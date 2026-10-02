@@ -2,10 +2,11 @@
 
 #include "Runtime/Core/Globals.h"
 #include "Runtime/Engine/FTimeManager.h"
-#include "Runtime/Engine/FEngine.h"
+#include "Runtime/Engine/UEngine.h"
 
 #include <format>
 #include <Windows.h>
+#include <Runtime/Core/FMemory.h>
 
 void FEngineLoop::Init(HINSTANCE Instance)
 {
@@ -19,10 +20,8 @@ void FEngineLoop::Init(HINSTANCE Instance)
 		.Height = Globals::WindowHeight,
 	});
 
-	// 엔진 객체 초기화
-	Engine = MakeUnique<FEngine>(*this);
-
-	Engine->Init();
+	//Memory Allocator 초기화
+	FMemory::Init();
 }
 
 void FEngineLoop::Tick()
@@ -47,6 +46,7 @@ void FEngineLoop::Exit()
 {
 	// 엔진 종료
 	Engine->Exit();
+	DestroyObject(Engine);
 
 	// 윈도우 객체 종료
 	WindowsApplication->Quit();

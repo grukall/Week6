@@ -137,7 +137,8 @@ private:
   bool InitializePipelines(FRenderer &Renderer);
   bool CreateWireframePipeline(FRenderer &Renderer);
   bool CreateOutlinePipeline(FRenderer &Renderer);
-  bool CreatePostProcessPipeline(FRenderer &Renderer);
+  bool CreateOutlinePostProcessPipeline(FRenderer& Renderer);
+  bool CreateFXAAPostProcessPipeline(FRenderer& Renderer);
 
   bool CreateInstancingArrayMap();
   FRenderer *RendererRef = nullptr;

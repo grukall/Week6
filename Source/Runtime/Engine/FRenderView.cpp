@@ -283,6 +283,7 @@ void FRenderView::RenderView(const FSceneView& View, const UScene& Scene, const 
 
     // 후처리 외곽선 패스
     RenderPostProcessPass(View.Camera, EditorCtx.SelectedActor);
+    FXAAPostProcessPass();
 
     Renderer.ClearLastRenderState();
 }
@@ -335,6 +336,11 @@ void FRenderView::FlushLinePass(const FCamera& Camera)
 void FRenderView::RenderPostProcessPass(const FCamera& Camera, const AActor* SelectedActor)
 {
     RenderOutline(Camera, SelectedActor);
+}
+
+void FRenderView::FXAAPostProcessPass()
+{
+    Renderer.FXAA();
 }
 
 void FRenderView::RenderOverlayPass(const FCamera& Camera, const FSceneView& SceneView, const FTransform& SelectedTransform, const FGizmo& Gizmo, UTextInstanceComponent* TextComp)

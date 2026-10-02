@@ -171,7 +171,7 @@ bool FRenderResourceLibrary::CreateOutlinePipeline(FRenderer &Renderer) {
   return true;
 }
 
-bool FRenderResourceLibrary::CreatePostProcessPipeline(FRenderer &Renderer) {
+bool FRenderResourceLibrary::CreateOutlinePostProcessPipeline(FRenderer &Renderer) {
   ID3D11Device *Device = Renderer.GetDevice();
   if (!Device) {
     return false;
@@ -278,14 +278,135 @@ bool FRenderResourceLibrary::CreatePostProcessPipeline(FRenderer &Renderer) {
       .BlendState           = std::move(BlendState),
   };
 
-  AllPipelineMap[FName("#PostProcess")] = MakeShared<FRenderPipeline>(std::move(CreateInfo));
+  AllPipelineMap[FName("#OutlinePostProcess")] = MakeShared<FRenderPipeline>(std::move(CreateInfo));
   return true;
 }
 
+bool FRenderResourceLibrary::CreateFXAAPostProcessPipeline(FRenderer& Renderer) {
+    ID3D11Device* Device = Renderer.GetDevice();
+    if (!Device) {
+        return false;
+    }
+
+    const FWString Path = EngineUtil::GetContentDirectory();
+    const FWString VsPath = Path + L"/Shader/ScreenQuadVS.cso";
+
+    // TODO: 셰이더 추가 및 경로 변경 필요
+    const FWString PsPath = Path + L"/Shader/FXAAPostProcessPS.cso";
+
+    if (!std::filesystem::exists(VsPath) || !std::filesystem::exists(PsPath)) {
+        return false;
+    }
+
+    Microsoft::WRL::ComPtr<ID3D11VertexShader> VertexShader;
+    Microsoft::WRL::ComPtr<ID3D11PixelShader> PixelShader;
+    Microsoft::WRL::ComPtr<ID3D11RasterizerState> RasterizerState;
+    Microsoft::WRL::ComPtr<ID3D11DepthStencilState> DepthStencilState;
+    Microsoft::WRL::ComPtr<ID3D11SamplerState> SamplerState;
+    Microsoft::WRL::ComPtr<ID3D11BlendState> BlendState;
+
+    // 버텍스 셰이더 로드 및 생성
+    Microsoft::WRL::ComPtr<ID3DBlob> Blob;
+    HRESULT Result = D3DReadFileToBlob(VsPath.c_str(), &Blob);
+    if (FAILED(Result)) {
+        return false;
+    }
+
+    Result = Device->CreateVertexShader(Blob->GetBufferPointer(),
+        Blob->GetBufferSize(), nullptr,
+        &VertexShader);
+    if (FAILED(Result)) {
+        return false;
+    }
+
+    // 픽셀 셰이더 로드 및 생성
+    Result = D3DReadFileToBlob(PsPath.c_str(), &Blob);
+    if (FAILED(Result)) {
+        return false;
+    }
+
+    Result = Device->CreatePixelShader(Blob->GetBufferPointer(),
+        Blob->GetBufferSize(), nullptr,
+        &PixelShader);
+    if (FAILED(Result)) {
+        return false;
+    }
+
+    // 래스터라이저 상태 생성
+    D3D11_RASTERIZER_DESC RasterizerDesc{
+        .FillMode = D3D11_FILL_SOLID,
+        .CullMode = D3D11_CULL_NONE,
+        .FrontCounterClockwise = false,
+    };
+    Result = Device->CreateRasterizerState(&RasterizerDesc, &RasterizerState);
+    if (FAILED(Result)) {
+        return false;
+    }
+
+    // 깊이 스텐실 상태 생성
+    D3D11_DEPTH_STENCIL_DESC DepthStencilDesc{
+        .DepthEnable = FALSE,
+        .DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO,
+        .DepthFunc = D3D11_COMPARISON_ALWAYS,
+        .StencilEnable = FALSE,
+    };
+    Result = Device->CreateDepthStencilState(&DepthStencilDesc,
+        &DepthStencilState);
+    if (FAILED(Result)) {
+        return false;
+    }
+
+    // 블렌드 상태 생성
+    D3D11_BLEND_DESC BlendDesc{};
+    BlendDesc.RenderTarget[0].BlendEnable = FALSE;
+    BlendDesc.RenderTarget[0].RenderTargetWriteMask =
+        D3D11_COLOR_WRITE_ENABLE_ALL;
+    Result = Device->CreateBlendState(&BlendDesc, &BlendState);
+    if (FAILED(Result)) {
+        return false;
+    }
+
+    // 샘플러 상태 생성
+    D3D11_SAMPLER_DESC SamplerDesc{
+        .Filter = D3D11_FILTER_MIN_MAG_MIP_POINT,
+        .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+        .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+        .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
+        .ComparisonFunc = D3D11_COMPARISON_NEVER,
+        .MaxLOD = D3D11_FLOAT32_MAX,
+    };
+
+    Result = Device->CreateSamplerState(&SamplerDesc, &SamplerState);
+
+    if (FAILED(Result)) {
+        return false;
+    }
+
+    FRenderPipelineCreateInfo CreateInfo{
+        .VertexShader = std::move(VertexShader),
+        .PixelShader = std::move(PixelShader),
+        .RasterizerState = std::move(RasterizerState),
+        .DepthStencilState = std::move(DepthStencilState),
+        .SamplerState = std::move(SamplerState),
+        .BlendState = std::move(BlendState),
+    };
+
+    AllPipelineMap[FName("#FXAAPostProcess")] = MakeShared<FRenderPipeline>(std::move(CreateInfo));
+    return true;
+}
+
 bool FRenderResourceLibrary::InitializePipelines(FRenderer &Renderer) {
-  return CreateWireframePipeline(Renderer) &&
-         CreateOutlinePipeline(Renderer) &&
-         CreatePostProcessPipeline(Renderer);
+#define USINGFXAA 1
+#if USINGFXAA
+    return CreateWireframePipeline(Renderer) &&
+        CreateOutlinePipeline(Renderer) &&
+        CreateOutlinePostProcessPipeline(Renderer) &&
+        CreateFXAAPostProcessPipeline(Renderer);
+#else
+    return CreateWireframePipeline(Renderer) &&
+        CreateOutlinePipeline(Renderer) &&
+        CreateOutlinePostProcessPipeline(Renderer);
+#endif
 }
 
 bool FRenderResourceLibrary::Initialize(FRenderer &Renderer) {

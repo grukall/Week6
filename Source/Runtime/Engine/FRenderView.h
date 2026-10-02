@@ -49,6 +49,8 @@ public:
 	void RenderPostProcessPass(const FCamera& Camera, const AActor* SelectedActor);
 	void RenderOverlayPass(const FCamera& Camera, const FSceneView& SceneView, const FTransform& SelectedTransform, const FGizmo& Gizmo, UTextInstanceComponent* TextComp);
 
+	void FXAAPostProcessPass();
+
 	// 개별 렌더 및 디버그 라인
 	void RenderGizmo(const FTransform& Transform, const FCamera& Camera, FVector2 TopLeftUV, FVector2 LengthUV, const FGizmo& Gizmo);
 

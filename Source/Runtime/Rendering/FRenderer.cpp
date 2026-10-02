@@ -1526,7 +1526,7 @@ void FRenderer::RenderOutline() {
   Context->PSSetShaderResources(0, 2, SRVs);
 
   FRenderResourceLibrary::Get()
-      .GetPipeline(FName("#PostProcess"))
+      .GetPipeline(FName("#OutlinePostProcess"))
       ->Bind(*Context.Get());
   Context->Draw(3, 0);
   INC_DWORD_STAT("Draws");
@@ -1535,6 +1535,30 @@ void FRenderer::RenderOutline() {
   // 슬롯 해제
   ID3D11ShaderResourceView *NullSRVs[] = {nullptr, nullptr};
   Context->PSSetShaderResources(0, 2, NullSRVs);
+}
+
+void FRenderer::FXAA() {
+    Context->RSSetViewports(1, &Viewport);
+    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    Context->IASetInputLayout(nullptr);
+
+    ID3D11Buffer* NullVB = nullptr;
+    UINT Zero = 0;
+    Context->IASetVertexBuffers(0, 1, &NullVB, &Zero, &Zero);
+
+    Context->OMSetRenderTargets(1, BackBufferRTV.GetAddressOf(), nullptr);
+    // 씬 텍스처와 스텐실 텍스처 바인딩
+    ID3D11ShaderResourceView* SRVs[] = { EditorViewPortSRV.Get() };
+    Context->PSSetShaderResources(0, 1, SRVs);
+
+    FRenderResourceLibrary::Get().GetPipeline(FName("#FXAAPostProcess"))->Bind(*Context.Get());
+    Context->Draw(3, 0);
+    INC_DWORD_STAT("Draws");
+    INC_DWORD_STAT_BY("Prims", 1);
+
+    // 슬롯 해제
+    ID3D11ShaderResourceView* NullSRVs[] = { nullptr, nullptr };
+    Context->PSSetShaderResources(0, 2, NullSRVs);
 }
 
 bool FRenderer::InitializeGPUTimerQueries() {

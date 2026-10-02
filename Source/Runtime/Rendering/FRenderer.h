@@ -104,6 +104,9 @@ public:
   ID3D11RenderTargetView* GetBackBuffer() { return BackBufferRTV.Get(); }
   ID3D11DepthStencilView* GetDepthStencilView() { return DepthStencilView.Get(); }
 
+  // FXAA 
+  void FXAA();
+
   float GetWidth() const { return Viewport.Width; }
   float GetHeight() const { return Viewport.Height; }
 

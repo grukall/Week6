@@ -6,6 +6,7 @@
 #include "Runtime/Actors/ABillboardActor.h"
 #include "Runtime/Actors/ASpotlightActor.h"
 #include "Runtime/CoreUObject/UObject.h"
+#include "Runtime/CoreUObject/UEditorEngine.h"
 #include "Runtime/Engine/FTimeManager.h"
 #include "Runtime/Input/FInputManager.h"
 #include "Runtime/Rendering/FRenderResourceLibrary.h"
@@ -14,7 +15,7 @@
 #include <numbers>
 #include <Runtime/Engine/FSceneBVH.h>
 
-void FEditor::Initialize(USceneManager *SceneManager) {
+void FEditor::Initialize(UEditorEngine* InEditorEngine) {
   State.ReadFromFile();
   Gizmo.Initialize();
   SelectedActorTextComp = NewObject<UTextInstanceComponent>();
@@ -27,7 +28,7 @@ void FEditor::Initialize(USceneManager *SceneManager) {
     SelectedActorTextComp->SetMaterial(Registry.Get<UMaterial>("Material/SelectedActor_Text.json"));
     SelectedActorTextComp->SetFont(FName("bazziotf"));
   }
-  this->SceneManager = SceneManager;
+  this->EditorEngine = InEditorEngine;
 }
 
 void FEditor::Shutdown() {
@@ -54,8 +55,8 @@ void FEditor::Process() {
         Target->Destroy();
     }
     
-  if (SceneManager && SceneManager->CurrentScene) {
-    SceneManager->CurrentScene->Update(FTimeManager::GetDeltaTime());
+  if (EditorEngine && EditorEngine->GWorld) {
+      EditorEngine->GWorld->Tick(FTimeManager::GetDeltaTime());
   }
 
   if (SelectedActor) {
@@ -65,8 +66,8 @@ void FEditor::Process() {
     SelectedActor->SetTransform(SelectedTransform);
 
     // Transform이 변경되었을 때만 Refit
-    if (bChanged && SceneManager && SceneManager->CurrentScene) {
-        RefitActorInBVH(SceneManager->CurrentScene->GetSceneBVH(), SelectedActor);
+    if (bChanged && EditorEngine && EditorEngine->GWorld) {
+        RefitActorInBVH(EditorEngine->GWorld->Scene->GetSceneBVH(), SelectedActor);
     }
   }
 
@@ -112,30 +113,30 @@ void FEditor::LoadState()
 
 void FEditor::NewScene() {
   UnSelectActor();
-  SceneManager->SetScene(NewObject<UScene>());
+  EditorEngine->SetLevel(NewObject<ULevel>());
   State.ResetToDefaults();
   LoadState();
 }
 
-void FEditor::SaveScene(const FString &Path) { SceneManager->SaveScene(Path); }
+void FEditor::SaveScene(const FString &Path) { EditorEngine->SaveLevel(Path); }
 
 void FEditor::LoadScene(const FString &Path) 
 {
   // 씬 로드
   FEditorViewportClient* Viewport = GetActiveViewport();
-  SceneManager->LoadScene(Path, Viewport ? &Viewport->ViewportCamera : nullptr);
+  EditorEngine->LoadLevel(Path, Viewport ? &Viewport->ViewportCamera : nullptr);
   SelectedActor = nullptr;
 
   // 로드된 컴포넌트는 대기열에만 쌓이므로, 트랜스폼이 모두 설정된 지금 트리를 만든다.
-  if (SceneManager->CurrentScene)
+  if (EditorEngine->GWorld)
   {
-    UScene* Scene = SceneManager->CurrentScene;
+    FScene* Scene = EditorEngine->GWorld->Scene;
     Scene->GetSceneBVH().Build(Scene->GetRenderComponents());
   }
 }
 
 bool FEditor::CheckSceneExists() {
-  if (SceneManager->CurrentScene == nullptr)
+  if (EditorEngine->GWorld->Scene == nullptr)
     return false;
   return true;
 }
@@ -198,10 +199,10 @@ void FEditor::UnSelectActor() {
 
 const TArray<UPrimitiveComponent *> &FEditor::GetPrimitiveComponents() const {
     static const TArray<UPrimitiveComponent*> Empty;
-  if (!SceneManager || !SceneManager->CurrentScene) {
+  if (!EditorEngine || !EditorEngine->GWorld) {
     return Empty;
   }
-  return SceneManager->CurrentScene->GetRenderComponents();
+  return EditorEngine->GWorld->Scene->GetRenderComponents();
 }
 
 void FEditor::ClearSelectionForGC() {
@@ -211,7 +212,7 @@ void FEditor::ClearSelectionForGC() {
 }
 
 void FEditor::SpawnActorToCurrentScene(UClass* Type, int Size) {
-    if (!SceneManager || !SceneManager->CurrentScene) {
+    if (!EditorEngine || !EditorEngine->GWorld) {
         return;
     }
 
@@ -230,7 +231,7 @@ void FEditor::SpawnActorToCurrentScene(UClass* Type, int Size) {
             Random::GetFloat(Min, Max, 2),
         };
 
-        AActor* NewActor = SceneManager->CurrentScene->SpawnActor(Type);
+        AActor* NewActor = EditorEngine->GWorld->SpawnActor(Type);
         if (!NewActor) { return; }
 
 
@@ -244,10 +245,10 @@ void FEditor::SpawnActorToCurrentScene(UClass* Type, int Size) {
         SelectActor(NewActor);
     }
 
-    FSceneBVH& BVH = SceneManager->CurrentScene->GetSceneBVH();
+    FSceneBVH& BVH = EditorEngine->GWorld->Scene->GetSceneBVH();
     if (BVH.ShouldRebuild())
     {
-        BVH.Build(SceneManager->CurrentScene->GetRenderComponents());
+        BVH.Build(EditorEngine->GWorld->Scene->GetRenderComponents());
     }
 }
 
@@ -366,4 +367,27 @@ void FEditor::SetViewLayout(FEditorState::SplitViewMode mode) {
         break;
 
     }
+}
+
+FScene* FEditor::GetCurrentScene() const
+{
+    if (!EditorEngine || !EditorEngine->GWorld)
+    {
+        return (nullptr);
+    }
+    return (EditorEngine->GWorld->Scene);
+}
+
+ULevel* FEditor::GetCurrentLevel() const
+{
+    if (!EditorEngine || !EditorEngine->GWorld)
+    {
+        return (nullptr);
+    }
+    return (EditorEngine->GWorld->GetPersistentLevel());
+}
+
+UWorld* FEditor::GetCurrentWorld() const
+{
+    return EditorEngine ? EditorEngine->GWorld : nullptr;
 }

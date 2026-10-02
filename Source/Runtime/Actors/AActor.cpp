@@ -4,7 +4,8 @@
 #include "Runtime/CoreUObject/UObjectGlobals.h"
 #include "Runtime/CoreUObject/USceneComponent.h"
 #include "Runtime/Engine/FArchive.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/FScene.h"
+#include "Runtime/CoreUObject/ULevel.h"
 
 IMPLEMENT_UCLASS(AActor, UObject)
 
@@ -18,7 +19,7 @@ void AActor::Initialize()
 
 void AActor::Release()
 {
-	UScene* RegisteredScene = Owner;
+	ULevel* RegisteredLevel = Owner->GetPersistentLevel();
 	if (bHasBegunPlay)
 	{
 		EndPlay();
@@ -29,9 +30,9 @@ void AActor::Release()
 		Unregister();
 	}
 
-	if (RegisteredScene)
+	if (RegisteredLevel)
 	{
-		RegisteredScene->RemoveActor(this);
+		RegisteredLevel->RemoveActor(this);
 	}
 
 	while (!AttachedComp.empty())
@@ -210,9 +211,9 @@ void AActor::AddComponent(USceneComponent* Addcomp)
 	}
 }
 
-void AActor::Register(UScene& Scene)
+void AActor::Register(UWorld& InWorld)
 {
-	if (Owner == &Scene)
+	if (Owner == &InWorld)
 	{
 		return;
 	}
@@ -222,12 +223,12 @@ void AActor::Register(UScene& Scene)
 		Unregister();
 	}
 
-	Owner = &Scene;
+	Owner = &InWorld;
 	for (USceneComponent* Component : AttachedComp)
 	{
 		if (Component)
 		{
-			Component->Register(Scene);
+			Component->Register(InWorld);
 		}
 	}
 }
@@ -248,7 +249,7 @@ void AActor::BeginPlay() {
 	}
 }
 
-void AActor::Update(float DeltaTime) {
+void AActor::Tick(float DeltaTime) {
 	if (!bTickEnabled || !bHasBegunPlay)
 	{
 		return;
@@ -258,7 +259,7 @@ void AActor::Update(float DeltaTime) {
 	{
 		if (Component && Component->IsTickEnabled())
 		{
-			Component->Update(DeltaTime);
+			Component->TickComponent(DeltaTime);
 		}
 	}
 }
@@ -307,4 +308,43 @@ void AActor::Destroy() {
 		return;
 	}
 	DestroyObject(this);
+}
+
+USceneComponent* AActor::GetRootComponent() const
+{
+	return RootComponent;
+}
+const TArray<USceneComponent*>& AActor::GetAttachedComponents() const
+{
+	return AttachedComp;
+}
+
+FTransform AActor::GetTransform() const
+{
+	return RootComponent ? RootComponent->GetRelativeTransform() : FTransform{};
+}
+
+void AActor::SetTransform(const FTransform& NewTransform)
+{
+	if (RootComponent) RootComponent->SetRelativeTransform(NewTransform);
+}
+
+bool AActor::IsActorTickEnabled()
+{
+	return bTickEnabled;
+}
+
+UWorld* AActor::GetOwner() const
+{ 
+	return Owner; 
+}
+
+bool AActor::IsRegistered() const
+{
+	return Owner != nullptr;
+}
+
+bool AActor::HasBegunPlay() const
+{
+	return bHasBegunPlay;
 }

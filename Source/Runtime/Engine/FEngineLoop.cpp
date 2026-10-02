@@ -2,7 +2,7 @@
 
 #include "Runtime/Core/Globals.h"
 #include "Runtime/Engine/FTimeManager.h"
-#include "Runtime/Engine/FEngine.h"
+#include "Runtime/CoreUObject/UEditorEngine.h"
 
 #include <format>
 #include <Windows.h>
@@ -20,7 +20,7 @@ void FEngineLoop::Init(HINSTANCE Instance)
 	});
 
 	// 엔진 객체 초기화
-	Engine = MakeUnique<FEngine>(*this);
+	Engine = MakeUnique<UEditorEngine>(*this);
 
 	Engine->Init();
 }

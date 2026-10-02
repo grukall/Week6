@@ -3,7 +3,7 @@
 #include "Runtime/Core/PointerTypes.h"
 #include "Runtime/ApplicationCore/FWindowApplication.h"
 
-class FEngine;
+class UEditorEngine;
 class FTimeManager;
 
 // 엔진의 하부 계층을 담당하는 클래스
@@ -14,7 +14,7 @@ private:
 
 	TUniquePtr<FWindowsApplication> WindowsApplication;
 
-	TUniquePtr<FEngine> Engine{ nullptr };
+	TUniquePtr<UEditorEngine> Engine{ nullptr };
 
 public:
 

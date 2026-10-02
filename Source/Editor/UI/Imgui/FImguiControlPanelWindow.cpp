@@ -8,7 +8,7 @@
 #include "Runtime/Core/FString.h"
 #include "Runtime/Engine/ShowFlags.h"
 #include "Runtime/Engine/FRayCastingManager.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/FScene.h"
 #include "Runtime/CoreUObject/FStatsManager.h"
 #include "Runtime/CoreUObject/UPrimitiveComponent.h"
 #include <algorithm>
@@ -188,7 +188,7 @@ void FImguiControlPanelWindow::RunPickBenchmark(FEditor& Editor, int Iterations)
 {
     if (!FRayCastingManager::bHasLastPickRay || Iterations <= 0) { return; }
 
-    UScene* Scene = Editor.GetCurrentScene();
+    FScene* Scene = Editor.GetCurrentScene();
     FEditorViewportClient* Viewport = Editor.GetActiveViewport();
     const bool bUseBVH = Editor.bUseBVHPicking && Scene;
     if (!bUseBVH && !Viewport) { return; }

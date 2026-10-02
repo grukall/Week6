@@ -3,7 +3,7 @@
 #include "Runtime/Core/FString.h"
 #include "Runtime/Core/IntTypes.h"
 #include "Runtime/Core/PointerTypes.h"
-#include "Runtime/Engine/FEngine.h"
+#include "Runtime/CoreUObject/UEditorEngine.h"
 
 // 엔진의 전역 변수를 담는 네임스페이스입니다.
 namespace Globals

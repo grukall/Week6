@@ -3,17 +3,21 @@
 #include "Runtime/CoreUObject/UObject.h"
 #include "Runtime/CoreUObject/USceneComponent.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
+
 #include <type_traits>
 #include <concepts>
 
-class UScene;
+class FScene;
+class ULevel;
+class UWorld;
+class USceneComponent;
 
 class AActor : public UObject
 {
 	DECLARE_UCLASS(AActor, UObject)
 	GENERATED_BODY()
 
-	friend class UScene;
+	friend class FScene;
 
 protected:
 	USceneComponent* RootComponent = nullptr;
@@ -28,34 +32,36 @@ protected:
 public:
 	void Initialize() override;
 	void Release() override;
-	UScene* GetOwner() const { return Owner; }
+	UWorld* GetOwner() const;
 
 	void CreateRootComponent(UClass* ClassType);
 
 	void SetRootComponent(USceneComponent* Component);
-	USceneComponent* GetRootComponent() const { return RootComponent; }
-	const TArray<USceneComponent*>& GetAttachedComponents() const { return AttachedComp; }
+	USceneComponent* GetRootComponent() const;
+	const TArray<USceneComponent*>& GetAttachedComponents() const;
 
 
-	FTransform GetTransform() const { return RootComponent ? RootComponent->GetRelativeTransform() : FTransform{}; }
-	void SetTransform(const FTransform& NewTransform) { if (RootComponent) RootComponent->SetRelativeTransform(NewTransform); }
+	FTransform GetTransform() const;
+	void SetTransform(const FTransform& NewTransform);
+
+	bool IsActorTickEnabled();
 
 	//하위 컴포넌트 월드 Tranform도 바뀐다.
 	void MarkComponentsTransformDirty();
 
 	void AddComponent(USceneComponent* Addcomp);
-	virtual void Register(UScene& Scene);
+	virtual void Register(UWorld& InWorld);
 	virtual void BeginPlay();
-	virtual void Update(float DeltaTime);
+	virtual void Tick(float DeltaTime);
 	virtual void EndPlay();
 	virtual void Unregister();
 
-	[[nodiscard]] bool IsRegistered() const { return Owner != nullptr; }
-	[[nodiscard]] bool HasBegunPlay() const { return bHasBegunPlay; }
+	[[nodiscard]] bool IsRegistered() const;
+	[[nodiscard]] bool HasBegunPlay() const;
 
 	void Destroy();
 
 private:
-	UScene* Owner = nullptr; // SpawnActor될 때 설정됨
+	UWorld* Owner = nullptr; // SpawnActor될 때 설정됨
 	bool bHasBegunPlay = false;
 };

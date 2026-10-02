@@ -8,12 +8,14 @@
 #include "Runtime/CoreUObject/UObject.h"
 #include "Runtime/CoreUObject/TWeakObjectPtr.h"
 #include "Runtime/Actors/AActor.h"
-#include "Runtime/Engine/USceneManager.h"
 #include "Runtime/Rendering/ShaderConstants.h"
 #include "Runtime/CoreUObject/UTextInstanceComponent.h"
 
 
 #include "Runtime/UI/SSplitter.h"
+
+class UEditorEngine;
+
 enum class EEditorPrimitiveType : uint8 {
   Cube,
   Cylinder,
@@ -51,7 +53,7 @@ public:
   }
 
 public:
-  void Initialize(USceneManager *SceneManager);
+  void Initialize(UEditorEngine *InEditorEngine);
   void Shutdown();
 
   void Process();
@@ -78,9 +80,10 @@ public:
   [[nodiscard]] TArray<FEditorViewportClient> &GetViewports() {
     return EditorViewports;
   }
-  [[nodiscard]] UScene* GetCurrentScene() const {
-    return SceneManager ? SceneManager->CurrentScene : nullptr;
-  }
+  [[nodiscard]] FScene* GetCurrentScene() const;
+  [[nodiscard]] ULevel* GetCurrentLevel() const;
+  [[nodiscard]] UWorld* GetCurrentWorld() const;
+
   void SpawnActorToCurrentScene(UClass* Type, int Count = 1);
   // 피킹 등에서 현재 씬의 렌더링 대상 컴포넌트가 필요할 때 사용
   [[nodiscard]] const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
@@ -102,9 +105,8 @@ public:
   SSplitterH HorizonSplitter2; //세로선
   SSplitterV VerticalSplitter; // 가로선
 private:
-  USceneManager* SceneManager =
-      nullptr; // 씬을 다중으로 가질 수 있도록 구조개선 가능-이경우 에디터쪽에
-               // 클래스를 추가해 씬과 FEditorViewportClient들을 연관
+    UEditorEngine* EditorEngine = nullptr;
+    
   TArray<FEditorViewportClient> EditorViewports;
   FGizmo Gizmo;
   TWeakObjectPtr<AActor> SelectedActor;

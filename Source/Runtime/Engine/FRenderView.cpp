@@ -15,7 +15,7 @@
 #include "Runtime/Rendering/FRenderer.h"
 #include "Runtime/Rendering/ShaderConstants.h"
 #include "Runtime/Engine/FRenderData.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/FScene.h"
 #include "Runtime/Engine/FTimeManager.h"
 #include "Runtime/Core/Globals.h"
 #include <fstream>
@@ -95,7 +95,7 @@ namespace
     }
 }
 
-void FRenderView::CollectScenePrimitives(const UScene& Scene, const FSceneView& View, const AActor* SelectedActor)
+void FRenderView::CollectScenePrimitives(const FScene& Scene, const FSceneView& View, const AActor* SelectedActor)
 {
     const TArray<UPrimitiveComponent*>& Primitives = Scene.GetRenderComponents();
     // Primitives[i]의 SceneIndex는 i이므로 CullDataList[i]가 그 컴포넌트의 월드 바운드다 (VisibleFlags와 같은 규칙)
@@ -221,7 +221,7 @@ void FRenderView::PrepareRender()
     Renderer.UpdateFrameConstants(FrameConstants);
 }
 
-void FRenderView::RenderView(const FSceneView& View, const UScene& Scene, const FEditorRenderContext& EditorCtx)
+void FRenderView::RenderView(const FSceneView& View, const FScene& Scene, const FEditorRenderContext& EditorCtx)
 {
     // 뷰포트 시작
     BeginView(View);
@@ -526,7 +526,7 @@ void FRenderView::SetCullingEnabled(bool pCullingEnable)
     Globals::bEnableFrustumCulling = pCullingEnable;
 }
 
-void FRenderView::CullScene(const FSceneView& View, const UScene& Scene)
+void FRenderView::CullScene(const FSceneView& View, const FScene& Scene)
 {
     const TArray<FAxisAlignedBoundingBox>& CullDataList = Scene.GetCullDataList();
     

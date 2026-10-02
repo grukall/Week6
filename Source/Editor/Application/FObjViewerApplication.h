@@ -16,7 +16,7 @@ public:
 	FObjViewerApplication(FRenderer& InRenderer);
 
 	void Initialize(HWND hWnd, ID3D11Device* Device, ID3D11DeviceContext* Context);
-	void Update(float DeltaTime) override;
+	void Tick(float DeltaTime) override;
 	void Render() override;
 	void Shutdown() override;
 	void OpenObj(const char* InPath);

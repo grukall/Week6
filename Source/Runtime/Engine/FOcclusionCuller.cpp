@@ -1,7 +1,7 @@
 #include "FOcclusionCuller.h"
 #include "Runtime/CoreUObject/UPrimitiveComponent.h"
 #include "Runtime/Geometry/FAxisAlignedBoundingBox.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/FScene.h"
 #include "Runtime/Engine/FSceneView.h"
 #include "Runtime/Engine/FCamera.h"
 #include "Runtime/Engine/FCameraProjection.h"
@@ -632,8 +632,8 @@ void FOcclusionBuffer::RasterizeConvexPolygon(const FScreenVertex* Polygon, int3
 	//}
 }
 
-uint32 FOcclusionCuller::Cull(const FSceneView& View, const UScene& Scene, 
-							  TArray<uint8>& InOutVisibleFlags, TArray<uint8>& OutOccludedFlags)
+uint32 FOcclusionCuller::Cull(const FSceneView& View, const FScene& Scene, TArray<uint8>& InOutVisibleFlags,
+	TArray<uint8>& OutOccludedFlags)
 {
 	const TArray<UPrimitiveComponent*>& Prims = Scene.GetRenderComponents();
 	const TArray<FAxisAlignedBoundingBox>& Bounds = Scene.GetCullDataList();

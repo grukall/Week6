@@ -33,13 +33,12 @@ void FEditorApplication::Initialize_ImguiWin32DX11(
   ImguiManager.Initialize_ImplWin32DX11(Window, Device, Context);
 }
 
-void FEditorApplication::Initialize_Runtime(USceneManager *SceneManager,
-                                            FRenderView *RenderView) {
+void FEditorApplication::Initialize_Runtime(UEditorEngine* EditorEngine, FRenderView* RenderView) {
   this->RenderView = RenderView;
-  this->SceneManager = SceneManager;
-  this->CurrentScene = SceneManager->CurrentScene;
+  this->EditorEngine = EditorEngine;
+  this->CurrentScene = EditorEngine->GWorld->Scene;
 
-  Editor.Initialize(SceneManager);
+  Editor.Initialize(EditorEngine);
   Editor.InitMultiViewport(FEditorViewportClient{});
   Editor.LoadState();
   Editor.SetViewLayout(Editor.State.GetSplitMode());
@@ -51,25 +50,21 @@ void FEditorApplication::Initialize_Runtime(USceneManager *SceneManager,
 
 void FEditorApplication::Shutdown() { Editor.Shutdown(); }
 
-void FEditorApplication::Update(float DeltaTime) {
-  BeginFrame();
-  Tick(DeltaTime);
+void FEditorApplication::Tick(float DeltaTime) {
+    BeginFrame();
+    ToolBar.Process(Editor, ConsoleWindow, ControlPanelWindow, PropertyWindow);
+    EditorViewportWindow.Process(Editor, DeltaTime);
+    WorldOutliner.Process(Editor);
+    ControlPanelWindow.Process(Editor);
+    PropertyWindow.Process(Editor);
+    ConsoleWindow.Process(Editor, [this](const char* Command) {ExecuteCommand(Command);});
+    ContentsDrawer.Process(Editor);
+    Editor.Process();
 }
 
 void FEditorApplication::BeginFrame()
 { 
     ImguiManager.NewFrame();
-}
-
-void FEditorApplication::Tick(float DeltaTime) {
-  ToolBar.Process(Editor, ConsoleWindow, ControlPanelWindow, PropertyWindow);
-  EditorViewportWindow.Process(Editor, DeltaTime);
-  WorldOutliner.Process(Editor);
-  ControlPanelWindow.Process(Editor);
-  PropertyWindow.Process(Editor);
-  ConsoleWindow.Process(Editor, [this](const char* Command) {ExecuteCommand(Command);});
-  ContentsDrawer.Process(Editor);
-  Editor.Process();
 }
 
 void FEditorApplication::Render() {
@@ -82,7 +77,7 @@ void FEditorApplication::Render() {
       //컬링 준비 시간 기록?
       // 
       //이동한 오브젝트는 월드 AABB 재계산
-      SceneManager->CurrentScene->UpdateDirtyBounds();
+      EditorEngine->GWorld->Scene->UpdateDirtyBounds();
   }
 
   //Active인 ViewportClient만 렌더링
@@ -118,7 +113,7 @@ void FEditorApplication::Render() {
           }
 
           // 뷰포트 렌더링 일괄 수행
-          RenderView->RenderView(sceneview, *SceneManager->CurrentScene, EditorCtx);
+          RenderView->RenderView(sceneview, *EditorEngine->GWorld->Scene, EditorCtx);
 
   }
 

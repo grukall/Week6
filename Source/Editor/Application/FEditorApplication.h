@@ -19,8 +19,8 @@
 class FEditorApplication final : public IApplication {
 	FEditor Editor;
 
-	USceneManager* SceneManager = nullptr;
-	UScene* CurrentScene = nullptr;
+	UEditorEngine* EditorEngine = nullptr;
+	FScene* CurrentScene = nullptr;
 
 	FImguiManager ImguiManager;
 
@@ -53,9 +53,9 @@ public:
 	FEditorApplication& operator=(FEditorApplication&&) = delete;
 
 	void Initialize_ImguiWin32DX11(HWND& Window, ID3D11Device* Device, ID3D11DeviceContext* Context);
-	void Initialize_Runtime(USceneManager* SceneManager, FRenderView* RenderView);
+	void Initialize_Runtime(UEditorEngine* EditorEngine, FRenderView* RenderView);
 	void Shutdown() override;
-	void Update(float DeltaTime) override;
+	void Tick(float DeltaTime) override;
 	void Render() override;
 	void OnWindowSize(UINT Width, UINT Height) override;
 
@@ -63,5 +63,4 @@ public:
 
 private:
 	void BeginFrame();
-	void Tick(float DeltaTime);
 };

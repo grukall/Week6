@@ -1,5 +1,5 @@
 #include "UAnimatedBillboardComp.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/FScene.h"
 #include "Runtime/Engine/FArchive.h"
 #include "UClass.h"
 #include <algorithm>
@@ -74,7 +74,7 @@ void UAnimatedBillboardComp::Deserialize(const FArchive& Archive)
 	CurrentUVOffset = Archive.GetVector2("CurrentUVOffset");
 }
 
-void UAnimatedBillboardComp::Update(float DeltaTime) {
+void UAnimatedBillboardComp::TickComponent(float DeltaTime) {
   if (!bPlaying || TotalFrames <= 1 || FrameRate <= 0.0f) {
     return;
   }

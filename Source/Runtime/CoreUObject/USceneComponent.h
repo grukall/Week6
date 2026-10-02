@@ -1,13 +1,16 @@
 #pragma once
 
 #include "Runtime/Geometry/FTransform.h"
+#include "Runtime/CoreUObject/UWorld.h"
 #include "ThirdParty/Json/json.hpp"
 #include "UObject.h"
+#include "ULevel.h"
 
 
-class UScene;
+class FScene;
 class AActor;
 class FArchive;
+class UWorld;
 
 class USceneComponent : public UObject
 {
@@ -23,15 +26,15 @@ public:
     USceneComponent* GetSceneOwner() const { return SceneOwner; }
     void SetActorOwner(AActor* Owner) { ActorOwner = Owner; } //selectedacotor 한테 textcomponent 바로 붙여야해서 만듦
 
-    virtual void Register(UScene& InScene);
+    virtual void Register(UWorld& InWorld);
     virtual void BeginPlay();
-    virtual void Update(float DeltaTime) {}
+    virtual void TickComponent(float DeltaTime) {}
     virtual void EndPlay();
     virtual void Unregister();
 
     void SetupAttachment(USceneComponent* InParent);
 
-    [[nodiscard]] bool IsRegistered() const { return Scene != nullptr; }
+    [[nodiscard]] bool IsRegistered() const { return World != nullptr; }
     [[nodiscard]] bool HasBegunPlay() const { return bHasBegunPlay; }
     [[nodiscard]] bool IsTickEnabled() const { return bTickEnabled; }
 
@@ -74,7 +77,7 @@ public:
 protected:
     AActor* ActorOwner = nullptr;
     USceneComponent* SceneOwner = nullptr;
-    UScene* Scene = nullptr;
+    UWorld* World = nullptr;
     bool bHasBegunPlay = false;
     bool bTickEnabled = false;
     bool bInheritRotation = true;

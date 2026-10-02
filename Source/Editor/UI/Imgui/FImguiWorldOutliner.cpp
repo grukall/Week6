@@ -2,7 +2,7 @@
 #include "Runtime/Actors/AActor.h"
 #include "Runtime/CoreUObject/UClass.h"
 #include "Runtime/CoreUObject/USceneComponent.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/FScene.h"
 #include "ThirdParty/Imgui/imgui.h"
 #include <string>
 #include <algorithm>
@@ -16,8 +16,8 @@ void FImguiWorldOutliner::Process(FEditor& Editor)
 
 	ImGui::Begin("World Outliner");
 
-	UScene* Scene = Editor.GetCurrentScene();
-	if (!Scene)
+	ULevel* Level = Editor.GetCurrentLevel();
+	if (!Level)
 	{
 		ImGui::TextDisabled("No Active Scene");
 		ImGui::End();
@@ -36,19 +36,19 @@ void FImguiWorldOutliner::Process(FEditor& Editor)
 	const bool bFilterChanged = ShowSearchBar();
 	ImGui::Separator();
 
-	auto& Actors = Scene->GetActors();
+	auto& Actors = Level->GetActors();
 	AActor* SelectedActor = Editor.GetSelectedActor();
 	// 액터 목록 표시
 	ImGui::BeginChild("ActorList", ImVec2(0.0f, -ImGui::GetFrameHeightWithSpacing()), false);
 
 	if (bUseOptimized)
 	{
-		if (bCacheDirty || Scene != LastScene || Actors.size() != LastActorCount)
+		if (bCacheDirty || Level != LastLevel || Actors.size() != LastActorCount)
 		{
-			RefreshCache(Scene);
+			RefreshCache(Level);
 			UpdateFilter(CurrentFilterStr.c_str());
 			RebuildDisplayList();
-			LastScene = Scene;
+			LastLevel = Level;
 			bDisplayListDirty = false;
 		}
 		else if (bFilterChanged || bDisplayListDirty)
@@ -108,10 +108,10 @@ void FImguiWorldOutliner::Process(FEditor& Editor)
 	ImGui::End();
 }
 
-void FImguiWorldOutliner::RefreshCache(UScene* Scene)
+void FImguiWorldOutliner::RefreshCache(ULevel* InLevel)
 {
 	CachedActors.clear();
-	const auto& Actors = Scene->GetActors();
+	const auto& Actors = InLevel->GetActors();
 	CachedActors.reserve(Actors.size());
 
 	for (AActor* Actor : Actors)

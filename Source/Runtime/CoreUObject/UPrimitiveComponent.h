@@ -3,6 +3,7 @@
 #include "Runtime/Engine/FCamera.h"
 #include "Runtime/Engine/FRenderData.h"
 #include "Runtime/Engine/ShowFlags.h"
+#include "Runtime/CoreUObject/UWorld.h"
 #include "Runtime/Math/FMatrix.h"
 #include "Runtime/Geometry/FAxisAlignedBoundingBox.h"
 #include "USceneComponent.h"
@@ -15,7 +16,7 @@ class UPrimitiveComponent : public USceneComponent {
 
 public:
     void Initialize() override;
-    void Register(UScene& InScene) override;
+    void Register(UWorld& InWorld) override;
     void Unregister() override;
 
     virtual void SetMesh(UStaticMesh* Mesh);

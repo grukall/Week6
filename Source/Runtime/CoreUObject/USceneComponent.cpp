@@ -4,7 +4,8 @@
 #include "UObjectGlobals.h" 
 #include "UPrimitiveComponent.h"
 #include "Runtime/Engine/FArchive.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/FScene.h"
+#include "Runtime/CoreUObject/UWorld.h"
 
 
 IMPLEMENT_UCLASS(USceneComponent, UObject)
@@ -12,33 +13,33 @@ IMPLEMENT_UCLASS(USceneComponent, UObject)
 void USceneComponent::Initialize()
 {
     Super::Initialize();
-    Scene = nullptr;
+    World = nullptr;
     bHasBegunPlay = false;
     bTickEnabled = false;
 }
 void USceneComponent::Release()
 {
     if (bHasBegunPlay) { EndPlay(); }
-    if (Scene) { Unregister(); }
+    if (World) { Unregister(); }
 
     ActorOwner = nullptr;
     SceneOwner = nullptr;
-    Scene = nullptr;
+    World = nullptr;
 
     Super::Release();
 }
 
-void USceneComponent::Register(UScene& InScene)
+void USceneComponent::Register(UWorld& InWorld)
 {
-    if (Scene == &InScene) { return; }
-    if (Scene) { Unregister(); }
+    if (World == &InWorld) { return; }
+    if (World) { Unregister(); }
 
-    Scene = &InScene;
+    World = &InWorld;
 }
 
 void USceneComponent::BeginPlay()
 {
-    if (!Scene || bHasBegunPlay) { return; }
+    if (!World || bHasBegunPlay) { return; }
     bHasBegunPlay = true;
 }
 
@@ -51,7 +52,7 @@ void USceneComponent::EndPlay()
 void USceneComponent::Unregister()
 {
     if (bHasBegunPlay) { EndPlay(); }
-    Scene = nullptr;
+    World = nullptr;
 }
 
 void USceneComponent::SetupAttachment(USceneComponent* InParent)

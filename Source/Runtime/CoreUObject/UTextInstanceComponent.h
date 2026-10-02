@@ -14,7 +14,7 @@ class UTextInstanceComponent : public UInstancePrimitiveComponent {
 
 public:
   void Initialize() override;
-  void Update(float delta) override;
+  void TickComponent(float delta) override;
 
   void SetText(const FWString &InText);
 

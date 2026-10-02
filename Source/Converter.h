@@ -53,7 +53,7 @@ namespace Converter
 
 		FArchive SceneArchive;
 		SceneArchive.SetInt32("UUID", NextUUID++);
-		SceneArchive.SetString("Type", "UScene");
+		SceneArchive.SetString("Type", "FScene");
 
 		TArray<FArchive> Actors;
 		const nlohmann::json Primitives = Archive.GetArchive("Primitives").GetJSON();

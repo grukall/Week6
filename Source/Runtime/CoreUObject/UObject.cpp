@@ -26,6 +26,26 @@ void UObject::Deserialize(const FArchive& Archive)
 	UUID = Archive.GetInt32("UUID");
 }
 
+//// 서브 오브젝트를 복제하는 함수 (하위 클래스에서 재정의 가능)
+void UObject::DuplicateSubObjects() {}
+//	if (SubObjectA)
+//		SubObjectA = SubObjectA->Duplicate();
+//
+//	if (SubObjectB)
+//		SubObjectB = SubObjectB->Duplicate();
+//}
+//
+//// 현재 오브젝트를 복제하는 함수
+UObject* UObject::Duplicate() { return (nullptr); }
+//	// 새 객체 생성
+//	UObject* NewObject = new UObject(*this); // 얕은 복사 수행
+//
+//	// 서브 오브젝트는 깊은 복사로 별도 처리
+//	NewObject->DuplicateSubObjects();
+//
+//	return NewObject;
+//}
+
 void* UObject::operator new(std::size_t Size)
 {
 	// void* Memory = ::operator new(Size);

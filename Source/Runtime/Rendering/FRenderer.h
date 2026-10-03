@@ -157,7 +157,10 @@ private:
 
   Microsoft::WRL::ComPtr<ID3D11RenderTargetView> EditorViewPortRTV;
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> EditorViewPortSRV;
+  Microsoft::WRL::ComPtr<ID3D11RenderTargetView> SceneColorRTV;
+  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SceneColorSRV;
   Microsoft::WRL::ComPtr<ID3D11Texture2D> renderTexture;
+  Microsoft::WRL::ComPtr<ID3D11Texture2D> SceneColorTexture;
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> DepthStencilSRV;
 
   TMap<FRasterizerDesc, Microsoft::WRL::ComPtr<ID3D11RasterizerState>> RasterizerStateMap;

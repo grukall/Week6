@@ -143,6 +143,7 @@ void FRenderer::OnWindowSize(UINT Width, UINT Height) {
   EditorViewPortRTV.Reset();
   EditorViewPortSRV.Reset();
   renderTexture.Reset();
+  SceneColorTexture.Reset();
 
   SwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, 0);
   Viewport.Width = static_cast<float>(Width);
@@ -813,10 +814,10 @@ bool FRenderer::InitializeEditorViewportRenderTarget() {
     return false;
   }
 
-  Result = Device->CreateRenderTargetView(renderTexture.Get(), nullptr,
-                                          &EditorViewPortRTV);
+  Result =
+      Device->CreateTexture2D(&ColorTexDesc, nullptr, &SceneColorTexture);
   if (FAILED(Result)) {
-    return false;
+      return false;
   }
 
   Result = Device->CreateShaderResourceView(renderTexture.Get(), nullptr,
@@ -824,6 +825,26 @@ bool FRenderer::InitializeEditorViewportRenderTarget() {
   if (FAILED(Result)) {
     return false;
   }
+
+  Result = Device->CreateRenderTargetView(renderTexture.Get(), nullptr,
+      &EditorViewPortRTV);
+  if (FAILED(Result)) {
+      return false;
+  }
+
+
+  Result = Device->CreateShaderResourceView(SceneColorTexture.Get(), nullptr,
+      &SceneColorSRV);
+  if (FAILED(Result)) {
+      return false;
+  }
+
+  Result = Device->CreateRenderTargetView(SceneColorTexture.Get(), nullptr,
+      &SceneColorRTV);
+  if (FAILED(Result)) {
+      return false;
+  }
+
 
   return true;
 }

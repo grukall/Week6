@@ -124,4 +124,7 @@ private:
 	TArray<FDrawCommand> OracleOccludedCommands;  // 오클루전으로 지운 것 (검증 대상)
 
 	void RunOcclusionOracle();
+
+public:
+	bool bIsFXAA = false;
 };

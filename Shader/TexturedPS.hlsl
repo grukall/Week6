@@ -5,10 +5,11 @@ SamplerState DiffuseSampler : register(s0);
 
 struct PS_INPUT
 {
-    float4 Position : SV_Position;
+    float4 PosH : SV_Position;
+    float3 PosW : Position;
     float4 Color : COLOR;
     float2 UV : TEXCOORD0;
-    float3 Normal : NORMAL; // 법선
+    float3 NormalW : NORMAL;
 };
 
 float4 MainPS(PS_INPUT Input) : SV_Target
@@ -25,12 +26,24 @@ float4 MainPS(PS_INPUT Input) : SV_Target
     }
     
     // 조명 계산 및 양면 음영 보정
-    float3 N = normalize(Input.Normal);
-    float NdotL = max(0.0f, dot(N, -normalize(LightDirection)));
-    float3 Diffuse = LightColor * (Intensity * NdotL);
-    float3 Ambient = LightColor * max(AmbientIntensity, 0.4f);
-    float3 DirectionalLight = max(Ambient + Diffuse, 0.5f);
+    float3 N = normalize(Input.NormalW);
+    //float NdotL = max(0.0f, dot(N, -normalize(LightDirection)));
+    //float3 Diffuse = LightColor * (Intensity * NdotL);
+    //float3 Ambient = LightColor * max(AmbientIntensity, 0.4f);
+    //float3 DirectionalLight = max(Ambient + Diffuse, 0.5f);
 
-    float3 FinalColor = BaseColor * DirectionalLight;
-    return float4(FinalColor, Sampled.a);
+    Material Mat;
+    Mat.DiffAlbedo = BaseColor;
+    Mat.SpecAlbedo = float3(0.0f, 0.0f, 0.0f);
+    Mat.Shininess = 0.0f;
+    
+    float3 ToEye = normalize(CamPos - Input.PosW);
+    
+    float3 FinalColor = ComputeLight(DirLights, PointLights, SpotLights,
+                    NumDirLights, NumPointLights, NumSpotLights,
+                    Mat, Input.PosW, N, ToEye);
+    
+    float3 Ambient = Mat.DiffAlbedo * AmbientLight;
+    return float4(Ambient + FinalColor, Input.Color.a);
+
 }

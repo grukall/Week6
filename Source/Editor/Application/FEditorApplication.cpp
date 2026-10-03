@@ -211,6 +211,11 @@ void FEditorApplication::ExecuteCommand(const char* Command) {
         UE_LOG("Culling : %s", Globals::bEnableFrustumCulling ? "ON" : "OFF");
     }    
 
+    else if (lowerCmd.compare("FXAA"))
+    {
+        RenderView->bIsFXAA = !RenderView->bIsFXAA;
+    }
+
     else {
         UE_LOG("Unknown command: '%s'\n", Command);
         return;

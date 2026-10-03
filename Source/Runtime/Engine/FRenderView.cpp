@@ -283,7 +283,11 @@ void FRenderView::RenderView(const FSceneView& View, const UScene& Scene, const 
 
     // 후처리 외곽선 패스
     RenderPostProcessPass(View.Camera, EditorCtx.SelectedActor);
-    FXAAPostProcessPass();
+
+    if (bIsFXAA)
+    {
+        FXAAPostProcessPass();
+    }
 
     Renderer.ClearLastRenderState();
 }

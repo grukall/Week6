@@ -1006,6 +1006,19 @@ bool FRenderer::InitializeConstantBuffers() {
     return false;
   }
 
+  D3D11_BUFFER_DESC MaterialConstantBufferDesc = {
+      .ByteWidth = sizeof(FMaterialConstants),
+      .Usage = D3D11_USAGE_DEFAULT,
+      .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+  };
+
+  Result =
+      Device->CreateBuffer(&MaterialConstantBufferDesc, nullptr, &MaterialConstantBuffer);
+
+  if (FAILED(Result)) {
+      return false;
+  }
+
   for (int32 i = 0; i < NumFrameResourceCount; i++)
   {
 	  D3D11_BUFFER_DESC FrameResourceConstantBufferDesc = {
@@ -1076,6 +1089,11 @@ void FRenderer::UpdateViewConstants(const FViewConstants &Constants) {
         &ShaderConstants, 0, 0);
     Context->VSSetConstantBuffers(1, 1, GetCurrentFrameResource()->ViewConstantBuffer.GetAddressOf());
     Context->PSSetConstantBuffers(1, 1, GetCurrentFrameResource()->ViewConstantBuffer.GetAddressOf());
+}
+
+void FRenderer::UpdateMaterialConstants(const FMaterialConstants& Constants) {
+    Context->UpdateSubresource(MaterialConstantBuffer.Get(), 0, nullptr, &Constants, 0, 0);
+    Context->PSSetConstantBuffers(5, 1, MaterialConstantBuffer.GetAddressOf());
 }
 
 void FRenderer::Draw(const FDrawCommand &Command, uint32 Slot,
@@ -1287,11 +1305,12 @@ void FRenderer::DrawUploadedCommand(const FDrawCommand& Command, bool bApplyView
                 bApplyViewMode
             );
 
-            Context->DrawIndexed(
-                Section.IndexCount,
-                Section.StartIndex,
-                0
-            );
+            FMaterialConstants MaterialConstants;
+            //MConstants.diffAlbedo = Material.;
+            //MConstants.Shininess = Material.;
+            //MConstants.specAlbedo = Material.;
+
+            UpdateMaterialConstants(MaterialConstants);
 
             INC_DWORD_STAT_BY(
                 "Prims",

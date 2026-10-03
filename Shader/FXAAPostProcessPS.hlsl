@@ -4,11 +4,10 @@
 #define SW 3
 #define SE 4
 
+#define THICKNESS 1
 #define FXAAReduceMul (1.0f / 8.0f)
 #define FXAAReduceMin (1.0f / 128.0f)
-
 #define FXAASpanMax 8.0f
-
 #define SUBPIX
 
 // 외곽선 후처리 픽셀 셰이더
@@ -56,8 +55,10 @@ float4 MainPS(PS_IN input) : SV_TARGET
     
     float luma[5] = {0,0,0,0,0};
     luma[Center] = RGB2luma(PixelColor);
-    luma[NW] = TextureOffset(int2(-1, -1)); luma[NE] = TextureOffset(int2(-1, 1));
-    luma[SW] = TextureOffset(int2(1, -1)); luma[SE] = TextureOffset(int2(1, 1));
+    luma[NW] = TextureOffset(int2(-THICKNESS, -THICKNESS));
+    luma[NE] = TextureOffset(int2(-THICKNESS, THICKNESS));
+    luma[SW] = TextureOffset(int2(THICKNESS, -THICKNESS));
+    luma[SE] = TextureOffset(int2(THICKNESS, THICKNESS));
     
     float lumaMin = min(luma[Center], min(min(luma[NW], luma[NE]), min(luma[SW], luma[SE])));
     float lumaMax = max(luma[Center], max(max(luma[NW], luma[NE]), max(luma[SW], luma[SE])));
@@ -98,7 +99,7 @@ float4 MainPS(PS_IN input) : SV_TARGET
         rgbB = rgbA;
     }
     
-    const float Subpix = 0.99f;
+    const float Subpix = 0.5f;
     float4 FinalColor = lerp(PixelColor, float4(rgbB, 0), Subpix);
     
 

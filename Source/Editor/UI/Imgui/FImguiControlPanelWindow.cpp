@@ -534,7 +534,7 @@ void FImguiControlPanelWindow::DirectionLightSetting(FEditor& Editor)
     ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.85f, 0.22f, 0.22f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(1.0f, 0.35f, 0.35f, 1.0f));
     ImGui::SetNextItemWidth(180.0f);
-    ImGui::SliderFloat("##LightDirX", &Editor.GlobalLight.LightDirection.X, -1.0f, 1.0f, "%.2f");
+    ImGui::SliderFloat("##LightDirX", &Editor.GlobalLight.DirLights[0].LightDirection.X, -1.0f, 1.0f, "%.2f");
     ImGui::PopStyleColor(2);
     ImGui::SameLine();
     ImGui::Text("Light Dir X (Forward/Back)");
@@ -549,7 +549,7 @@ void FImguiControlPanelWindow::DirectionLightSetting(FEditor& Editor)
     ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.22f, 0.75f, 0.22f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.35f, 0.95f, 0.35f, 1.0f));
     ImGui::SetNextItemWidth(180.0f);
-    ImGui::SliderFloat("##LightDirY", &Editor.GlobalLight.LightDirection.Y, -1.0f, 1.0f, "%.2f");
+    ImGui::SliderFloat("##LightDirY", &Editor.GlobalLight.DirLights[0].LightDirection.Y, -1.0f, 1.0f, "%.2f");
     ImGui::PopStyleColor(2);
     ImGui::SameLine();
     ImGui::Text("Light Dir Y (Right/Left)");
@@ -564,23 +564,23 @@ void FImguiControlPanelWindow::DirectionLightSetting(FEditor& Editor)
     ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.25f, 0.45f, 0.95f, 1.0f));
     ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.4f, 0.6f, 1.0f, 1.0f));
     ImGui::SetNextItemWidth(180.0f);
-    ImGui::SliderFloat("##LightDirZ", &Editor.GlobalLight.LightDirection.Z, -1.0f, 1.0f, "%.2f");
+    ImGui::SliderFloat("##LightDirZ", &Editor.GlobalLight.DirLights[0].LightDirection.Z, -1.0f, 1.0f, "%.2f");
     ImGui::PopStyleColor(2);
     ImGui::SameLine();
     ImGui::Text("Light Dir Z (Up/Down)");
 
     ImGui::SetNextItemWidth(180.0f);
-    ImGui::ColorEdit3("##LightColor", &Editor.GlobalLight.LightColor.X);
+    ImGui::ColorEdit3("##LightColor", &Editor.GlobalLight.DirLights[0].LightColor.X);
     ImGui::SameLine();
     ImGui::Text("Color");
 
     ImGui::SetNextItemWidth(180.0f);
-    ImGui::SliderFloat("##LightIntensity", &Editor.GlobalLight.Intensity, 0.0f, 5.0f, "%.2f");
+    ImGui::SliderFloat("##LightIntensity", &Editor.GlobalLight.DirLights[0].Intensity, 0.0f, 5.0f, "%.2f");
     ImGui::SameLine();
     ImGui::Text("Intensity");
 
     ImGui::SetNextItemWidth(180.0f);
-    ImGui::SliderFloat("##LightAmbient", &Editor.GlobalLight.AmbientIntensity, 0.0f, 1.0f, "%.2f");
+    ImGui::SliderFloat("##LightAmbient", &Editor.GlobalLight.DirLights[0].AmbientIntensity, 0.0f, 1.0f, "%.2f");
     ImGui::SameLine();
     ImGui::Text("Ambient");
 }

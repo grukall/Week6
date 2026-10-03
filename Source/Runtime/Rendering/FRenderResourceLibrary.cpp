@@ -396,17 +396,10 @@ bool FRenderResourceLibrary::CreateFXAAPostProcessPipeline(FRenderer& Renderer) 
 }
 
 bool FRenderResourceLibrary::InitializePipelines(FRenderer &Renderer) {
-#define USINGFXAA 1
-#if USINGFXAA
     return CreateWireframePipeline(Renderer) &&
         CreateOutlinePipeline(Renderer) &&
         CreateOutlinePostProcessPipeline(Renderer) &&
         CreateFXAAPostProcessPipeline(Renderer);
-#else
-    return CreateWireframePipeline(Renderer) &&
-        CreateOutlinePipeline(Renderer) &&
-        CreateOutlinePostProcessPipeline(Renderer);
-#endif
 }
 
 bool FRenderResourceLibrary::Initialize(FRenderer &Renderer) {

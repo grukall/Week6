@@ -77,6 +77,7 @@ public:
   void UpdateLightConstants(const FLightConstants &Constants, const EViewModeIndex InMode);
   void UpdateFrameConstants(const FFrameConstants &Constants);
   void UpdateViewConstants(const FViewConstants &Constants);
+  void UpdateMaterialConstants(const FMaterialConstants& Constants);
 
   // 텍스트 인스턴싱
   void AddTextInstanceArray(const FDrawCommand& Command);
@@ -154,6 +155,7 @@ private:
   Microsoft::WRL::ComPtr<ID3D11Buffer> ViewConstantBuffer;
   Microsoft::WRL::ComPtr<ID3D11Buffer> ObjectConstantBuffer;*/
   Microsoft::WRL::ComPtr<ID3D11Buffer> LightConstantBuffer;
+  Microsoft::WRL::ComPtr<ID3D11Buffer> MaterialConstantBuffer;
 
   // 임시 상수버퍼
   Microsoft::WRL::ComPtr<ID3D11Buffer> ObjectConstantUploadBuffer;

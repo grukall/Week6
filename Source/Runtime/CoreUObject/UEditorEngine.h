@@ -55,8 +55,6 @@ private:
 	TArray<FWorldContext> WorldContexts;
 
 public:
-	UWorld* GWorld = nullptr; // 나중에 위치바꿔야됨
-
 	UEditorEngine(FEngineLoop& InEngineLoop)
 		: EngineLoop{ InEngineLoop }
 	{
@@ -66,9 +64,14 @@ public:
 	void Tick(float DeltaTime);
 	void Exit();
 	const FWorldContext& GetWorldContextFromWorld(UWorld* InWorld) const;
+	FWorldContext& GetEditorWorldContext(bool bEnsureIsGWorld = false);
 
 	void SaveWorld(const FString& path) const;
 	void LoadWorld(const FString& path, FCamera* OutCamera = nullptr);
-	void SetWorld(UWorld* InWorld);
+	void SetWorld(UWorld* InWorld, EWorldType InWorldType);
+	void AddWorld(UWorld* InWorld, EWorldType InWorldType);
 	void Release();
+
+	void StartPIE();
+	void EndPIE();
 };

@@ -58,6 +58,38 @@ void AActor::Release()
 	Super::Release();
 }
 
+AActor* AActor::Duplicate()
+{
+	Super::Duplicate();
+	AActor* NewActor = NewObject<AActor>();
+	NewActor->Initialize();
+	NewActor->DuplicateSubObjects();
+	// 나중에 추가설정
+	// Owner 
+	return (NewActor);
+}
+
+void AActor::DuplicateSubObjects()
+{
+	for (USceneComponent* SceneComponent : AttachedComp)
+	{
+		USceneComponent* NewSceneComponent = SceneComponent->Duplicate()->Cast<USceneComponent>();
+		if (GetRootComponent() == NewSceneComponent)
+		{
+			NewActor->SetRootComponent(NewSceneComponent);
+			NewSceneComponent->SetupAttachment(nullptr);
+		}
+		else if (NewSceneComponent->GetSceneOwner() == nullptr)
+		{
+			NewSceneComponent->SetupAttachment(GetRootComponent());
+		}
+		NewSceneComponent->ActorOwner = this;
+		NewActor->AttachedComp.push_bach(NewSceneComponent);
+		NewSceneComponent->Initialize();
+	}
+}
+
+
 void AActor::Serialize(FArchive& Archive) const
 {
 	Super::Serialize(Archive);
@@ -332,6 +364,11 @@ void AActor::SetTransform(const FTransform& NewTransform)
 bool AActor::IsActorTickEnabled()
 {
 	return bTickEnabled;
+}
+
+bool AActor::IsActorEditorTickEnabled()
+{
+	return bTickInEditor;
 }
 
 UWorld* AActor::GetOwner() const

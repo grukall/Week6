@@ -14,6 +14,7 @@ class UInstancePrimitiveComponent : public UPrimitiveComponent {
 
 public:
     void Initialize() override;
+    virtual UInstancePrimitiveComponent* Duplicate() override;
 
     // 큐 방식: FRenderData에 Instances까지 채워서 반환
     virtual void BuildRenderData() const;

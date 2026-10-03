@@ -14,6 +14,7 @@
 #include "Runtime/Asset/FAssetRegistry.h"
 #include <numbers>
 #include <Runtime/Engine/FSceneBVH.h>
+#include <Runtime/Core/Globals.h>
 
 void FEditor::Initialize(UEditorEngine* InEditorEngine) {
   State.ReadFromFile();
@@ -55,8 +56,8 @@ void FEditor::Process() {
         Target->Destroy();
     }
     
-  if (EditorEngine && EditorEngine->GWorld) {
-      EditorEngine->GWorld->Tick(FTimeManager::GetDeltaTime());
+  if (Globals::GEditor && Globals::GWorld) {
+      Globals::GWorld->Tick(FTimeManager::GetDeltaTime());
   }
 
   if (SelectedActor) {
@@ -66,8 +67,8 @@ void FEditor::Process() {
     SelectedActor->SetTransform(SelectedTransform);
 
     // Transform이 변경되었을 때만 Refit
-    if (bChanged && EditorEngine && EditorEngine->GWorld) {
-        RefitActorInBVH(EditorEngine->GWorld->Scene->GetSceneBVH(), SelectedActor);
+    if (bChanged && Globals::GEditor && Globals::GWorld) {
+        RefitActorInBVH(Globals::GWorld->Scene->GetSceneBVH(), SelectedActor);
     }
   }
 
@@ -113,7 +114,7 @@ void FEditor::LoadState()
 
 void FEditor::NewMap() {
   UnSelectActor();
-  EditorEngine->SetWorld(NewObject<UWorld>());
+  EditorEngine->SetWorld(NewObject<UWorld>(), EWorldType::Editor);
   State.ResetToDefaults();
   LoadState();
 }
@@ -128,15 +129,15 @@ void FEditor::LoadMap(const FString &Path)
   SelectedActor = nullptr;
 
   // 로드된 컴포넌트는 대기열에만 쌓이므로, 트랜스폼이 모두 설정된 지금 트리를 만든다.
-  if (EditorEngine->GWorld)
+  if (Globals::GWorld)
   {
-    FScene* Scene = EditorEngine->GWorld->Scene;
+    FScene* Scene = Globals::GWorld->Scene;
     Scene->GetSceneBVH().Build(Scene->GetRenderComponents());
   }
 }
 
 bool FEditor::CheckSceneExists() {
-  if (EditorEngine->GWorld->Scene == nullptr)
+  if (Globals::GWorld->Scene == nullptr)
     return false;
   return true;
 }
@@ -199,10 +200,10 @@ void FEditor::UnSelectActor() {
 
 const TArray<UPrimitiveComponent *> &FEditor::GetPrimitiveComponents() const {
     static const TArray<UPrimitiveComponent*> Empty;
-  if (!EditorEngine || !EditorEngine->GWorld) {
+  if (!EditorEngine || !Globals::GWorld) {
     return Empty;
   }
-  return EditorEngine->GWorld->Scene->GetRenderComponents();
+  return Globals::GWorld->Scene->GetRenderComponents();
 }
 
 void FEditor::ClearSelectionForGC() {
@@ -212,7 +213,7 @@ void FEditor::ClearSelectionForGC() {
 }
 
 void FEditor::SpawnActorToCurrentScene(UClass* Type, int Size) {
-    if (!EditorEngine || !EditorEngine->GWorld) {
+    if (!EditorEngine || !Globals::GWorld) {
         return;
     }
 
@@ -231,7 +232,7 @@ void FEditor::SpawnActorToCurrentScene(UClass* Type, int Size) {
             Random::GetFloat(Min, Max, 2),
         };
 
-        AActor* NewActor = EditorEngine->GWorld->SpawnActor(Type);
+        AActor* NewActor = Globals::GWorld->SpawnActor(Type);
         if (!NewActor) { return; }
 
 
@@ -245,10 +246,10 @@ void FEditor::SpawnActorToCurrentScene(UClass* Type, int Size) {
         SelectActor(NewActor);
     }
 
-    FSceneBVH& BVH = EditorEngine->GWorld->Scene->GetSceneBVH();
+    FSceneBVH& BVH = Globals::GWorld->Scene->GetSceneBVH();
     if (BVH.ShouldRebuild())
     {
-        BVH.Build(EditorEngine->GWorld->Scene->GetRenderComponents());
+        BVH.Build(Globals::GWorld->Scene->GetRenderComponents());
     }
 }
 
@@ -371,23 +372,23 @@ void FEditor::SetViewLayout(FEditorState::SplitViewMode mode) {
 
 FScene* FEditor::GetCurrentScene() const
 {
-    if (!EditorEngine || !EditorEngine->GWorld)
+    if (!EditorEngine || !Globals::GWorld)
     {
         return (nullptr);
     }
-    return (EditorEngine->GWorld->Scene);
+    return (Globals::GWorld->Scene);
 }
 
 ULevel* FEditor::GetCurrentLevel() const
 {
-    if (!EditorEngine || !EditorEngine->GWorld)
+    if (!EditorEngine || !Globals::GWorld)
     {
         return (nullptr);
     }
-    return (EditorEngine->GWorld->GetPersistentLevel());
+    return (Globals::GWorld->GetPersistentLevel());
 }
 
 UWorld* FEditor::GetCurrentWorld() const
 {
-    return EditorEngine ? EditorEngine->GWorld : nullptr;
+    return EditorEngine ? Globals::GWorld : nullptr;
 }

@@ -3,6 +3,8 @@
 #include "Editor/Core/FEditor.h"
 #include "FImguiEditorViewportWindow.h"
 #include "Runtime/Resource/FResourceLoader.h"
+#include "Runtime/Core/Globals.h"
+
 // "표시명\0패턴\0" 이중 널 종료 필요
 constexpr wchar_t SceneFilter[] = L"Scene Files (*.Scene)\0*.Scene\0All Files (*.*)\0*.*\0";
 constexpr wchar_t ObjFilter[] = L"Scene Files (*.obj)\0*.obj\0All Files (*.*)\0*.*\0";
@@ -23,6 +25,9 @@ void FImguiToolbar::Process(FEditor& Editor, FImguiConsoleWindow& ConsoleWindow,
 
         //Imgui Window들 소환
         ShowViewBar(Editor, ConsoleWindow);
+
+        //PIE Start / Pause
+        ShowPIEBar(Editor);
 
         ImGui::EndMainMenuBar();
 	}
@@ -158,6 +163,23 @@ void FImguiToolbar::ShowViewBar(FEditor& Editor, FImguiConsoleWindow& ConsoleWin
     if (ImGui::Button(GizmoModes[SelectedItem], { 150.0f, 0.0f }))
     {
         Gizmo.Mode = static_cast<EGizmoMode>((SelectedItem + 1) % 4);
+    }
+}
+
+void FImguiToolbar::ShowPIEBar(FEditor& Editor)
+{
+    static const char* PIEModes[2] = { "PIE Pause", "PIE Start" };
+    const int SelectedItem = Globals::GWorld->IsPlayInEditor() ? 0 : 1;
+    if (ImGui::Button(PIEModes[SelectedItem], { 150.0f, 0.0f }))
+    {
+        if (SelectedItem == 0)
+        {
+            Globals::GEditor->EndPIE();
+        }
+        else if (SelectedItem == 1)
+        {
+            Globals::GEditor->StartPIE();
+        }
     }
 }
 

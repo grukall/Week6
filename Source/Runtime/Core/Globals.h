@@ -12,6 +12,10 @@ namespace Globals
 	constexpr FStringView EngineName = "Oiiaii";
 	constexpr FStringView EngineWindowClass = "OiiaiiClass";
 
+	//World, Engine
+	inline UWorld* GWorld = nullptr;
+	inline UEditorEngine* GEditor = nullptr;
+
 	// 초기 윈도우 사이즈
 	constexpr uint32 WindowWidth = 1600;
 	constexpr uint32 WindowHeight = 900;

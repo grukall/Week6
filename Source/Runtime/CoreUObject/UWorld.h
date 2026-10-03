@@ -26,15 +26,28 @@ public:
     virtual void Serialize(FArchive& Archive) const override;
     virtual void Deserialize(const FArchive& Archive) override;
 
+    void CreateWorld(EWorldType InWorldType);
+
+    void InitializeActorsForPlay();
+    static UWorld* DuplicateWorldForPIE(UWorld* InWorld);
+
 
     void SetPersistentLevel(ULevel* InLevel);
+    void SetWorldType(EWorldType InWorldType);
+
+
     ULevel* GetPersistentLevel() const;
+
+
     bool IsPlayInEditor() const;
     bool IsEditorWorld() const;
+
     void EndPlay();
+    void BeginPlay();
     void Activate();
     void Deactivate();
-    void BeginPlay();
+    void CleanupWorld();
+    
 
     [[nodiscard]] bool IsActive() const { return bActive; }
     [[nodiscard]] bool HasBegunPlay() const { return bHasBegunPlay; }

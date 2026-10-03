@@ -18,6 +18,8 @@ public:
     void Initialize() override;
     void Register(UWorld& InWorld) override;
     void Unregister() override;
+    virtual UPrimitiveComponent* Duplicate() override;
+    virtual void DuplicateSubObjects() override;
 
     virtual void SetMesh(UStaticMesh* Mesh);
 

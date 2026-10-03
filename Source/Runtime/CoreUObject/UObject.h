@@ -78,7 +78,6 @@ struct _MetaRegister_##ClassName##_##Key					\
 	}														\
 } _MetaRegisterInstance_##ClassName##_##Key;				\
 
-
 class UObject
 {
 	GENERATED_BODY()
@@ -87,14 +86,6 @@ class UObject
 	friend class FUObjectArray;
 
 public:
-	// 공유 가능한 오브젝트 (얕은 복사)
-	UObject* ObjectA = nullptr;
-	UObject* ObjectB = nullptr;
-
-	// 공유 불가능한 서브 오브젝트 (깊은 복사 필요)
-	UObject* SubObjectA = nullptr;
-	UObject* SubObjectB = nullptr;
-
 	[[nodiscard]] uint32 GetUUID() const { return UUID; }
 
 	UObject(const UObject&) = delete;
@@ -168,4 +159,9 @@ public:
 	const T* Cast() const {
 		return IsA<T>() ? static_cast<const T*>(this) : nullptr;
 	}
+
+	//template<typename T>
+	//T* DuplicateAs(T* Source) {
+	//	return (Source->Duplicate()->Cast<T>());
+	//}
 };

@@ -36,7 +36,7 @@ void FEditorApplication::Initialize_ImguiWin32DX11(
 void FEditorApplication::Initialize_Runtime(UEditorEngine* EditorEngine, FRenderView* RenderView) {
   this->RenderView = RenderView;
   this->EditorEngine = EditorEngine;
-  this->CurrentScene = EditorEngine->GWorld->Scene;
+  this->CurrentScene = Globals::GWorld->Scene;
 
   Editor.Initialize(EditorEngine);
   Editor.InitMultiViewport(FEditorViewportClient{});
@@ -77,7 +77,7 @@ void FEditorApplication::Render() {
       //컬링 준비 시간 기록?
       // 
       //이동한 오브젝트는 월드 AABB 재계산
-      EditorEngine->GWorld->Scene->UpdateDirtyBounds();
+      Globals::GWorld->Scene->UpdateDirtyBounds();
   }
 
   //Active인 ViewportClient만 렌더링
@@ -113,7 +113,7 @@ void FEditorApplication::Render() {
           }
 
           // 뷰포트 렌더링 일괄 수행
-          RenderView->RenderView(sceneview, *EditorEngine->GWorld->Scene, EditorCtx);
+          RenderView->RenderView(sceneview, *Globals::GWorld->Scene, EditorCtx);
 
   }
 

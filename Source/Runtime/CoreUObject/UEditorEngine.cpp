@@ -28,9 +28,11 @@
 #include <string>
 #include <filesystem>
 #include <Windows.h>
+#include <cassert>
 
 void UEditorEngine::Init()
 {
+	Globals::GEditor = this;
 	HWND Window = EngineLoop.GetMainWindowHandle();
 	if (!Renderer.Initialize(Window))
 	{
@@ -60,7 +62,7 @@ void UEditorEngine::Init()
 
 #else
 	// 새씬 생성
-	SetWorld(NewObject<UWorld>());
+	SetWorld(NewObject<UWorld>(), EWorldType::Editor);
 
 	TUniquePtr<FEditorApplication> EditorApp = MakeUnique<FEditorApplication>();
 	{
@@ -73,6 +75,32 @@ void UEditorEngine::Init()
 	Application = std::move(EditorApp);
 #endif
 
+}
+
+void UEditorEngine::StartPIE() {
+	UWorld* EditorWorld = Globals::GEditor->GetEditorWorldContext().World();
+
+	UWorld* PIEWorld = UWorld::DuplicateWorldForPIE(EditorWorld);
+
+	Globals::GWorld = PIEWorld;
+
+	// AActor::BeginPlay()
+	PIEWorld->InitializeActorsForPlay();
+
+	Globals::GWorld->SetWorldType(EWorldType::PIE);
+
+}
+
+void UEditorEngine::EndPIE() {
+	if (Globals::GWorld && Globals::GWorld->IsPlayInEditor())
+	{
+		Globals::GWorld->CleanupWorld();
+		delete Globals::GWorld;
+	}
+
+	Globals::GWorld = Globals::GEditor->GetEditorWorldContext().World();
+
+	Globals::GWorld->SetWorldType(EWorldType::Editor);
 }
 
 void UEditorEngine::Tick(float DeltaTime)
@@ -89,7 +117,19 @@ void UEditorEngine::Tick(float DeltaTime)
 
 	{
 		SCOPE_CYCLE_COUNTER("Game");
-		Application->Tick(DeltaTime);
+
+		for (FWorldContext& WorldContext : WorldContexts)
+		{
+			UWorld* EditorWorld = WorldContext.World();
+			if (EditorWorld && EditorWorld->WorldType == EWorldType::Editor)
+			{
+				Application->Tick(DeltaTime);	
+			}
+			else if (EditorWorld && EditorWorld->WorldType == EWorldType::PIE)
+			{
+				Application->Tick(DeltaTime);
+			}
+		}
 	}
 
 	{
@@ -136,6 +176,22 @@ const FWorldContext& UEditorEngine::GetWorldContextFromWorld(UWorld* InWorld) co
 	return (FWorldContext());
 }
 
+FWorldContext& UEditorEngine::GetEditorWorldContext(bool bEnsureIsGWorld)
+{
+	for (FWorldContext& WorldContext : WorldContexts)
+	{
+		if (WorldContext.WorldType == EWorldType::Editor)
+		{
+			if (bEnsureIsGWorld)
+			{
+				assert(WorldContext.World() == Globals::GWorld);
+			}
+			return WorldContext;
+		}
+	}
+	
+}
+
 
 void UEditorEngine::SaveWorld(const FString& path) const
 {
@@ -153,7 +209,7 @@ void UEditorEngine::SaveWorld(const FString& path) const
 	Archive.SetInt32("NextUUID", UUID);
 
 	FArchive SceneArchive;
-	GWorld->Serialize(SceneArchive);
+	Globals::GWorld->Serialize(SceneArchive);
 	Archive.SetArchive("Scene", SceneArchive);
 
 	std::ofstream file(path);
@@ -207,24 +263,33 @@ void UEditorEngine::LoadWorld(const FString& path, FCamera* OutCamera)
 
 	FArchive SceneArchive = Archive.GetArchive("Scene");
 
-	SetWorld(NewObject<UWorld>());
-	GWorld->GetPersistentLevel()->Deserialize(SceneArchive);
+	SetWorld(NewObject<UWorld>(), EWorldType::Editor);
+	Globals::GWorld->GetPersistentLevel()->Deserialize(SceneArchive);
 }
 
-void UEditorEngine::SetWorld(UWorld* InWorld)
+void UEditorEngine::SetWorld(UWorld* InWorld, EWorldType InWorldType)
 {
 	if (InWorld == nullptr)
 	{
 		return;
 	}
-	if (GWorld)
+	if (Globals::GWorld)
 	{
-		DestroyObject(GWorld);
-		GWorld = nullptr;
+		DestroyObject(Globals::GWorld);
+		Globals::GWorld = nullptr;
 	}
 
-	InWorld->Initialize();
-	GWorld = InWorld;
+	InWorld->CreateWorld(EWorldType::Editor);
+	Globals::GWorld = InWorld;
+	Globals::GEditor->AddWorld(Globals::GWorld, EWorldType::Editor);
+}
+
+void UEditorEngine::AddWorld(UWorld* InWorld, EWorldType InWorldType)
+{
+	FWorldContext WorldContext;
+	WorldContext.SetCurrentWorld(InWorld);
+	WorldContext.SetCurrentWorldType(InWorldType);
+	WorldContexts.push_back(WorldContext);
 }
 
 void UEditorEngine::Release()
@@ -234,17 +299,17 @@ void UEditorEngine::Release()
 		UWorld* World = WorldContext.GetCurrentWorld();
 		if (World)
 		{
-			if (World == GWorld)
+			if (World == Globals::GWorld)
 			{
-				GWorld = nullptr;
+				Globals::GWorld = nullptr;
 			}
 			DestroyObject(World);
 		}
 	}
 
-	if (GWorld)
+	if (Globals::GWorld)
 	{
-		DestroyObject(GWorld);
-		GWorld = nullptr;
+		DestroyObject(Globals::GWorld);
+		Globals::GWorld = nullptr;
 	}
 }

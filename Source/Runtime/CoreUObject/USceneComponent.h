@@ -19,6 +19,8 @@ class USceneComponent : public UObject
 public:
     virtual void Initialize() override;
     virtual void Release() override;
+    virtual USceneComponent* Duplicate() override;
+    virtual void DuplicateSubObjects() override;
     
     AActor* GetActorOwner() const { return ActorOwner; }
     USceneComponent* GetSceneOwner() const { return SceneOwner; }

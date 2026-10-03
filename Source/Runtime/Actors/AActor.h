@@ -23,6 +23,7 @@ protected:
 	USceneComponent* RootComponent = nullptr;
 	TArray<USceneComponent*> AttachedComp;
 	bool bTickEnabled = false;
+	bool bTickInEditor = false;
 
 	explicit AActor() = default;
 
@@ -30,6 +31,9 @@ protected:
 	virtual void Deserialize(const FArchive& Archive) override;
 
 public:
+	
+	AActor* Duplicate() override;
+	void DuplicateSubObjects() override;
 	void Initialize() override;
 	void Release() override;
 	UWorld* GetOwner() const;
@@ -45,6 +49,7 @@ public:
 	void SetTransform(const FTransform& NewTransform);
 
 	bool IsActorTickEnabled();
+	bool IsActorEditorTickEnabled();
 
 	//하위 컴포넌트 월드 Tranform도 바뀐다.
 	void MarkComponentsTransformDirty();

@@ -8,6 +8,12 @@ IMPLEMENT_UCLASS(ULevel, UObject)
 
 void ULevel::RemoveActor(AActor* Actor) { std::erase(Actors, Actor); }
 void ULevel::AddActor(AActor* Actor) { Actors.push_back(Actor); }
+
+void ULevel::Initialize(UWorld* InWorld)
+{
+    OwningWorld = InWorld;
+}
+
 void ULevel::Release()
 {
     while (!Actors.empty()) {
@@ -15,6 +21,7 @@ void ULevel::Release()
         Actors.pop_back();
         DestroyObject(Actor);
     }
+    OwningWorld = nullptr;
 }
 
 [[nodiscard]] const TArray<AActor*>& ULevel::GetActors() const
@@ -25,50 +32,50 @@ void ULevel::Release()
 void ULevel::Serialize(FArchive& Archive) const {
     Super::Serialize(Archive);
 
-    //TArray<FArchive> ActorArchives;
+    TArray<FArchive> ActorArchives;
 
-    //for (const auto& Item : Actors) {
-    //    if (!Item) {
-    //        continue;
-    //    }
+    for (const auto& Item : Actors) {
+        if (!Item) {
+            continue;
+        }
 
-    //    FArchive ItemArchive;
-    //    Item->Serialize(ItemArchive);
-    //    ActorArchives.push_back(ItemArchive);
-    //}
+        FArchive ItemArchive;
+        Item->Serialize(ItemArchive);
+        ActorArchives.push_back(ItemArchive);
+    }
 
-    //Archive.SetArchiveArray("Actors", ActorArchives);
+    Archive.SetArchiveArray("Actors", ActorArchives);
 }
 
 void ULevel::Deserialize(const FArchive& Archive) {
     Super::Deserialize(Archive);
 
-    //if (Archive.IsNull("Actors")) {
-    //    // Actor 목록이 비어있음
-    //    return;
-    //}
+    if (Archive.IsNull("Actors")) {
+        // Actor 목록이 비어있음
+        return;
+    }
 
-    //TArray<FArchive> ActorArchives = Archive.GetArchiveArray("Actors");
+    TArray<FArchive> ActorArchives = Archive.GetArchiveArray("Actors");
 
-    //for (const auto& Item : ActorArchives) {
-    //    UClass* ClassType = UClass::FindByName(Item.GetString("Type"));
-    //    if (ClassType == nullptr) {
-    //        continue;
-    //    }
+    for (const auto& Item : ActorArchives) {
+        UClass* ClassType = UClass::FindByName(Item.GetString("Type"));
+        if (ClassType == nullptr) {
+            continue;
+        }
 
-    //    AActor* Actor = SpawnActor(ClassType);
-    //    if (!Actor) {
-    //        continue;
-    //    }
-    //    Actor->Deserialize(Item);
+        AActor* Actor = OwningWorld->SpawnActor(ClassType);
+        if (!Actor) {
+            continue;
+        }
+        Actor->Deserialize(Item);
 
-    //    if (bActive) {
-    //        Actor->Register(*this);
-    //    }
-    //    if (bHasBegunPlay) {
-    //        Actor->BeginPlay();
-    //    }
-    //}
+        if (OwningWorld->IsActive()) {
+            Actor->Register(*OwningWorld);
+        }
+        if (OwningWorld->HasBegunPlay()) {
+            Actor->BeginPlay();
+        }
+    }
 }
 
 

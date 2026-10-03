@@ -1,16 +1,14 @@
 #pragma once
 
 #include "Runtime/Geometry/FTransform.h"
-#include "Runtime/CoreUObject/UWorld.h"
 #include "ThirdParty/Json/json.hpp"
 #include "UObject.h"
-#include "ULevel.h"
-
 
 class FScene;
 class AActor;
 class FArchive;
 class UWorld;
+class ULevel;
 
 class USceneComponent : public UObject
 {
@@ -34,7 +32,7 @@ public:
 
     void SetupAttachment(USceneComponent* InParent);
 
-    [[nodiscard]] bool IsRegistered() const { return World != nullptr; }
+    [[nodiscard]] bool IsRegistered() const;
     [[nodiscard]] bool HasBegunPlay() const { return bHasBegunPlay; }
     [[nodiscard]] bool IsTickEnabled() const { return bTickEnabled; }
 

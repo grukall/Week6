@@ -14,6 +14,7 @@ public:
     // 액터 목록 반환
     [[nodiscard]] const TArray<AActor*>& GetActors() const;
 
+    void Initialize(UWorld* InWorld);
     void Release();
     virtual void Serialize(FArchive& Archive) const override;
     virtual void Deserialize(const FArchive& Archive) override;

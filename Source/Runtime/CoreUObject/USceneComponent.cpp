@@ -6,6 +6,7 @@
 #include "Runtime/Engine/FArchive.h"
 #include "Runtime/Engine/FScene.h"
 #include "Runtime/CoreUObject/UWorld.h"
+#include "Runtime/CoreUObject/ULevel.h"
 
 
 IMPLEMENT_UCLASS(USceneComponent, UObject)
@@ -65,6 +66,11 @@ void USceneComponent::SetupAttachment(USceneComponent* InParent)
     {
         ActorOwner = InParent->GetActorOwner();
     }
+}
+
+bool USceneComponent::IsRegistered() const
+{
+    return World != nullptr; 
 }
 
 void USceneComponent::Serialize(FArchive& Archive) const

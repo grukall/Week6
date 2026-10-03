@@ -111,20 +111,20 @@ void FEditor::LoadState()
     
 }
 
-void FEditor::NewScene() {
+void FEditor::NewMap() {
   UnSelectActor();
-  EditorEngine->SetLevel(NewObject<ULevel>());
+  EditorEngine->SetWorld(NewObject<UWorld>());
   State.ResetToDefaults();
   LoadState();
 }
 
-void FEditor::SaveScene(const FString &Path) { EditorEngine->SaveLevel(Path); }
+void FEditor::SaveMap(const FString &Path) { EditorEngine->SaveWorld(Path); }
 
-void FEditor::LoadScene(const FString &Path) 
+void FEditor::LoadMap(const FString &Path) 
 {
   // 씬 로드
   FEditorViewportClient* Viewport = GetActiveViewport();
-  EditorEngine->LoadLevel(Path, Viewport ? &Viewport->ViewportCamera : nullptr);
+  EditorEngine->LoadWorld(Path, Viewport ? &Viewport->ViewportCamera : nullptr);
   SelectedActor = nullptr;
 
   // 로드된 컴포넌트는 대기열에만 쌓이므로, 트랜스폼이 모두 설정된 지금 트리를 만든다.

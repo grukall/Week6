@@ -1,0 +1,1602 @@
+{
+    "NextUUID": 149,
+    "Scene": {
+        "Actors": [
+            {
+                "RootComponent": {
+                    "Location": [
+                        0.5299999713897705,
+                        2.7100000381469727,
+                        1.2000000476837158
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 83
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 84
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        2.4100000858306885,
+                        -0.6700000166893005,
+                        -1.8700000047683716
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 85
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 86
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -1.440000057220459,
+                        0.12999999523162842,
+                        2.990000009536743
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 87
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 88
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -0.6100000143051147,
+                        -0.2800000011920929,
+                        -3.0
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 89
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 90
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        0.7599999904632568,
+                        -0.6399999856948853,
+                        -0.23999999463558197
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 91
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 92
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -2.1500000953674316,
+                        1.9700000286102295,
+                        2.0299999713897705
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "Texture/Error.json",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 93
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 94
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -1.940000057220459,
+                        2.700000047683716,
+                        -1.6799999475479126
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 95
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 96
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        1.809999942779541,
+                        0.6100000143051147,
+                        -1.4600000381469727
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 97
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 98
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -1.590000033378601,
+                        0.6700000166893005,
+                        -0.09000000357627869
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 99
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 100
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        2.75,
+                        2.7799999713897705,
+                        -1.4299999475479126
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 101
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 102
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        0.9800000190734863,
+                        -0.8500000238418579,
+                        -0.5600000023841858
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 103
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 104
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -0.75,
+                        -2.6700000762939453,
+                        -2.190000057220459
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 105
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 106
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        2.1700000762939453,
+                        -0.7900000214576721,
+                        0.6100000143051147
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 107
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 108
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        1.7300000190734863,
+                        0.23999999463558197,
+                        1.940000057220459
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 109
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 110
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        0.9399999976158142,
+                        1.8899999856948853,
+                        1.600000023841858
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 111
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 112
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        2.0999999046325684,
+                        -2.2799999713897705,
+                        1.4500000476837158
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 113
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 114
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        1.940000057220459,
+                        -2.740000009536743,
+                        1.7799999713897705
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 115
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 116
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -2.1500000953674316,
+                        -0.4399999976158142,
+                        -0.6100000143051147
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 117
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 118
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -0.6000000238418579,
+                        0.5,
+                        -1.9800000190734863
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 119
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 120
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        2.890000104904175,
+                        -2.7300000190734863,
+                        -2.9000000953674316
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 121
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 122
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        1.809999942779541,
+                        1.6799999475479126,
+                        0.47999998927116394
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 123
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 124
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        0.5699999928474426,
+                        -1.9299999475479126,
+                        2.9000000953674316
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 125
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 126
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -0.41999998688697815,
+                        -2.559999942779541,
+                        1.9600000381469727
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 127
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 128
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        0.949999988079071,
+                        0.6499999761581421,
+                        1.809999942779541
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 129
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 130
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        0.5799999833106995,
+                        -0.029999999329447746,
+                        2.559999942779541
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 131
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 132
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -0.07999999821186066,
+                        -2.5999999046325684,
+                        -2.4800000190734863
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 133
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 134
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -2.059999942779541,
+                        2.7200000286102295,
+                        -0.009999999776482582
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 135
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 136
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        1.3600000143051147,
+                        0.6499999761581421,
+                        -2.4200000762939453
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 137
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 138
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        -1.059999942779541,
+                        1.5399999618530273,
+                        -2.440000057220459
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 139
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 140
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        0.07999999821186066,
+                        -0.9399999976158142,
+                        -2.9600000381469727
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "StaticMesh/JungleApple/MatID_1",
+                            "OverridePipelineAsset": "Pipeline/Optimize.json",
+                            "OverrideTextureAsset": "StaticMesh/JungleApple/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "StaticMesh/JungleApple/Apple_Normal.json",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 141
+                },
+                "Type": "AAppleNormalActor",
+                "UUID": 142
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        0.25999999046325684,
+                        5.870827674865723,
+                        -0.029999999329447746
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "Material/Textured.json",
+                            "OverridePipelineAsset": "Pipeline/UVScroll.json",
+                            "OverrideTextureAsset": "Texture/oiiaii.json",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "#Sphere",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 143
+                },
+                "Type": "ASphereActor",
+                "UUID": 144
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        2.9000000953674316,
+                        0.5899999737739563,
+                        -0.44999998807907104
+                    ],
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "TextureAsset": "Texture/Space.json",
+                    "Type": "UBillBoardComp",
+                    "UUID": 145
+                },
+                "Type": "ABillboardActor",
+                "UUID": 146
+            },
+            {
+                "RootComponent": {
+                    "Location": [
+                        2.1700000762939453,
+                        -0.5699999928474426,
+                        -1.5700000524520874
+                    ],
+                    "Materials": [
+                        {
+                            "Albedo": 1.0,
+                            "Color": [
+                                1.0,
+                                1.0,
+                                1.0,
+                                0.0
+                            ],
+                            "Diffuse": 1.0,
+                            "DisableShading": false,
+                            "MaterialAsset": "Material/Textured.json",
+                            "OverridePipelineAsset": "Pipeline/UVScroll.json",
+                            "OverrideTextureAsset": "Texture/oiiaii.json",
+                            "Specular": 1.0,
+                            "UVOffset": [
+                                0.0,
+                                0.0
+                            ],
+                            "UVScale": [
+                                1.0,
+                                1.0
+                            ]
+                        }
+                    ],
+                    "MeshAsset": "#Cube",
+                    "Rotation": [
+                        -0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "Scale": [
+                        0.5,
+                        0.5,
+                        0.5
+                    ],
+                    "Type": "UStaticMeshComponent",
+                    "UUID": 147
+                },
+                "Type": "ACubeActor",
+                "UUID": 148
+            }
+        ],
+        "Type": "ULevel",
+        "UUID": 81
+    },
+    "Version": 2
+}

@@ -13,6 +13,7 @@ void UWorld::SetPersistentLevel(ULevel* InLevel)
         PersistentLevel->Release();
     }
     PersistentLevel = InLevel;
+    InLevel->Initialize(this);
 }
 
 ULevel* UWorld::GetPersistentLevel() const
@@ -129,7 +130,10 @@ void UWorld::Initialize() {
     }
     Super::Initialize();
     Scene = new FScene();
+    Scene->SetRenderResourceLibrary(&FRenderResourceLibrary::Get());
     bInitialized = true;
+    PersistentLevel = NewObject<ULevel>();
+    PersistentLevel->Initialize(this);
 }
 
 void UWorld::Tick(float DeltaTime) {

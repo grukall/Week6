@@ -35,7 +35,7 @@ void FImguiControlPanelWindow::Process(FEditor& Editor)
 
     if (ImGui::Button("대회 씬 바로 불러오기"))
     {
-        Editor.LoadScene("DefaultScene/Default.scene");
+        Editor.LoadMap("DefaultScene/Default.scene");
     }
 
     //액터 스폰

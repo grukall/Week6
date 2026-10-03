@@ -60,7 +60,7 @@ void FImguiToolbar::ShowFileBar(FString CurrentScenePath, FEditor& Editor)
     {
         if (ImGui::MenuItem("New Scene"))
         {
-            Editor.NewScene();
+            Editor.NewMap();
             CurrentScenePath.clear();
         }
         if (ImGui::MenuItem("Save Scene"))
@@ -72,12 +72,12 @@ void FImguiToolbar::ShowFileBar(FString CurrentScenePath, FEditor& Editor)
                 if (PickSceneFile(Path, true))
                 {
                     CurrentScenePath = Path;
-                    Editor.SaveScene(Path);
+                    Editor.SaveMap(Path);
                 }
             }
             else
             {
-                Editor.SaveScene(CurrentScenePath);
+                Editor.SaveMap(CurrentScenePath);
             }
         }
 
@@ -87,7 +87,7 @@ void FImguiToolbar::ShowFileBar(FString CurrentScenePath, FEditor& Editor)
             if (PickSceneFile(Path, true))
             {
                 CurrentScenePath = Path;
-                Editor.SaveScene(Path);
+                Editor.SaveMap(Path);
             }
         }
 
@@ -97,7 +97,7 @@ void FImguiToolbar::ShowFileBar(FString CurrentScenePath, FEditor& Editor)
             if (PickSceneFile(Path, false))
             {
                 CurrentScenePath = Path;
-                Editor.LoadScene(Path);
+                Editor.LoadMap(Path);
             }
         }
 

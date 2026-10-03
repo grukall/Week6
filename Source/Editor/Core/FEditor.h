@@ -58,9 +58,9 @@ public:
 
   void Process();
 
-  void NewScene();
-  void SaveScene(const FString &Path);
-  void LoadScene(const FString &Path);
+  void NewMap();
+  void SaveMap(const FString &Path);
+  void LoadMap(const FString &Path);
   bool CheckSceneExists();
 
   void AddViewport(FEditorViewportClient Viewport);

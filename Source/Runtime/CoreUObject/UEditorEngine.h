@@ -67,8 +67,8 @@ public:
 	void Exit();
 	const FWorldContext& GetWorldContextFromWorld(UWorld* InWorld) const;
 
-	void SaveLevel(const FString& path) const;
-	void LoadLevel(const FString& path, FCamera* OutCamera = nullptr);
-	void SetLevel(ULevel* level);
+	void SaveWorld(const FString& path) const;
+	void LoadWorld(const FString& path, FCamera* OutCamera = nullptr);
+	void SetWorld(UWorld* InWorld);
 	void Release();
 };

@@ -17,7 +17,7 @@ class AActor : public UObject
 	DECLARE_UCLASS(AActor, UObject)
 	GENERATED_BODY()
 
-	friend class FScene;
+	friend class ULevel;
 
 protected:
 	USceneComponent* RootComponent = nullptr;

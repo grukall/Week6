@@ -60,9 +60,7 @@ void UEditorEngine::Init()
 
 #else
 	// 새씬 생성
-	GWorld = NewObject<UWorld>();
-	GWorld->Initialize();
-	SetLevel(NewObject<ULevel>());
+	SetWorld(NewObject<UWorld>());
 
 	TUniquePtr<FEditorApplication> EditorApp = MakeUnique<FEditorApplication>();
 	{
@@ -139,7 +137,7 @@ const FWorldContext& UEditorEngine::GetWorldContextFromWorld(UWorld* InWorld) co
 }
 
 
-void UEditorEngine::SaveLevel(const FString& path) const
+void UEditorEngine::SaveWorld(const FString& path) const
 {
 	std::filesystem::path fsPath(path);
 	std::filesystem::path directory = fsPath.parent_path();
@@ -168,7 +166,7 @@ void UEditorEngine::SaveLevel(const FString& path) const
 	file << Archive.GetJSON().dump(4);
 }
 
-void UEditorEngine::LoadLevel(const FString& path, FCamera* OutCamera)
+void UEditorEngine::LoadWorld(const FString& path, FCamera* OutCamera)
 {
 
 	std::ifstream file(path);
@@ -209,24 +207,24 @@ void UEditorEngine::LoadLevel(const FString& path, FCamera* OutCamera)
 
 	FArchive SceneArchive = Archive.GetArchive("Scene");
 
-	ULevel* Level = NewObject<ULevel>();
-	Level->Initialize();
-	//Scene->SetRenderResourceLibrary(&FRenderResourceLibrary::Get());
-	Level->Deserialize(SceneArchive);
-	SetLevel(Level);
+	SetWorld(NewObject<UWorld>());
+	GWorld->GetPersistentLevel()->Deserialize(SceneArchive);
 }
 
-void UEditorEngine::SetLevel(ULevel* InLevel)
+void UEditorEngine::SetWorld(UWorld* InWorld)
 {
-	if (InLevel == nullptr || !GWorld || GWorld->GetPersistentLevel() == InLevel) 
+	if (InWorld == nullptr)
 	{
-		return; 
+		return;
+	}
+	if (GWorld)
+	{
+		DestroyObject(GWorld);
+		GWorld = nullptr;
 	}
 
-	InLevel->Initialize();
-	GWorld->Scene->SetRenderResourceLibrary(&FRenderResourceLibrary::Get());
-	GWorld->SetPersistentLevel(InLevel);
-	
+	InWorld->Initialize();
+	GWorld = InWorld;
 }
 
 void UEditorEngine::Release()
@@ -240,15 +238,12 @@ void UEditorEngine::Release()
 			{
 				GWorld = nullptr;
 			}
-			World->Release();
 			DestroyObject(World);
 		}
 	}
 
 	if (GWorld)
 	{
-		GWorld->Release();
-
 		DestroyObject(GWorld);
 		GWorld = nullptr;
 	}

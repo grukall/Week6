@@ -3,24 +3,24 @@
 // 44 Bytes
 struct DirectionLight
 {
-    float Intensity;
-    float AmbientIntensity;
-    float3 LightColor;
     float3 Position;
+    float Intensity;
+    float3 LightColor;
+    float AmbientIntensity;
     float3 LightDirection; // Direction, Spot Light Only
 };
 
 // 40 Bytes
 struct SpotLight
 {
-    float Intensity;
-    float AmbientIntensity;
-    float3 LightColor;
     float3 Position;
+    float Intensity;
+    float3 LightColor;
+    float AmbientIntensity;
     float3 LightDirection; // Direction, Spot Light Only
+    float SpotPower;
     float FallOffStart; // Point, Spot Light Only
     float FallOffEnd; // Point, Spot Light Only
-    float SpotPower;
 };
 
 // 40 Bytes

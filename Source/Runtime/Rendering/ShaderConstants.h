@@ -85,39 +85,36 @@ static_assert(sizeof(FGridLineConstants) % 16 == 0);
 
 struct DirectionLight
 {
+	FVector Position{ 0.0f, 0.0f, 0.0f };
 	float Intensity = 1.0f;	
+	FVector LightColor{ 1.0f, 1.0f, 1.0f };
 	float AmbientIntensity = 0.2f;
-	float Padding[2]{};
 
-	FVector LightColor{ 1.0f, 1.0f, 1.0f }; float Padding1 = 0;
-	FVector Position{ 0.0f, 0.0f, 0.0f }; float Padding2 = 0;
-	FVector LightDirection{ -0.5f, -0.5f, -1.0f }; float Padding3 = 0;
+	FVector LightDirection{ -0.5f, -0.5f, -1.0f }; 
+	float Padding = 0;
 };
 
 struct SpotLight
 {
+	FVector Position{ 0.0f, 0.0f, 0.0f };
 	float Intensity = 1.0f;
+	FVector LightColor{ 1.0f, 1.0f, 1.0f };
 	float AmbientIntensity = 0.2f;
-	float Padding[2]{};
 
-	FVector LightColor{ 1.0f, 1.0f, 1.0f }; float Padding1 = 0;
-	FVector Position{ 0.0f, 0.0f, 0.0f }; float Padding2 = 0;
-	FVector LightDirection{ -0.5f, -0.5f, -1.0f }; float Padding3 = 0;
+	FVector LightDirection{ -0.5f, -0.5f, -1.0f }; 
+	float SpotPower = 64.0f;
 	
 	float FallOffStart = 0.0f;	// Point, Spot Light Only
 	float FallOffEnd = 0.0f;	// Point, Spot Light Only
-	float SpotPower = 64.0f;
-	float Padding4;
+	float Padding[2]{};
 };
 
 struct PointLight
 {
+	FVector Position{ 0.0f, 0.0f, 0.0f };
 	float Intensity = 1.0f;
+	FVector LightColor{ 1.0f, 1.0f, 1.0f };
 	float AmbientIntensity = 0.2f;
-	float PaddingA[2]{};
-
-	FVector LightColor{ 1.0f, 1.0f, 1.0f }; float Padding1 = 0;
-	FVector Position{ 0.0f, 0.0f, 0.0f }; float Padding2 = 0;
 
 	float FallOffStart = 0.0f;	// Point, Spot Light Only
 	float FallOffEnd = 0.0f;	// Point, Spot Light Only
@@ -149,9 +146,9 @@ static_assert(sizeof(FLightConstants) % 16 == 0);
 // Register = b5
 struct FMaterialConstants
 {
-	FVector DiffAlbedo;
-	float Shininess;
-	FVector SpecAlbedo;
+	FVector DiffAlbedo{1.0f, 1.0f, 1.0f};
+	float Shininess = 0.0f;
+	FVector SpecAlbedo{0.0f, 0.0f, 0.0f};
 	float Padding = 0.0f;
 };
 

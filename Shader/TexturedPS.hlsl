@@ -45,5 +45,6 @@ float4 MainPS(PS_INPUT Input) : SV_Target
     
     float3 Ambient = Mat.DiffAlbedo * AmbientLight;
     return float4(Ambient + FinalColor, Input.Color.a);
+    //return float4(1.0f, 1.0f, 1.0f, Input.Color.a);
 
 }

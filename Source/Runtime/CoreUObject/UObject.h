@@ -79,6 +79,11 @@ struct _MetaRegister_##ClassName##_##Key					\
 } _MetaRegisterInstance_##ClassName##_##Key;				\
 
 
+#define IMPLEMENT_ABSTRACT_UCLASS(ClassName, ParentClass)			\
+UObject* ClassName::CreateObject()		{ return nullptr; }			\
+UClass* ClassName::StaticClass()		{ return ClassInfo; }		\
+UClass* ClassName::GetClass() const		{ return StaticClass(); }	\
+
 class UObject
 {
 	GENERATED_BODY()

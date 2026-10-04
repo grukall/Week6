@@ -32,7 +32,7 @@ public:
 	void Update(float DeltaTime);
 
 	virtual void Init(HWND Window);
-	virtual void Tick(float DeltaTime);
+	virtual void Tick(float DeltaTime) = 0;
 	virtual void Exit();
 
 	virtual void OnWindowResize(UINT Width, UINT Height);

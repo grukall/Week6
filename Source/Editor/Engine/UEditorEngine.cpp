@@ -2,6 +2,7 @@
 
 #include "UEditorEngine.h"
 #include "Runtime/Rendering/FRenderer.h"
+#include "Runtime/Engine/FTimeManager.h"
 #include <Windows.h>
 #include <Runtime/Core/PointerTypes.h>
 #include "Runtime/Core/Globals.h"
@@ -79,7 +80,6 @@ void UEditorEngine::OnWindowResize(UINT Width, UINT Height)
 
 void UEditorEngine::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime);
 
 #ifdef _OBJVIEWER
 	ObjViewer->Update(DeltaTime);
@@ -92,6 +92,17 @@ void UEditorEngine::Tick(float DeltaTime)
     PropertyWindow.Process(Editor);
     ConsoleWindow.Process(Editor, [this](const char* Command) {ExecuteCommand(Command); });
     ContentsDrawer.Process(Editor);
+
+    //WorldContext Tick
+    for (FWorldContext& WorldContext : WorldContexts)
+    {
+        UWorld* World = WorldContext.World;
+        if (World && WorldContext.WorldType == EWorldType::Game)
+        {
+            World->Tick(FTimeManager::GetDeltaTime());
+        }
+    }
+
     Editor.Process();
 #endif
 }

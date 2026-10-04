@@ -12,7 +12,7 @@
 
 #include <Windows.h>
 
-IMPLEMENT_UCLASS(UEngine, UObject)
+IMPLEMENT_ABSTRACT_UCLASS(UEngine, UObject)
 
 void UEngine::Update(float DeltaTime)
 {
@@ -61,18 +61,6 @@ void UEngine::Init(HWND Window)
 	UClass::ResolveTypeBitsets();
 
 	FResourceLoader::LoadAssets();
-}
-
-void UEngine::Tick(float DeltaTime)
-{
-	for (FWorldContext& WorldContext : WorldContexts)
-	{
-		UWorld* World = WorldContext.World;
-		if (World && WorldContext.WorldType == EWorldType::Game)
-		{
-			World->Tick(FTimeManager::GetDeltaTime());
-		}
-	}
 }
 
 void UEngine::Exit()

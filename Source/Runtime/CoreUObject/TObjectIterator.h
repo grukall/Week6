@@ -41,7 +41,7 @@ public:
 			return nullptr;
 		}
 
-		return static_cast<TObject*>(*Iterator);
+		return static_cast<TObject*>((*Iterator).Object);
 	}
 
 	TObject* operator->() const 
@@ -55,7 +55,7 @@ private:
 		while (Iterator != FUObjectArray::Get().end()) 
 		{
 			// 빈 슬롯은 이터레이터가 건너뛰므로 Object는 항상 유효하다.
-			UObject* Object = *Iterator;
+			UObject* Object = (*Iterator).Object;
 			if (Object->IsA(TObject::StaticClass()))
 			{
 				return;

@@ -7,7 +7,7 @@
 class UObject;
 
 // 객체 해제 시 자동으로 널포인터를 반환하는 약한 참조 포인터
-// 슬롯 번호(Index)와 UUID로 O(1) 검증한다. (삭제된 객체의 포인터는 역참조하지 않는다)
+// 슬롯 번호(Index)와 시리얼 번호로 O(1) 검증한다. (삭제된 객체의 포인터는 역참조하지 않는다)
 //template<typename U = T>
 //	requires std::derived_from<U, UObject> 이거 여기에 선언하면 다른곳에서 순환오류 날수도있음
 template<typename T>
@@ -15,8 +15,8 @@ class TWeakObjectPtr
 {
 private:
 	mutable T* RawPtr = nullptr;
-	mutable uint32 ObjectIndex = 0;
-	mutable uint32 ObjectUUID = 0;
+	mutable uint32 ObjectIndex = UObject::InvalidInternalIndex;
+	mutable uint32 ObjectSerialNumber = 0;
 
 public:
 	TWeakObjectPtr() = default;
@@ -30,7 +30,6 @@ public:
 	}
 
 	TWeakObjectPtr(std::nullptr_t)
-		: RawPtr(nullptr), ObjectIndex(0), ObjectUUID(0)
 	{
 	}
 
@@ -53,13 +52,13 @@ public:
 	{
 		if (RawPtr)
 		{
-			// 생성자 실행 중 등록되어 식별자가 비어있던 경우 갱신
-			if (ObjectUUID == 0)
+			// 생성자 실행 중 등록되기 전에 만들어져 식별자가 비어있던 경우 갱신
+			if (ObjectSerialNumber == 0)
 			{
 				Capture(RawPtr);
 			}
 
-			if (FUObjectArray::Get().IsValid(ObjectIndex, ObjectUUID))
+			if (FUObjectArray::Get().IsValid(ObjectIndex, ObjectSerialNumber))
 			{
 				return RawPtr;
 			}
@@ -79,12 +78,25 @@ public:
 	bool operator!=(const T* Other) const { return Get() != Other; }
 
 	bool IsValid() const { return Get() != nullptr; }
-	void Reset() const { RawPtr = nullptr; ObjectIndex = 0; ObjectUUID = 0; }
+	void Reset() const
+	{
+		RawPtr = nullptr;
+		ObjectIndex = UObject::InvalidInternalIndex;
+		ObjectSerialNumber = 0;
+	}
 
 private:
+	// 객체의 슬롯 번호와 그 슬롯의 현재 시리얼 번호를 기록한다. 등록 전 객체는 시리얼이 0으로 남는다.
 	void Capture(T* InPtr) const
 	{
-		ObjectIndex = InPtr ? InPtr->GetInternalIndex() : 0;
-		ObjectUUID = InPtr ? InPtr->GetUUID() : 0;
+		if (!InPtr)
+		{
+			ObjectIndex = UObject::InvalidInternalIndex;
+			ObjectSerialNumber = 0;
+			return;
+		}
+
+		ObjectIndex = InPtr->GetInternalIndex();
+		ObjectSerialNumber = FUObjectArray::Get().GetSerialNumber(ObjectIndex);
 	}
 };

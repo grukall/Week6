@@ -223,10 +223,10 @@ void FImguiControlPanelWindow::RunPickBenchmark(FEditor& Editor, int Iterations)
     double Sum = 0.0;
     for (double T : Times) { Sum += T; }
 
-    UE_LOG("[PickBench] %s x%d | Median %.4f ms | Min %.4f ms | Avg %.4f ms | Hit UUID %u",
+    UE_LOG("[PickBench] %s x%d | Median %.4f ms | Min %.4f ms | Avg %.4f ms | Hit Index %u",
         bUseBVH ? "BVH" : "Linear", Iterations,
         Times[Times.size() / 2], Times.front(), Sum / Times.size(),
-        HitComponent ? HitComponent->GetUUID() : 0u);
+        HitComponent ? HitComponent->GetInternalIndex() : 0u);
 }
 
 void FImguiControlPanelWindow::RenderStateSort(FEditor& Editor)

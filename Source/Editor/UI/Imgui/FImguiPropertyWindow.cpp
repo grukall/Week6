@@ -68,7 +68,8 @@ void FImguiPropertyWindow::ShowActorHeader(const AActor& Actor) const
 {
 	const char* ActorClassName = Actor.GetClass() ? Actor.GetClass()->GetDisplayName().c_str() : "None";
 	ImGui::Text("Actor Class: %s", ActorClassName);
-	ImGui::Text("Actor UUID: %u", Actor.GetUUID());
+	ImGui::Text("Actor Name: %s", Actor.GetName().ToString().c_str());
+	ImGui::Text("Actor Guid: %s", Actor.GetGuid().ToString().c_str());
 }
 
 void FImguiPropertyWindow::ShowComponentHierarchy(const AActor& Actor) const
@@ -79,7 +80,7 @@ void FImguiPropertyWindow::ShowComponentHierarchy(const AActor& Actor) const
 	if (RootComp)
 	{
 		const char* RootName = RootComp->GetClass() ? RootComp->GetClass()->GetDisplayName().c_str() : "RootComponent";
-		ImGui::BulletText("[Root] %s (ID: %u)", RootName, RootComp->GetUUID());
+		ImGui::BulletText("[Root] %s (Index: %u)", RootName, RootComp->GetInternalIndex());
 	}
 
 	for (const USceneComponent* Comp : Actor.GetAttachedComponents())
@@ -91,7 +92,7 @@ void FImguiPropertyWindow::ShowComponentHierarchy(const AActor& Actor) const
 
 		const char* SubName = Comp->GetClass() ? Comp->GetClass()->GetDisplayName().c_str() : "SubComponent";
 		ImGui::Indent(15.0f);
-		ImGui::BulletText("└── [Sub] %s (ID: %u)", SubName, Comp->GetUUID());
+		ImGui::BulletText("└── [Sub] %s (Index: %u)", SubName, Comp->GetInternalIndex());
 		ImGui::Unindent(15.0f);
 	}
 }
@@ -112,7 +113,7 @@ void FImguiPropertyWindow::ShowComponentSections(FEditor& Editor, AActor& Actor)
 
 		// ### 뒤쪽이 실제 ID 라서, 앞의 표시 이름이 바뀌어도 접힘 상태가 유지된다.
 		std::string SectionTitle = (bIsRoot ? "[Root] " : "[Sub] ") + std::string(CompTypeName)
-			+ " (ID: " + std::to_string(Comp->GetUUID()) + ")###CompHeader_" + std::to_string(Comp->GetUUID());
+			+ " (Index: " + std::to_string(Comp->GetInternalIndex()) + ")###CompHeader_" + std::to_string(Comp->GetInternalIndex());
 
 		if (!ImGui::CollapsingHeader(SectionTitle.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 		{

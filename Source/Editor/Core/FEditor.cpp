@@ -85,7 +85,7 @@ void FEditor::SaveState() {
   State.SetGridCellSize(Viewport->GetGrid().GetCellSize());
   State.SetGizmoMode(static_cast<uint8>(Gizmo.Mode));
   State.SetGizmoSpace(static_cast<uint8>(Gizmo.GetSpace()));
-  State.SetSelectedActor(SelectedActor ? SelectedActor->GetUUID() : static_cast<uint32>(-1));
+  // 선택된 액터는 저장하지 않는다. 런타임 식별자는 실행마다 달라지므로 파일 사이에서 의미가 없다.
 }
 
 void FEditor::LoadState()
@@ -176,7 +176,8 @@ bool FEditor::SelectActor(AActor *Actor) {
       FTransform RelativeTrans;
       RelativeTrans.SetLocation(FVector{ 0.0f, 0.0f, 1.5f });
       SelectedActorTextComp->SetRelativeTransform(RelativeTrans);
-      SelectedActorTextComp->SetText(L"UUID : " + std::to_wstring(SelectedActor->GetUUID()));
+      const FString ActorName = SelectedActor->GetName().ToString();
+      SelectedActorTextComp->SetText(L"Name : " + FWString(ActorName.begin(), ActorName.end()));
     }
   }
 

@@ -87,8 +87,9 @@ class UObject
 	friend class FUObjectArray;
 
 public:
-	[[nodiscard]] uint32 GetUUID() const { return UUID; }
 	// FUObjectArray 슬롯 번호. 객체가 살아 있는 동안 바뀌지 않는다. (약참조가 O(1) 검증에 사용)
+	// 등록되기 전(생성자 실행 중)에는 InvalidInternalIndex이다.
+	static constexpr uint32 InvalidInternalIndex = 0xFFFFFFFFu;
 	[[nodiscard]] uint32 GetInternalIndex() const { return InternalIndex; }
 
 	UObject(const UObject&) = delete;
@@ -96,8 +97,6 @@ public:
 
 	UObject(UObject&&) = delete;
 	const UObject& operator=(UObject&&) = delete;
-
-	void SetUUID(uint32 _UUID) { UUID = _UUID; }
 
 	virtual void Initialize();
 	virtual void Release();
@@ -132,8 +131,7 @@ protected:
 	virtual void Deserialize(const FArchive& Archive);
 
 private:
-	uint32 UUID = 0u;
-	uint32 InternalIndex = 0u;
+	uint32 InternalIndex = InvalidInternalIndex;
 
 	static inline uint64 TotalAllocationBytes = 0;
 	static inline uint64 TotalAllocationCount = 0;

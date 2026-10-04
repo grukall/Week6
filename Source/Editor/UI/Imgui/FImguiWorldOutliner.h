@@ -14,7 +14,8 @@ enum class EOutlinerItemRowType : uint8
 struct FOutlinerItem
 {
 	EOutlinerItemRowType Type = EOutlinerItemRowType::Actor;
-	uint64 UUID = 0;
+	// 펼침 상태 키 (액터는 이름 해시, 컴포넌트는 슬롯 번호)
+	uint64 Key = 0;
 	FString DisplayLabel;
 	FString LowerLabel;
 	int32 Depth = 0;
@@ -51,8 +52,8 @@ private:
 	TArray<int32> FilteredIndices;
 	// 화면에 1줄씩 순서대로 그릴 목록
 	TArray<FOutlinerItem> DisplayList;
-	// 펼쳐진 액터들의 UUID를 저장하는 집합
-	TSet<uint64> ExpandedActorUUIDs;
+	// 펼쳐진 액터들의 키(이름 해시)를 저장하는 집합
+	TSet<uint64> ExpandedActorKeys;
 
 	size_t LastActorCount = 0;
 	FString LastFilterStr = "";

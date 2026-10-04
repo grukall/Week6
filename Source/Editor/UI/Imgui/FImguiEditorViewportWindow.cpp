@@ -436,8 +436,8 @@ void FImguiEditorViewportWindow::HandlePicking(FEditor &Editor,
     const char *CompClass =
         HitComponent->GetClass() ? HitComponent->GetClass()->GetDisplayName().c_str() : "Unknown";
 
-    UE_LOG("[Picking] Actor: %s (UUID: %u), Component: %s (UUID: %u)", ActorClass,
-           OwnerActor->GetUUID(), CompClass, HitComponent->GetUUID());
+    UE_LOG("[Picking] Actor: %s (Name: %s), Component: %s (Index: %u)", ActorClass,
+           OwnerActor->GetName().ToString().c_str(), CompClass, HitComponent->GetInternalIndex());
 }
 
 void FImguiEditorViewportWindow::UpdateGizmoHover(FEditor &Editor,

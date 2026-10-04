@@ -121,10 +121,10 @@ void FImguiWorldOutliner::RefreshCache(UWorld* World)
 			FOutlinerItem Item;
 			Item.Type = EOutlinerItemRowType::Actor;
 			Item.Actor = Actor;
-			Item.UUID = Actor->GetUUID();
+			Item.Key = Actor->GetName().GetHash();
 
 			const char* ClassName = Actor->GetClass() ? Actor->GetClass()->GetDisplayName().c_str() : "Actor";
-			Item.DisplayLabel = FString(ClassName) + " (ID: " + std::to_string(Item.UUID) + ")";
+			Item.DisplayLabel = Actor->GetName().ToString() + " (" + ClassName + ")";
 
 			Item.LowerLabel = Item.DisplayLabel;
 			std::transform(Item.LowerLabel.begin(), Item.LowerLabel.end(), Item.LowerLabel.begin(),
@@ -184,7 +184,7 @@ void FImguiWorldOutliner::ShowActorNode(FEditor& Editor, AActor* Actor, const st
 	}
 
 	// 트리 노드 렌더링
-	const bool bNodeOpen = ImGui::TreeNodeEx(reinterpret_cast<void*>(static_cast<uintptr_t>(Actor->GetUUID())), NodeFlags, "%s (ID: %u)", Actor->GetClass()->GetDisplayName().c_str(), Actor->GetUUID());
+	const bool bNodeOpen = ImGui::TreeNodeEx(Actor, NodeFlags, "%s (%s)", Actor->GetName().ToString().c_str(), Actor->GetClass()->GetDisplayName().c_str());
 
 	// 클릭 시 액터 선택
 	if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
@@ -223,7 +223,7 @@ void FImguiWorldOutliner::ShowActorNode_Cached(FEditor& Editor, const FOutlinerI
 		AActor* Actor = Item.Actor;
 		if (!Actor) return;
 
-		const bool bIsOpen = ExpandedActorUUIDs.contains(Item.UUID);
+		const bool bIsOpen = ExpandedActorKeys.contains(Item.Key);
 		const bool bIsSelected = (Actor == SelectedActor);
 		ImGuiTreeNodeFlags NodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 		if (bIsSelected)
@@ -237,7 +237,7 @@ void FImguiWorldOutliner::ShowActorNode_Cached(FEditor& Editor, const FOutlinerI
 			NodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 		}
 
-		const bool bNodeOpen = ImGui::TreeNodeEx(reinterpret_cast<void*>(static_cast<uintptr_t>(Item.UUID)), NodeFlags, "%s", Item.DisplayLabel.c_str());
+		const bool bNodeOpen = ImGui::TreeNodeEx(Actor, NodeFlags, "%s", Item.DisplayLabel.c_str());
 
 		if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
 		{
@@ -250,11 +250,11 @@ void FImguiWorldOutliner::ShowActorNode_Cached(FEditor& Editor, const FOutlinerI
 			{
 				if (bNodeOpen)
 				{
-					ExpandedActorUUIDs.insert(Item.UUID);
+					ExpandedActorKeys.insert(Item.Key);
 				}
 				else
 				{
-					ExpandedActorUUIDs.erase(Item.UUID);
+					ExpandedActorKeys.erase(Item.Key);
 				}
 				bDisplayListDirty = true;
 			}
@@ -268,7 +268,7 @@ void FImguiWorldOutliner::ShowActorNode_Cached(FEditor& Editor, const FOutlinerI
 	else
 	{
 		ImGuiTreeNodeFlags CompFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
-		ImGui::TreeNodeEx(reinterpret_cast<void*>(static_cast<uintptr_t>(Item.UUID)), CompFlags, "%s", Item.DisplayLabel.c_str());
+		ImGui::TreeNodeEx(Item.Component, CompFlags, "%s", Item.DisplayLabel.c_str());
 		ImGui::Unindent(16.0f);
 	}
 }
@@ -278,7 +278,7 @@ void FImguiWorldOutliner::ShowComponentNode(USceneComponent& Comp) const
 	const char* CompClassName = Comp.GetClass() ? Comp.GetClass()->GetDisplayName().c_str() : "Component";
 
 	ImGuiTreeNodeFlags CompFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
-	ImGui::TreeNodeEx(reinterpret_cast<void*>(static_cast<uintptr_t>(Comp.GetUUID())), CompFlags, "%s (ID: %u)", CompClassName, Comp.GetUUID());
+	ImGui::TreeNodeEx(&Comp, CompFlags, "%s (Index: %u)", CompClassName, Comp.GetInternalIndex());
 }
 
 
@@ -313,7 +313,7 @@ void FImguiWorldOutliner::RebuildDisplayList()
 		Row.Depth = 0;
 		DisplayList.push_back(Row);
 
-		if (ExpandedActorUUIDs.contains(ActorItem.UUID))
+		if (ExpandedActorKeys.contains(ActorItem.Key))
 		{
 			for (USceneComponent* Comp : Actor->GetAttachedComponents())
 			{
@@ -321,9 +321,9 @@ void FImguiWorldOutliner::RebuildDisplayList()
 
 				FOutlinerItem CompItem;
 				CompItem.Type = EOutlinerItemRowType::Component;
-				CompItem.UUID = Comp->GetUUID();
+				CompItem.Key = Comp->GetInternalIndex();
 				const char* CompName = Comp->GetClass() ? Comp->GetClass()->GetDisplayName().c_str() : "Component";
-				CompItem.DisplayLabel = FString(CompName) + " (ID: " + std::to_string(CompItem.UUID) + ")";
+				CompItem.DisplayLabel = FString(CompName) + " (Index: " + std::to_string(Comp->GetInternalIndex()) + ")";
 				CompItem.Depth = 1;
 				CompItem.Component = Comp;
 				CompItem.Actor = Actor;

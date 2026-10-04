@@ -3,6 +3,8 @@
 #include "Runtime/CoreUObject/UObject.h"
 #include "Runtime/CoreUObject/USceneComponent.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
+#include "Runtime/Core/FName.h"
+#include "Runtime/Core/FGuid.h"
 #include <type_traits>
 #include <concepts>
 
@@ -34,6 +36,12 @@ public:
 	// 소속 레벨이 속한 월드. 레벨이 없으면 nullptr
 	[[nodiscard]] UWorld* GetWorld() const;
 
+	// 액터를 식별하는 값들 (런타임 약참조는 FUObjectArray의 슬롯/시리얼 번호가 맡는다)
+	// 이름: 레벨 안에서 유일. 저장 파일과 에디터 표시에 쓴다. 레벨에 추가될 때 ULevel이 부여한다.
+	[[nodiscard]] const FName& GetName() const { return Name; }
+	// Guid: 저장 파일에 보존되고 에디터 월드와 PIE 월드의 같은 액터를 서로 찾는 키로 쓴다.
+	[[nodiscard]] const FGuid& GetGuid() const { return Guid; }
+
 	void CreateRootComponent(UClass* ClassType);
 
 	void SetRootComponent(USceneComponent* Component);
@@ -63,4 +71,7 @@ private:
 	ULevel* OwningLevel = nullptr;     // 소속 레벨 (ULevel::AddActor/RemoveActor가 관리)
 	UWorld* RegisteredWorld = nullptr; // Register된 월드 (컴포넌트가 FScene에 연결된 상태)
 	bool bHasBegunPlay = false;
+
+	FName Name;  // 기본값 None. ULevel::AddActor가 유일한 이름을 부여한다.
+	FGuid Guid;  // 기본값 무효. ULevel::AddActor가 새로 발급하거나, 파일에서 읽은 값을 보존한다.
 };

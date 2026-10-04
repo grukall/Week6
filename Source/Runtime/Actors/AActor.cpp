@@ -16,6 +16,8 @@ void AActor::Initialize()
 	RegisteredWorld = nullptr;
 	bHasBegunPlay = false;
 	bTickEnabled = false;
+	Name = FName();
+	Guid.Invalidate();
 }
 
 UWorld* AActor::GetWorld() const
@@ -68,6 +70,9 @@ void AActor::Serialize(FArchive& Archive) const
 {
 	Super::Serialize(Archive);
 
+	Archive.SetString("Name", Name.ToString());
+	Archive.SetString("Guid", Guid.ToString());
+
 	if (RootComponent)
 	{
 		FArchive RootArchive{};
@@ -83,6 +88,29 @@ void AActor::Serialize(FArchive& Archive) const
 void AActor::Deserialize(const FArchive& Archive)
 {
 	Super::Deserialize(Archive);
+
+	// 이름과 Guid는 레벨이 유일성을 관리하므로 레벨을 통해 바꾼다. (이전 파일에는 없을 수 있음)
+	if (OwningLevel)
+	{
+		if (!Archive.IsNull("Name"))
+		{
+			const FName SavedName(Archive.GetString("Name"));
+			if (!OwningLevel->SetActorName(this, SavedName))
+			{
+				UE_LOG_WARN("[%s::Deserialize] 저장된 이름 %s을(를) 사용할 수 없어 %s을(를) 유지합니다.",
+					GetClass()->GetUClassName(), SavedName.ToString(), Name.ToString());
+			}
+		}
+
+		if (!Archive.IsNull("Guid"))
+		{
+			FGuid SavedGuid;
+			if (FGuid::Parse(Archive.GetString("Guid"), SavedGuid))
+			{
+				OwningLevel->SetActorGuid(this, SavedGuid);
+			}
+		}
+	}
 
 	if (Archive.IsNull("RootComponent"))
 	{

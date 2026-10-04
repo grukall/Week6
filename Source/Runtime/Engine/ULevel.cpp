@@ -124,6 +124,18 @@ void ULevel::AddActor(AActor* Actor)
 
     Actors.push_back(Actor);
     Actor->OwningLevel = this;
+
+    // 이름이 없거나 이 레벨에서 이미 쓰이고 있으면 새로 부여한다.
+    if (Actor->Name.IsNone() || ActorsByName.contains(Actor->Name)) {
+        Actor->Name = MakeUniqueActorName(Actor);
+    }
+    ActorsByName[Actor->Name] = Actor;
+
+    // Guid가 없거나 이 레벨에서 이미 쓰이고 있으면 새로 발급한다.
+    if (!Actor->Guid.IsValid() || ActorsByGuid.contains(Actor->Guid)) {
+        Actor->Guid = FGuid::NewGuid();
+    }
+    ActorsByGuid[Actor->Guid] = Actor;
 }
 
 void ULevel::RemoveActor(AActor* Actor)
@@ -133,7 +145,88 @@ void ULevel::RemoveActor(AActor* Actor)
     }
 
     std::erase(Actors, Actor);
+
+    if (auto It = ActorsByName.find(Actor->Name); It != ActorsByName.end() && It->second == Actor) {
+        ActorsByName.erase(It);
+    }
+    if (auto It = ActorsByGuid.find(Actor->Guid); It != ActorsByGuid.end() && It->second == Actor) {
+        ActorsByGuid.erase(It);
+    }
+
     if (Actor->OwningLevel == this) {
         Actor->OwningLevel = nullptr;
+    }
+}
+
+AActor* ULevel::FindActorByName(const FName& Name) const
+{
+    const auto It = ActorsByName.find(Name);
+    return It != ActorsByName.end() ? It->second : nullptr;
+}
+
+AActor* ULevel::FindActorByGuid(const FGuid& Guid) const
+{
+    const auto It = ActorsByGuid.find(Guid);
+    return It != ActorsByGuid.end() ? It->second : nullptr;
+}
+
+bool ULevel::SetActorName(AActor* Actor, const FName& NewName)
+{
+    if (!Actor || Actor->OwningLevel != this || NewName.IsNone()) {
+        return false;
+    }
+    if (Actor->Name == NewName) {
+        return true;
+    }
+
+    const auto Existing = ActorsByName.find(NewName);
+    if (Existing != ActorsByName.end() && Existing->second != Actor) {
+        return false;
+    }
+
+    if (auto It = ActorsByName.find(Actor->Name); It != ActorsByName.end() && It->second == Actor) {
+        ActorsByName.erase(It);
+    }
+    Actor->Name = NewName;
+    ActorsByName[NewName] = Actor;
+    return true;
+}
+
+bool ULevel::SetActorGuid(AActor* Actor, const FGuid& NewGuid)
+{
+    if (!Actor || Actor->OwningLevel != this || !NewGuid.IsValid()) {
+        return false;
+    }
+    if (Actor->Guid == NewGuid) {
+        return true;
+    }
+
+    const auto Existing = ActorsByGuid.find(NewGuid);
+    if (Existing != ActorsByGuid.end() && Existing->second != Actor) {
+        return false;
+    }
+
+    if (auto It = ActorsByGuid.find(Actor->Guid); It != ActorsByGuid.end() && It->second == Actor) {
+        ActorsByGuid.erase(It);
+    }
+    Actor->Guid = NewGuid;
+    ActorsByGuid[NewGuid] = Actor;
+    return true;
+}
+
+FName ULevel::MakeUniqueActorName(const AActor* Actor)
+{
+    // "AAppleNormalActor" -> "AppleNormalActor" (UE처럼 접두 'A' 제거)
+    FString Base = Actor->GetClass()->GetUClassName();
+    if (Base.size() > 1 && Base[0] == 'A' && Base[1] >= 'A' && Base[1] <= 'Z') {
+        Base.erase(0, 1);
+    }
+
+    int32& Number = NextNameNumber[Base];
+    while (true) {
+        const FName Candidate(Base + "_" + std::to_string(Number++));
+        if (!ActorsByName.contains(Candidate)) {
+            return Candidate;
+        }
     }
 }

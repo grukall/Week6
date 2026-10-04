@@ -18,14 +18,6 @@ void UInstancePrimitiveComponent::Initialize()
 
 }
 
-UInstancePrimitiveComponent* UInstancePrimitiveComponent::Duplicate()
-{
-    Super::Duplicate();
-    UInstancePrimitiveComponent* NewInstancePrimitiveComponent = NewObject<UInstancePrimitiveComponent>();
-    NewInstancePrimitiveComponent->InstanceTransforms = InstanceTransforms;
-    return (NewInstancePrimitiveComponent);
-}
-
 void UInstancePrimitiveComponent::AddInstance(const FVector& WorldPosition, const FVector4& Color)
 {
     InstanceTransforms.push_back({ WorldPosition, Color });

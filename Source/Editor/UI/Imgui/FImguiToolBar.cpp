@@ -172,6 +172,7 @@ void FImguiToolbar::ShowPIEBar(FEditor& Editor)
     const int SelectedItem = Globals::GWorld->IsPlayInEditor() ? 0 : 1;
     if (ImGui::Button(PIEModes[SelectedItem], { 150.0f, 0.0f }))
     {
+        Editor.UnSelectActor();
         if (SelectedItem == 0)
         {
             Globals::GEditor->EndPIE();

@@ -27,6 +27,7 @@ private:
 	FFont* Font = nullptr;
 
 public:
+	UFont() = default;
 
 	void Load(UFontDesc& Desc);
 

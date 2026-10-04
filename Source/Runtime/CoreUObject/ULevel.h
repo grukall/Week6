@@ -22,6 +22,9 @@ public:
     void AddActor(AActor* Actor);
     //AActor* SpawnActor(UClass* ClassType);
 
+protected:
+    ULevel() = default;
+
 private:
     UWorld* OwningWorld = nullptr;
     TArray<AActor*> Actors;

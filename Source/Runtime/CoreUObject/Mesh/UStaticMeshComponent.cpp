@@ -119,14 +119,6 @@ void UStaticMeshComponent::SetMesh(UStaticMesh* Mesh)
 	}
 }
 
-UStaticMeshComponent* UStaticMeshComponent::Duplicate()
-{
-	Super::Duplicate();
-	UStaticMeshComponent* NewStaticMeshComponent = NewObject<UStaticMeshComponent>();
-	NewStaticMeshComponent->RenderData = RenderData;
-	return (NewStaticMeshComponent);
-}
-
 const UMaterial* UStaticMeshComponent::GetMaterial(int Index) const
 {
 	const FMaterialInstance* Instance = GetMaterialInstance(Index);

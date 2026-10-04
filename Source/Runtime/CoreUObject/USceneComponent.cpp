@@ -30,18 +30,14 @@ void USceneComponent::Release()
     Super::Release();
 }
 
-USceneComponent* USceneComponent::Duplicate()
+void USceneComponent::DuplicateSubObjects()
 {
-    Super::Duplicate();
-    USceneComponent* NewSceneComponent = NewObject<USceneComponent>();
-    NewSceneComponent->Initialize();
-    NewSceneComponent->SetRelativeTransform(RelativeTransform); // 참조로 넘겨줘서 나중에 확인필요
-    NewSceneComponent->DuplicateSubObjects();
-    // 나중에 추가설정
-    //USceneComponent* SceneOwner = nullptr;
-    //UWorld* World = nullptr;
-    // int32 BatchIndex = -1; 필요한지 모르겟
-    return (NewSceneComponent);
+    Super::DuplicateSubObjects();
+
+    World = nullptr;
+    BatchIndex = -1;
+    bHasBegunPlay = false;
+    bGlobalDirty = true;
 }
 
 void USceneComponent::Register(UWorld& InWorld)

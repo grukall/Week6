@@ -41,6 +41,9 @@ public:
   float GetWidth() const { return Width; }
   float GetHeight() const { return Height; }
 
+protected:
+    UTextInstanceComponent() = default;
+
 private:
   TSharedPtr<FFont> Font;
   UFont* FontAsset = nullptr;

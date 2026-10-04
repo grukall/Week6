@@ -106,10 +106,14 @@ public:
             std::forward<FirstArg>(First), std::forward<RestArgs>(Rest)...);
     }
 
+protected:
+    UWorld() = default;
+
 private:
     bool bActive = false;
     bool bHasBegunPlay = false;
     bool bInitialized = false;
 
     ULevel* PersistentLevel = nullptr;
+
 };

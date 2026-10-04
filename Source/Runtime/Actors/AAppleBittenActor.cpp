@@ -17,6 +17,12 @@ AAppleBittenActor::AAppleBittenActor()
 	AppleStaticMeshComp->SetMesh(Registry.Get<UStaticMesh>("StaticMesh/JungleApple/Apple_Bitten.json"));
 }
 
+void AAppleBittenActor::DuplicateSubObjects()
+{
+	Super::DuplicateSubObjects();
+	RemapComponent(AppleStaticMeshComp);
+}
+
 void AAppleBittenActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);

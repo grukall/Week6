@@ -14,7 +14,6 @@ class UInstancePrimitiveComponent : public UPrimitiveComponent {
 
 public:
     void Initialize() override;
-    virtual UInstancePrimitiveComponent* Duplicate() override;
 
     // 큐 방식: FRenderData에 Instances까지 채워서 반환
     virtual void BuildRenderData() const;
@@ -26,6 +25,9 @@ public:
     int32 GetInstanceCount() const { return static_cast<int32>(InstanceTransforms.size()); }
 
     virtual bool IsOcclusionTarget() const override { return false; }
+
+protected:
+    UInstancePrimitiveComponent() = default;
 
 private:
     struct FInstanceEntry { FVector Position; FVector4 Color; };

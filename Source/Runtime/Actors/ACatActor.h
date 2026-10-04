@@ -12,7 +12,7 @@ class ACatActor : public AActor
 
 public:
 	explicit ACatActor();
-
+	void DuplicateSubObjects() override;
 	void Initialize() override;
 	virtual void Tick(float DeltaTime) override;
 

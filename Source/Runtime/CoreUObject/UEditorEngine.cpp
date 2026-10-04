@@ -78,6 +78,10 @@ void UEditorEngine::Init()
 }
 
 void UEditorEngine::StartPIE() {
+	if (Globals::GWorld && Globals::GWorld->IsPlayInEditor())
+	{
+		return;
+	}
 	UWorld* EditorWorld = Globals::GEditor->GetEditorWorldContext().World();
 
 	UWorld* PIEWorld = UWorld::DuplicateWorldForPIE(EditorWorld);
@@ -86,21 +90,15 @@ void UEditorEngine::StartPIE() {
 
 	// AActor::BeginPlay()
 	PIEWorld->InitializeActorsForPlay();
-
-	Globals::GWorld->SetWorldType(EWorldType::PIE);
-
 }
 
 void UEditorEngine::EndPIE() {
 	if (Globals::GWorld && Globals::GWorld->IsPlayInEditor())
 	{
-		Globals::GWorld->CleanupWorld();
-		delete Globals::GWorld;
+		DestroyObject(Globals::GWorld);
 	}
 
 	Globals::GWorld = Globals::GEditor->GetEditorWorldContext().World();
-
-	Globals::GWorld->SetWorldType(EWorldType::Editor);
 }
 
 void UEditorEngine::Tick(float DeltaTime)
@@ -161,19 +159,19 @@ void UEditorEngine::Exit()
 
 }
 
-const FWorldContext& UEditorEngine::GetWorldContextFromWorld(UWorld* InWorld) const
+const FWorldContext* UEditorEngine::GetWorldContextFromWorld(UWorld* InWorld) const
 { 
 	if (InWorld == nullptr)
-		return (FWorldContext());
+		return (nullptr);
 
 	for (const FWorldContext& WorldContext : WorldContexts)
 	{
 		if (WorldContext.GetCurrentWorld() && WorldContext.GetCurrentWorld() == InWorld)
 		{
-			return (WorldContext);
+			return (&WorldContext);
 		}
 	}
-	return (FWorldContext());
+	return (nullptr);
 }
 
 FWorldContext& UEditorEngine::GetEditorWorldContext(bool bEnsureIsGWorld)
@@ -189,7 +187,8 @@ FWorldContext& UEditorEngine::GetEditorWorldContext(bool bEnsureIsGWorld)
 			return WorldContext;
 		}
 	}
-	
+
+	throw EngineUtil::CreateError("Editor WorldContext가 없습니다.");
 }
 
 
@@ -275,6 +274,15 @@ void UEditorEngine::SetWorld(UWorld* InWorld, EWorldType InWorldType)
 	}
 	if (Globals::GWorld)
 	{
+		for (auto It = WorldContexts.begin(); It != WorldContexts.end(); ++It)
+		{
+			if (It->GetCurrentWorld() == Globals::GWorld)
+			{
+				WorldContexts.erase(It);
+				break;
+			}
+		}
+
 		DestroyObject(Globals::GWorld);
 		Globals::GWorld = nullptr;
 	}

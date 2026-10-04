@@ -63,7 +63,7 @@ public:
 	void Init();
 	void Tick(float DeltaTime);
 	void Exit();
-	const FWorldContext& GetWorldContextFromWorld(UWorld* InWorld) const;
+	const FWorldContext* GetWorldContextFromWorld(UWorld* InWorld) const;
 	FWorldContext& GetEditorWorldContext(bool bEnsureIsGWorld = false);
 
 	void SaveWorld(const FString& path) const;

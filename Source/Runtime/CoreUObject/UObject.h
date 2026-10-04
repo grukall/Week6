@@ -41,6 +41,9 @@ class FArchive;
 		virtual UClass* GetClass() const;	\
 		static UClass* StaticClass();		\
 											\
+	protected:								\
+		virtual UObject* CreateCopy() const;\
+											\
 	private:								\
 		static UClass* ClassInfo;			\
 		static UObject* CreateObject();		\
@@ -48,6 +51,7 @@ class FArchive;
 
 #define IMPLEMENT_ROOT_UCLASS(ClassName)																		\
 UObject* ClassName::CreateObject()		{ return NewObject<ClassName>(); }										\
+UObject* ClassName::CreateCopy() const	{ return NewObject<ClassName>(*this); }									\
 UClass* ClassName::ClassInfo			= UClass::RegisterToFactory(#ClassName, &ClassName::CreateObject, "");	\
 UClass* ClassName::StaticClass()		{ return ClassInfo; }													\
 UClass* ClassName::GetClass() const		{ return StaticClass(); }												\
@@ -60,12 +64,17 @@ public:											\
     static UClass* StaticClass();				\
     using Super = ParentClass;					\
 												\
+protected:										\
+	ClassName(const ClassName&) = default;		\
+	UObject* CreateCopy() const override;		\
+												\
 private:										\
     static UObject* CreateObject();				\
 	static inline UClass* ClassInfo = UClass::RegisterToFactory(#ClassName, &ClassName::CreateObject, #ParentClass);	\
 
 #define IMPLEMENT_UCLASS(ClassName, ParentClass)																			\
 UObject* ClassName::CreateObject()		{ return NewObject<ClassName>(); }													\
+UObject* ClassName::CreateCopy() const	{ return NewObject<ClassName>(*this); }												\
 UClass* ClassName::StaticClass()		{ return ClassInfo; }																\
 UClass* ClassName::GetClass() const		{ return StaticClass(); }															\
 
@@ -88,7 +97,7 @@ class UObject
 public:
 	[[nodiscard]] uint32 GetUUID() const { return UUID; }
 
-	UObject(const UObject&) = delete;
+	//UObject(const UObject&) = delete;
 	UObject& operator=(const UObject&) = delete;
 
 	UObject(UObject&&) = delete;
@@ -100,7 +109,7 @@ public:
 	virtual void Release();
 
 	virtual void DuplicateSubObjects();
-	virtual UObject* Duplicate();
+	UObject* Duplicate();
 
 
 
@@ -129,6 +138,7 @@ public:
 protected:
 	UObject() = default;
 	virtual ~UObject() = default;
+	UObject(const UObject&){}
 
 	virtual void Serialize(FArchive& Archive) const;
 	virtual void Deserialize(const FArchive& Archive);
@@ -160,8 +170,12 @@ public:
 		return IsA<T>() ? static_cast<const T*>(this) : nullptr;
 	}
 
-	//template<typename T>
-	//T* DuplicateAs(T* Source) {
-	//	return (Source->Duplicate()->Cast<T>());
-	//}
+	template<typename T>
+	static T* DuplicateAs(T* Source) {
+		if (!Source)
+		{
+			return nullptr;
+		}
+		return (Source->Duplicate()->template Cast<T>());
+	}
 };

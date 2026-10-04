@@ -28,6 +28,9 @@ private:
 	UTexture* Texture = nullptr;
 	FTextureSamplerDesc SamplerDesc{};
 
+protected:
+	UMaterial() = default;
+
 public:
 
 	void Load(UMaterialDesc& Desc);

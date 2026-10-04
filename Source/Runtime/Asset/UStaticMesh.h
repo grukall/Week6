@@ -29,6 +29,9 @@ class UStaticMesh : public UAsset
 private:
 	TArray<FStaticMeshLOD> LODs;
 
+protected:
+	UStaticMesh() = default;
+
 public:
 
 	void Load(UStaticMeshDesc& Desc);

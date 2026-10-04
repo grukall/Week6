@@ -18,6 +18,9 @@ class UTexture : public UAsset
 private:
 	FTexture* Texture = nullptr;
 
+protected:
+	UTexture() = default;
+
 public:
 	void Load(UTextureDesc& Desc);
 

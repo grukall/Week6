@@ -16,15 +16,14 @@ UWorld* UWorld::DuplicateWorldForPIE(UWorld* InWorld)
 {
     UWorld* PIEWorld = NewObject<UWorld>();
     PIEWorld->Initialize();
-
+    PIEWorld->SetWorldType(EWorldType::PIE);
     for (AActor* Actor : InWorld->PersistentLevel->GetActors()) 
     {
-        UClass* Class = Actor->GetClass();
-
-        AActor* DuplicateActor = NewObject(Class)->Cast<AActor>()->Duplicate();
+        AActor* DuplicateActor = DuplicateAs(Actor);   
         PIEWorld->PersistentLevel->AddActor(DuplicateActor);
     }
-
+    PIEWorld->Activate();
+    PIEWorld->Scene->GetSceneBVH().Build(PIEWorld->Scene->GetRenderComponents());
     return (PIEWorld);
 }
 
@@ -37,7 +36,7 @@ void UWorld::SetPersistentLevel(ULevel* InLevel)
 {
     if (PersistentLevel)
     {
-        PersistentLevel->Release();
+        DestroyObject(PersistentLevel);
     }
     PersistentLevel = InLevel;
     InLevel->Initialize(this);
@@ -118,6 +117,7 @@ void UWorld::Deactivate() {
     }
     if (bHasBegunPlay) {
         EndPlay();
+        bHasBegunPlay = false;
     }
 
     const TArray<AActor*>& Actors = PersistentLevel->GetActors();
@@ -149,11 +149,13 @@ void UWorld::Release() {
     if (bActive) {
         Deactivate();
     }
-    PersistentLevel->Release();
+    DestroyObject(PersistentLevel);
+    PersistentLevel = nullptr;
     Scene->Release();
     delete (Scene);
+    Scene = nullptr;
     bInitialized = false;
-    Super::Release(); // ?
+    Super::Release();
 }
 
 void UWorld::CreateWorld(EWorldType InWorldType)

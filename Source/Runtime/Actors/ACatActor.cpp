@@ -18,6 +18,12 @@ ACatActor::ACatActor()
 	CatStaticMeshComp->SetMesh(Registry.Get<UStaticMesh>("StaticMesh/oiia/oiia.json"));
 }
 
+void ACatActor::DuplicateSubObjects()
+{
+	Super::DuplicateSubObjects();
+	RemapComponent(CatStaticMeshComp);
+}
+
 void ACatActor::Initialize()
 {
 	Super::Initialize();

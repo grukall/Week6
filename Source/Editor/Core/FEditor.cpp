@@ -113,27 +113,44 @@ void FEditor::LoadState()
 }
 
 void FEditor::NewMap() {
-  UnSelectActor();
-  EditorEngine->SetWorld(NewObject<UWorld>(), EWorldType::Editor);
-  State.ResetToDefaults();
-  LoadState();
+    if (Globals::GWorld && Globals::GWorld->IsPlayInEditor())
+    {
+        EditorEngine->EndPIE();
+    }
+    UnSelectActor();
+    EditorEngine->SetWorld(NewObject<UWorld>(), EWorldType::Editor);
+    State.ResetToDefaults();
+    LoadState();
 }
 
-void FEditor::SaveMap(const FString &Path) { EditorEngine->SaveWorld(Path); }
+void FEditor::SaveMap(const FString &Path) 
+{
+    if (Globals::GWorld && Globals::GWorld->IsPlayInEditor())
+    {
+        return;
+    }
+
+    EditorEngine->SaveWorld(Path); 
+}
 
 void FEditor::LoadMap(const FString &Path) 
 {
-  // 씬 로드
-  FEditorViewportClient* Viewport = GetActiveViewport();
-  EditorEngine->LoadWorld(Path, Viewport ? &Viewport->ViewportCamera : nullptr);
-  SelectedActor = nullptr;
+    if (Globals::GWorld && Globals::GWorld->IsPlayInEditor())
+    {
+        UnSelectActor();
+        EditorEngine->EndPIE();
+    }
+    // 씬 로드
+    FEditorViewportClient* Viewport = GetActiveViewport();
+    EditorEngine->LoadWorld(Path, Viewport ? &Viewport->ViewportCamera : nullptr);
+    SelectedActor = nullptr;
 
-  // 로드된 컴포넌트는 대기열에만 쌓이므로, 트랜스폼이 모두 설정된 지금 트리를 만든다.
-  if (Globals::GWorld)
-  {
+    // 로드된 컴포넌트는 대기열에만 쌓이므로, 트랜스폼이 모두 설정된 지금 트리를 만든다.
+    if (Globals::GWorld)
+    {
     FScene* Scene = Globals::GWorld->Scene;
     Scene->GetSceneBVH().Build(Scene->GetRenderComponents());
-  }
+    }
 }
 
 bool FEditor::CheckSceneExists() {

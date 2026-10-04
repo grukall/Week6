@@ -27,6 +27,7 @@ private:
 	FRenderPipeline* Pipeline = nullptr;
 
 public:
+	UPipeline() = default;
 
 	void Load(UPipelineDesc& Desc);
 

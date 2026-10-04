@@ -17,6 +17,12 @@ AAppleNormalActor::AAppleNormalActor()
 	AppleStaticMeshComp->SetMesh(Registry.Get<UStaticMesh>("StaticMesh/JungleApple/Apple_Normal.json"));
 }
 
+void AAppleNormalActor::DuplicateSubObjects()
+{
+	Super::DuplicateSubObjects();
+	RemapComponent(AppleStaticMeshComp);
+}
+
 void AAppleNormalActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);

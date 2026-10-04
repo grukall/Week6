@@ -11,6 +11,7 @@ class AAppleNormalActor : public AActor
 
 public:
 	explicit AAppleNormalActor();
+	void DuplicateSubObjects() override;
 
 	virtual void Tick(float DeltaTime) override;
 

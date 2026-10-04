@@ -29,12 +29,6 @@ void UObject::Deserialize(const FArchive& Archive)
 //// 서브 오브젝트를 복제하는 함수 (하위 클래스에서 재정의 가능)
 void UObject::DuplicateSubObjects()
 {
-
-	//if (SubObjectA)
-	//	SubObjectA = SubObjectA->Duplicate();
-
-	//if (SubObjectB)
-	//	SubObjectB = SubObjectB->Duplicate();
 }
 
  
@@ -42,10 +36,10 @@ void UObject::DuplicateSubObjects()
 UObject* UObject::Duplicate()
 {
 	// 새 객체 생성
-	UObject* TempObject = NewObject<UObject>();
-	TempObject->DuplicateSubObjects();
+	UObject* DuplicateObject = CreateCopy();
+	DuplicateObject->DuplicateSubObjects();
 
-	return TempObject;
+	return DuplicateObject;
 }
 
 void* UObject::operator new(std::size_t Size)

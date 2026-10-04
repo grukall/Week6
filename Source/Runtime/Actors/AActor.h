@@ -22,6 +22,7 @@ class AActor : public UObject
 protected:
 	USceneComponent* RootComponent = nullptr;
 	TArray<USceneComponent*> AttachedComp;
+	TMap<USceneComponent*, USceneComponent*> DuplicateRemap;
 	bool bTickEnabled = false;
 	bool bTickInEditor = false;
 
@@ -32,7 +33,6 @@ protected:
 
 public:
 	
-	AActor* Duplicate() override;
 	void DuplicateSubObjects() override;
 	void Initialize() override;
 	void Release() override;
@@ -69,4 +69,15 @@ public:
 private:
 	UWorld* Owner = nullptr; // SpawnActor될 때 설정됨
 	bool bHasBegunPlay = false;
+
+protected:
+	template<typename T>
+	void RemapComponent(T*& Ptr)
+	{
+		auto It = DuplicateRemap.find(Ptr);
+		if (It != DuplicateRemap.end())
+		{
+			Ptr = It->second->template Cast<T>();
+		}
+	}
 };

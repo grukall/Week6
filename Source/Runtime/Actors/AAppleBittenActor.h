@@ -11,6 +11,7 @@ class AAppleBittenActor : public AActor
 
 public:
 	explicit AAppleBittenActor();
+	void DuplicateSubObjects() override;
 
 	virtual void Tick(float DeltaTime) override;
 

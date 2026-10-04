@@ -21,7 +21,7 @@ class UAsset : public UObject
 	DECLARE_UCLASS(UAsset, UObject)
 
 protected:
-
+	UAsset() = default;
 	FName ID			= "";
 	FName Name			= "";
 	FString AssetPath	= "";

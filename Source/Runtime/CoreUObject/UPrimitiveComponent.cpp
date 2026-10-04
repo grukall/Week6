@@ -111,20 +111,12 @@ void UPrimitiveComponent::Unregister()
 }
 
 
-UPrimitiveComponent* UPrimitiveComponent::Duplicate()
+void UPrimitiveComponent::DuplicateSubObjects()
 {
-    Super::Duplicate();
-    UPrimitiveComponent* NewPrimitiveComponent = NewObject<UPrimitiveComponent>();
-    NewPrimitiveComponent->Initialize();
-    NewPrimitiveComponent->RenderData = RenderData;
-    NewPrimitiveComponent->Color = Color;
-    NewPrimitiveComponent->ColorAmount = ColorAmount;
-    NewPrimitiveComponent->SetRelativeTransform(RelativeTransform); // 참조로 넘겨줘서 나중에 확인필요
-    NewPrimitiveComponent->LocalBounds = LocalBounds;
-    NewPrimitiveComponent->WorldBounds = WorldBounds;
-    NewPrimitiveComponent->DuplicateSubObjects();
-
-    return (NewPrimitiveComponent);
+    Super::DuplicateSubObjects();
+    BVHIndex = -1;
+    SceneIndex = -1;
+    bBoundDirtyQueued = false;
 }
 
 void UPrimitiveComponent::UpdateMaterialCache()

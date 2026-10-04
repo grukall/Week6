@@ -64,7 +64,16 @@ void UEngine::Init(HWND Window)
 }
 
 void UEngine::Tick(float DeltaTime)
-{}
+{
+	for (FWorldContext& WorldContext : WorldContexts)
+	{
+		UWorld* World = WorldContext.World;
+		if (World && WorldContext.WorldType == EWorldType::Game)
+		{
+			World->Tick(FTimeManager::GetDeltaTime());
+		}
+	}
+}
 
 void UEngine::Exit()
 {

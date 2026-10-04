@@ -1,7 +1,7 @@
 #pragma once
 
 #include "UObject.h"
-#include "Runtime/Core/TArray.h"
+#include "Runtime/Core/TSparseArray.h"
 #include "Runtime/Core/IntTypes.h"
 #include <utility>
 
@@ -15,11 +15,9 @@ public:
 		return Instance;
 	}
 
-	void SetNextUUID(uint32 UUID);
-	[[nodiscard]] uint32 GetNextUUID() const { return NextUUID; }
-	[[nodiscard]] uint32 GetNumObjects() const { return static_cast<uint32>(Objects.size()); }
+	[[nodiscard]] uint32 GetNumObjects() const { return Objects.Num(); }
 	[[nodiscard]] UObject* GetObjectByIndex(uint32 Index) const { return Objects[Index]; }
-	[[nodiscard]] bool IsValid(const UObject* Object, uint32 UUID) const;
+	[[nodiscard]] bool IsValid(uint32 Index, uint32 UUID) const;
 
 	FUObjectArray(const FUObjectArray&) = delete;
 	FUObjectArray& operator=(const FUObjectArray&) = delete;
@@ -27,22 +25,10 @@ public:
 	FUObjectArray(FUObjectArray&&) = delete;
 	FUObjectArray& operator=(FUObjectArray&&) = delete;
 
-	class TIterator
-	{
-	public:
-		explicit TIterator( uint32 InIndex) : Index(InIndex) {}
-		TIterator& operator++() { ++Index; return *this;}
-		TIterator operator++(int) { TIterator Temp = *this; ++Index; return Temp; }
-		bool operator==(const TIterator& Other) const { return Index == Other.Index; }
-		bool operator!=(const TIterator& Other) const { return Index != Other.Index; }
-		UObject* operator*() const { return FUObjectArray::Get().GetObjectByIndex(Index); }
-		UObject* operator->() const { return FUObjectArray::Get().GetObjectByIndex(Index); }
-	private:
-		uint32 Index;
-	};
-
-	TIterator begin() { return TIterator(0); }
-	TIterator end() { return TIterator( GetNumObjects());} 
+	// 사용 중인 슬롯만 순회한다 (빈 슬롯은 TSparseArray 이터레이터가 건너뜀)
+	using TIterator = TSparseArray<UObject*>::Iterator;
+	TIterator begin() { return Objects.begin(); }
+	TIterator end() { return Objects.end(); }
 
 private:
 	FUObjectArray() = default;
@@ -53,7 +39,7 @@ private:
 
 	[[nodiscard]] uint32 AcquireUUID() { return NextUUID++; }
 
-	TArray<UObject*> Objects;
+	TSparseArray<UObject*> Objects;
 	uint32 NextUUID = 1u;
 
 	template <typename TObject, typename ... TArgs>

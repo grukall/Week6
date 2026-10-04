@@ -51,17 +51,6 @@ void FEditor::Process()
         UnSelectActor();
         Target->Destroy();
     }
-    
-
-    //TODO : 활성화된 모든 World를 순회하며 또 활성화된 모든 Level을 순회하며, 그 Level의 모든 Actor를 순회하며 Tick을 호출해야함.
-    for (FWorldContext &WorldContext : EditorEngine->WorldContexts)
-    {
-        UWorld* World = WorldContext.World;
-        if (World && WorldContext.WorldType == EWorldType::Game)
-        {
-            World->Tick(FTimeManager::GetDeltaTime());
-        }
-    }
 
     // 선택된 액터는 에디터 월드에 속하므로 현재 월드의 BVH만 갱신한다.
     if (SelectedActor)
@@ -252,8 +241,6 @@ void FEditor::SpawnActorToCurrentScene(UClass* Type, int Size)
         CurrentTransform.SetScale3D(FVector{ 0.5f, 0.5f, 0.5f });
         NewActor->SetTransform(CurrentTransform);
 
-        // 액터 시작 및 선택
-        NewActor->BeginPlay();
         SelectActor(NewActor);
     }
 

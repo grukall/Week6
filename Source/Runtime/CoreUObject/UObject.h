@@ -88,6 +88,8 @@ class UObject
 
 public:
 	[[nodiscard]] uint32 GetUUID() const { return UUID; }
+	// FUObjectArray 슬롯 번호. 객체가 살아 있는 동안 바뀌지 않는다. (약참조가 O(1) 검증에 사용)
+	[[nodiscard]] uint32 GetInternalIndex() const { return InternalIndex; }
 
 	UObject(const UObject&) = delete;
 	UObject& operator=(const UObject&) = delete;

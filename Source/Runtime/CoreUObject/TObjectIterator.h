@@ -54,8 +54,9 @@ private:
 	{
 		while (Iterator != FUObjectArray::Get().end()) 
 		{
+			// 빈 슬롯은 이터레이터가 건너뛰므로 Object는 항상 유효하다.
 			UObject* Object = *Iterator;
-			if (Object && Object->IsA(TObject::StaticClass()))
+			if (Object->IsA(TObject::StaticClass()))
 			{
 				return;
 			}

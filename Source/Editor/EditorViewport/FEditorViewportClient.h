@@ -54,6 +54,6 @@ public:
 
 	[[nodiscard]] bool IsFocused() const { return bFocused; }
 	[[nodiscard]] bool IsHovered() const { return bHovered; }
-	void Update();
+	void Tick();
 
 };

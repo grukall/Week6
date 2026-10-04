@@ -27,11 +27,15 @@ public:
 	virtual void Exit() override;
 
 	virtual void OnWindowResize(UINT Width, UINT Height) override;
-	virtual void Update(float DeltaTime) override;
+	virtual void Tick(float DeltaTime) override;
 	virtual void Render() override;
 	void ExecuteCommand(const char* Command);
+	[[nodiscard]] UWorld* GetEditorWorld() const { return CurrentWorld; }
 
 private:
+	//EWorldType::Editor
+	UWorld* EditorWorld;
+
 
 	FImguiEditorViewportWindow EditorViewportWindow;
 

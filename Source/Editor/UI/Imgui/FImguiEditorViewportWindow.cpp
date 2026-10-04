@@ -3,7 +3,8 @@
 #include "Runtime/CoreUObject/UPrimitiveComponent.h"
 #include "Runtime/Engine/FRayCastingManager.h"
 #include "Runtime/Engine/FSceneBVH.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/FScene.h"
+#include "Runtime/Engine/UWorld.h"
 #include "Runtime/Input/FInputManager.h"
 #include "Runtime/Math/FVector.h"
 #include "Runtime/Core/Log.h"
@@ -379,7 +380,14 @@ void FImguiEditorViewportWindow::HandlePicking(FEditor &Editor,
     FVector ImpactPoint;
     bool bHit = false;
 
-    UScene *PickScene = Editor.GetCurrentScene();
+	UWorld* World = Editor.GetCurrentWorld();
+	if (!World)
+	{
+		UE_LOG("[Picking] No world available for picking.");
+		return;
+	}
+
+    FScene *PickScene = World->GetScene();
 
     // 1) 마우스 화면 좌표 획득
     // 2) 화면 좌표 -> 월드 좌표로의 픽 레이(Pick Ray) 계산

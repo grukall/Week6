@@ -4,34 +4,41 @@
 #include "Runtime/CoreUObject/UObjectGlobals.h"
 #include "Runtime/CoreUObject/USceneComponent.h"
 #include "Runtime/Engine/FArchive.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/ULevel.h"
+#include "Runtime/Engine/UWorld.h"
 
 IMPLEMENT_UCLASS(AActor, UObject)
 
 void AActor::Initialize()
 {
 	Super::Initialize();
-	Owner = nullptr;
+	OwningLevel = nullptr;
+	RegisteredWorld = nullptr;
 	bHasBegunPlay = false;
 	bTickEnabled = false;
 }
 
+UWorld* AActor::GetWorld() const
+{
+	return OwningLevel ? OwningLevel->GetOwningWorld() : nullptr;
+}
+
 void AActor::Release()
 {
-	UScene* RegisteredScene = Owner;
 	if (bHasBegunPlay)
 	{
 		EndPlay();
 	}
 
-	if (Owner)
+	if (RegisteredWorld)
 	{
 		Unregister();
 	}
 
-	if (RegisteredScene)
+	// 등록 여부와 상관없이 소속 레벨의 목록에서 제외한다 (댕글링 포인터 방지).
+	if (OwningLevel)
 	{
-		RegisteredScene->RemoveActor(this);
+		OwningLevel->RemoveActor(this);
 	}
 
 	while (!AttachedComp.empty())
@@ -155,9 +162,9 @@ void AActor::SetRootComponent(USceneComponent* Component)
 	RootComponent->Initialize();
 	AttachedComp.push_back(RootComponent);
 
-	if (Owner)
+	if (RegisteredWorld)
 	{
-		RootComponent->Register(*Owner);
+		RootComponent->Register(RegisteredWorld);
 	}
 
 	if (bHasBegunPlay)
@@ -199,9 +206,9 @@ void AActor::AddComponent(USceneComponent* Addcomp)
 	AttachedComp.push_back(Addcomp);
 	Addcomp->Initialize();
 
-	if (Owner)
+	if (RegisteredWorld)
 	{
-		Addcomp->Register(*Owner);
+		Addcomp->Register(RegisteredWorld);
 	}
 
 	if (bHasBegunPlay)
@@ -210,30 +217,30 @@ void AActor::AddComponent(USceneComponent* Addcomp)
 	}
 }
 
-void AActor::Register(UScene& Scene)
+void AActor::Register(UWorld* World)
 {
-	if (Owner == &Scene)
+	if (RegisteredWorld == World)
 	{
 		return;
 	}
 
-	if (Owner)
+	if (RegisteredWorld)
 	{
 		Unregister();
 	}
 
-	Owner = &Scene;
+	RegisteredWorld = World;
 	for (USceneComponent* Component : AttachedComp)
 	{
 		if (Component)
 		{
-			Component->Register(Scene);
+			Component->Register(World);
 		}
 	}
 }
 
 void AActor::BeginPlay() {
-	if (!Owner || bHasBegunPlay)
+	if (!RegisteredWorld || bHasBegunPlay)
 	{
 		return;
 	}
@@ -248,7 +255,7 @@ void AActor::BeginPlay() {
 	}
 }
 
-void AActor::Update(float DeltaTime) {
+void AActor::Tick(float DeltaTime) {
 	if (!bTickEnabled || !bHasBegunPlay)
 	{
 		return;
@@ -258,7 +265,7 @@ void AActor::Update(float DeltaTime) {
 	{
 		if (Component && Component->IsTickEnabled())
 		{
-			Component->Update(DeltaTime);
+			Component->Tick(DeltaTime);
 		}
 	}
 }
@@ -285,7 +292,7 @@ void AActor::Unregister() {
 		EndPlay();
 	}
 
-	if (!Owner)
+	if (!RegisteredWorld)
 	{
 		return;
 	}
@@ -297,13 +304,13 @@ void AActor::Unregister() {
 			(*It)->Unregister();
 		}
 	}
-	Owner = nullptr;
+	RegisteredWorld = nullptr;
 }
 
 void AActor::Destroy() {
-	if (Owner)
+	if (UWorld* World = GetWorld())
 	{
-		Owner->DestroyActor(this);
+		World->DestroyActor(this);
 		return;
 	}
 	DestroyObject(this);

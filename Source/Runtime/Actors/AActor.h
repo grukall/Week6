@@ -6,14 +6,15 @@
 #include <type_traits>
 #include <concepts>
 
-class UScene;
+class UWorld;
+class ULevel;
 
 class AActor : public UObject
 {
 	DECLARE_UCLASS(AActor, UObject)
 	GENERATED_BODY()
 
-	friend class UScene;
+	friend class ULevel;
 
 protected:
 	USceneComponent* RootComponent = nullptr;
@@ -28,7 +29,10 @@ protected:
 public:
 	void Initialize() override;
 	void Release() override;
-	UScene* GetOwner() const { return Owner; }
+	// 이 액터가 속한 레벨 (로드/스폰 시 ULevel::AddActor가 설정. 등록 여부와 무관)
+	[[nodiscard]] ULevel* GetLevel() const { return OwningLevel; }
+	// 소속 레벨이 속한 월드. 레벨이 없으면 nullptr
+	[[nodiscard]] UWorld* GetWorld() const;
 
 	void CreateRootComponent(UClass* ClassType);
 
@@ -44,18 +48,19 @@ public:
 	void MarkComponentsTransformDirty();
 
 	void AddComponent(USceneComponent* Addcomp);
-	virtual void Register(UScene& Scene);
+	virtual void Register(UWorld *World);
 	virtual void BeginPlay();
-	virtual void Update(float DeltaTime);
+	virtual void Tick(float DeltaTime);
 	virtual void EndPlay();
 	virtual void Unregister();
 
-	[[nodiscard]] bool IsRegistered() const { return Owner != nullptr; }
+	[[nodiscard]] bool IsRegistered() const { return RegisteredWorld != nullptr; }
 	[[nodiscard]] bool HasBegunPlay() const { return bHasBegunPlay; }
 
 	void Destroy();
 
 private:
-	UScene* Owner = nullptr; // SpawnActor될 때 설정됨
+	ULevel* OwningLevel = nullptr;     // 소속 레벨 (ULevel::AddActor/RemoveActor가 관리)
+	UWorld* RegisteredWorld = nullptr; // Register된 월드 (컴포넌트가 FScene에 연결된 상태)
 	bool bHasBegunPlay = false;
 };

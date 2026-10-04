@@ -12,7 +12,7 @@ class AAppleBittenActor : public AActor
 public:
 	explicit AAppleBittenActor();
 
-	virtual void Update(float DeltaTime) override;
+	virtual void Tick(float DeltaTime) override;
 
 private:
 	UStaticMeshComponent* AppleStaticMeshComp;

@@ -12,7 +12,7 @@ class AAppleNormalActor : public AActor
 public:
 	explicit AAppleNormalActor();
 
-	virtual void Update(float DeltaTime) override;
+	virtual void Tick(float DeltaTime) override;
 
 private:
 	UStaticMeshComponent* AppleStaticMeshComp;

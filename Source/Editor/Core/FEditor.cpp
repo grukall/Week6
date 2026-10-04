@@ -1,10 +1,5 @@
 #include "FEditor.h"
 #include "Runtime/Actors/AActor.h"
-#include "Runtime/Actors/ACubeActor.h"
-#include "Runtime/Actors/ASphereActor.h"
-#include "Runtime/Actors/ACylinderActor.h"
-#include "Runtime/Actors/ABillboardActor.h"
-#include "Runtime/Actors/ASpotlightActor.h"
 #include "Runtime/CoreUObject/UObject.h"
 #include "Runtime/Engine/FTimeManager.h"
 #include "Runtime/Input/FInputManager.h"
@@ -12,9 +7,11 @@
 #include "Runtime/Math/Random.h"
 #include "Runtime/Asset/FAssetRegistry.h"
 #include <numbers>
-#include <Runtime/Engine/FSceneBVH.h>
+#include "Runtime/Engine/FSceneBVH.h"
+#include "Editor/Engine/UEditorEngine.h"
+#include "Runtime/Engine/UWorld.h"
 
-void FEditor::Initialize(USceneManager *SceneManager) {
+void FEditor::Initialize(UEditorEngine *Engine) {
   State.ReadFromFile();
   Gizmo.Initialize();
   SelectedActorTextComp = NewObject<UTextInstanceComponent>();
@@ -27,7 +24,8 @@ void FEditor::Initialize(USceneManager *SceneManager) {
     SelectedActorTextComp->SetMaterial(Registry.Get<UMaterial>("Material/SelectedActor_Text.json"));
     SelectedActorTextComp->SetFont(FName("bazziotf"));
   }
-  this->SceneManager = SceneManager;
+
+  this->EditorEngine = Engine;
 }
 
 void FEditor::Shutdown() {
@@ -39,14 +37,14 @@ FRenderResourceLibrary *FEditor::GetRendererLibrary() {
   return &FRenderResourceLibrary::Get();
 }
 
-void FEditor::Process() {
-  if (FInputManager::Get().IsKeyDown(VK_F11))
-  {
-    bZenMode = !bZenMode;
-  }
+void FEditor::Process()
+{
+    if (FInputManager::Get().IsKeyDown(VK_F11))
+    {
+        bZenMode = !bZenMode;
+    }
 
-  // 씬의 액터 업데이트
-  
+    // 씬의 액터 업데이트
     if (FInputManager::Get().IsKeyPressed(VK_DELETE) && SelectedActor)
     {
         AActor* Target = SelectedActor;
@@ -54,21 +52,33 @@ void FEditor::Process() {
         Target->Destroy();
     }
     
-  if (SceneManager && SceneManager->CurrentScene) {
-    SceneManager->CurrentScene->Update(FTimeManager::GetDeltaTime());
-  }
 
-  if (SelectedActor) {
-    USceneComponent* Root = SelectedActor->GetRootComponent();
-    const bool bChanged = Root && !(Root->GetRelativeTransform() == SelectedTransform);
-    
-    SelectedActor->SetTransform(SelectedTransform);
-
-    // Transform이 변경되었을 때만 Refit
-    if (bChanged && SceneManager && SceneManager->CurrentScene) {
-        RefitActorInBVH(SceneManager->CurrentScene->GetSceneBVH(), SelectedActor);
+    //TODO : 활성화된 모든 World를 순회하며 또 활성화된 모든 Level을 순회하며, 그 Level의 모든 Actor를 순회하며 Tick을 호출해야함.
+    for (FWorldContext &WorldContext : EditorEngine->WorldContexts)
+    {
+        UWorld* World = WorldContext.World;
+        if (World && WorldContext.WorldType == EWorldType::Game)
+        {
+            World->Tick(FTimeManager::GetDeltaTime());
+        }
     }
-  }
+
+    // 선택된 액터는 에디터 월드에 속하므로 현재 월드의 BVH만 갱신한다.
+    if (SelectedActor)
+    {
+        UWorld* World = GetCurrentWorld();
+
+        USceneComponent* Root = SelectedActor->GetRootComponent();
+        const bool bChanged = Root && !(Root->GetRelativeTransform() == SelectedTransform);
+
+        SelectedActor->SetTransform(SelectedTransform);
+
+        // Transform이 변경되었을 때만 Refit
+        if (bChanged && World && World->GetScene())
+        {
+            RefitActorInBVH(World->GetScene()->GetSceneBVH(), SelectedActor);
+        }
+    }
 
   SaveState();
   State.Tick(FTimeManager::GetDeltaTime());
@@ -110,34 +120,32 @@ void FEditor::LoadState()
     
 }
 
-void FEditor::NewScene() {
+UWorld* FEditor::GetCurrentWorld() const {
+  return EditorEngine ? EditorEngine->GetEditorWorld() : nullptr;
+}
+
+void FEditor::NewMap() {
+  // 이전 월드가 파괴되기 전에 선택을 해제한다.
   UnSelectActor();
-  SceneManager->SetScene(NewObject<UScene>());
+  EditorEngine->NewMap(GetCurrentWorld(), EWorldType::Editor);
   State.ResetToDefaults();
   LoadState();
 }
 
-void FEditor::SaveScene(const FString &Path) { SceneManager->SaveScene(Path); }
-
-void FEditor::LoadScene(const FString &Path) 
+void FEditor::SaveMap(const FString &Path)
 {
-  // 씬 로드
-  FEditorViewportClient* Viewport = GetActiveViewport();
-  SceneManager->LoadScene(Path, Viewport ? &Viewport->ViewportCamera : nullptr);
-  SelectedActor = nullptr;
-
-  // 로드된 컴포넌트는 대기열에만 쌓이므로, 트랜스폼이 모두 설정된 지금 트리를 만든다.
-  if (SceneManager->CurrentScene)
-  {
-    UScene* Scene = SceneManager->CurrentScene;
-    Scene->GetSceneBVH().Build(Scene->GetRenderComponents());
+  if (UWorld* World = GetCurrentWorld()) {
+    EditorEngine->SaveMap(*World, Path);
   }
 }
 
-bool FEditor::CheckSceneExists() {
-  if (SceneManager->CurrentScene == nullptr)
-    return false;
-  return true;
+void FEditor::LoadMap(const FString &Path)
+{
+  // 이전 월드가 파괴되기 전에 선택을 해제한다.
+  UnSelectActor();
+
+  FEditorViewportClient* Viewport = GetActiveViewport();
+  EditorEngine->LoadMap(GetCurrentWorld(), Path, Viewport ? &Viewport->ViewportCamera : nullptr);
 }
 
 void FEditor::AddViewport(FEditorViewportClient Viewport) {
@@ -198,10 +206,11 @@ void FEditor::UnSelectActor() {
 
 const TArray<UPrimitiveComponent *> &FEditor::GetPrimitiveComponents() const {
     static const TArray<UPrimitiveComponent*> Empty;
-  if (!SceneManager || !SceneManager->CurrentScene) {
+  UWorld* World = GetCurrentWorld();
+  if (!World || !World->GetScene()) {
     return Empty;
   }
-  return SceneManager->CurrentScene->GetRenderComponents();
+  return World->GetScene()->GetPrimitives();
 }
 
 void FEditor::ClearSelectionForGC() {
@@ -210,8 +219,12 @@ void FEditor::ClearSelectionForGC() {
   Gizmo.HoveredHandle = EGizmoHandle::None;
 }
 
-void FEditor::SpawnActorToCurrentScene(UClass* Type, int Size) {
-    if (!SceneManager || !SceneManager->CurrentScene) {
+void FEditor::SpawnActorToCurrentScene(UClass* Type, int Size)
+{
+    UWorld* World = GetCurrentWorld();
+    FScene* Scene = World ? World->GetScene() : nullptr;
+    if (!Scene)
+    {
         return;
     }
 
@@ -230,7 +243,7 @@ void FEditor::SpawnActorToCurrentScene(UClass* Type, int Size) {
             Random::GetFloat(Min, Max, 2),
         };
 
-        AActor* NewActor = SceneManager->CurrentScene->SpawnActor(Type);
+        AActor* NewActor = World->SpawnActor(Type);
         if (!NewActor) { return; }
 
 
@@ -244,10 +257,10 @@ void FEditor::SpawnActorToCurrentScene(UClass* Type, int Size) {
         SelectActor(NewActor);
     }
 
-    FSceneBVH& BVH = SceneManager->CurrentScene->GetSceneBVH();
+    FSceneBVH& BVH = Scene->GetSceneBVH();
     if (BVH.ShouldRebuild())
     {
-        BVH.Build(SceneManager->CurrentScene->GetRenderComponents());
+        BVH.Build(Scene->GetPrimitives());
     }
 }
 

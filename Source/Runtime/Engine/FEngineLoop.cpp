@@ -36,8 +36,8 @@ void FEngineLoop::Tick()
 		}
 
 		// 시간 업데이트
-		FTimeManager::Update();
-		Engine->Tick(FTimeManager::GetDeltaTime());
+		FTimeManager::Tick();
+		Engine->Update(FTimeManager::GetDeltaTime());
 
 	}
 }

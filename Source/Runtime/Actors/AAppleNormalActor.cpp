@@ -17,7 +17,7 @@ AAppleNormalActor::AAppleNormalActor()
 	AppleStaticMeshComp->SetMesh(Registry.Get<UStaticMesh>("StaticMesh/JungleApple/Apple_Normal.json"));
 }
 
-void AAppleNormalActor::Update(float DeltaTime)
+void AAppleNormalActor::Tick(float DeltaTime)
 {
-	Super::Update(DeltaTime);
+	Super::Tick(DeltaTime);
 }

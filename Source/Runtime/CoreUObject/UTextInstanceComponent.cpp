@@ -1,7 +1,7 @@
 #include "UTextInstanceComponent.h"
 #include "Runtime/Asset/UFont.h"
 #include "Runtime/Engine/FArchive.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/FScene.h"
 #include "Runtime/Rendering/FRenderResourceLibrary.h"
 #include "Runtime/Rendering/FRenderer.h"
 #include "Runtime/Rendering/ShaderConstants.h"
@@ -49,7 +49,7 @@ void UTextInstanceComponent::Initialize() {
   RebuildTextMesh();
 }
 
-void UTextInstanceComponent::Update(float delta) {}
+void UTextInstanceComponent::Tick(float delta) {}
 
 void UTextInstanceComponent::SetText(const FWString &InText) {
   Text = InText;

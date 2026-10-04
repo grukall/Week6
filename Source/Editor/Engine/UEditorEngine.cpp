@@ -1,9 +1,6 @@
 
 
 #include "UEditorEngine.h"
-#include "Runtime/CoreUObject/UObjectGlobals.h"
-#include "Runtime/Engine/USceneManager.h"
-#include "Runtime/Engine/UScene.h"
 #include "Runtime/Rendering/FRenderer.h"
 #include <Windows.h>
 #include <Runtime/Core/PointerTypes.h>
@@ -23,15 +20,23 @@ void UEditorEngine::Init(HWND Window)
 	ObjViewer = MakeUnique<FObjViewerApplication>(Renderer);
 	ObjViewer->Initialize(Window, Device, Context);
 #else
-	// 새씬 생성
-	SceneManager.SetScene(NewObject<UScene>());
-	
+	// 새 빈 월드 생성, TODO : 
+    UWorld* World = NewObject<UWorld>();
+    World->Initialize();
+    if (ULevel* Level = World->GetPersistentLevel())
+    {
+        Level->Activate();
+    }
+
+    CreateWorldContext(EWorldType::Editor, World);
+    CurrentWorld = World;
+
 	ID3D11Device* Device = nullptr;
 	ID3D11DeviceContext* Context = nullptr;
 	Renderer.GetDeviceAndContext_ImplDX11(Device, Context);
 	ImguiManager.Initialize_ImplWin32DX11(Window, Device, Context);
 
-	Editor.Initialize(&SceneManager);
+	Editor.Initialize(this);
 	Editor.InitMultiViewport(FEditorViewportClient{});
 	Editor.LoadState();
 	Editor.SetViewLayout(Editor.State.GetSplitMode());
@@ -72,9 +77,9 @@ void UEditorEngine::OnWindowResize(UINT Width, UINT Height)
 #endif
 }
 
-void UEditorEngine::Update(float DeltaTime)
+void UEditorEngine::Tick(float DeltaTime)
 {
-	Super::Update(DeltaTime);
+	Super::Tick(DeltaTime);
 
 #ifdef _OBJVIEWER
 	ObjViewer->Update(DeltaTime);
@@ -107,7 +112,10 @@ void UEditorEngine::Render()
         //컬링 준비 시간 기록?
         // 
         //이동한 오브젝트는 월드 AABB 재계산
-        SceneManager.CurrentScene->UpdateDirtyBounds();
+        for (FWorldContext& WorldContext : WorldContexts)
+        {
+            WorldContext.World->GetScene()->UpdateDirtyBounds();
+        }
     }
 
     //Active인 ViewportClient만 렌더링
@@ -143,7 +151,10 @@ void UEditorEngine::Render()
         }
 
         // 뷰포트 렌더링 일괄 수행
-        RenderView.RenderView(sceneview, *SceneManager.CurrentScene, EditorCtx);
+        if (UWorld* EditorWorld = GetEditorWorld())
+        {
+            RenderView.RenderView(sceneview, *EditorWorld->GetScene(), EditorCtx);
+        }
 
     }
 

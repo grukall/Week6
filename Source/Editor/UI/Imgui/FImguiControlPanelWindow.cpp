@@ -8,7 +8,7 @@
 #include "Runtime/Core/FString.h"
 #include "Runtime/Engine/ShowFlags.h"
 #include "Runtime/Engine/FRayCastingManager.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/FScene.h"
 #include "Runtime/CoreUObject/FStatsManager.h"
 #include "Runtime/CoreUObject/UPrimitiveComponent.h"
 #include <algorithm>
@@ -35,7 +35,7 @@ void FImguiControlPanelWindow::Process(FEditor& Editor)
 
     if (ImGui::Button("대회 씬 바로 불러오기"))
     {
-        Editor.LoadScene("DefaultScene/Default.scene");
+        Editor.LoadMap("DefaultScene/Default.scene");
     }
 
     //액터 스폰
@@ -188,7 +188,10 @@ void FImguiControlPanelWindow::RunPickBenchmark(FEditor& Editor, int Iterations)
 {
     if (!FRayCastingManager::bHasLastPickRay || Iterations <= 0) { return; }
 
-    UScene* Scene = Editor.GetCurrentScene();
+	UWorld* World = Editor.GetCurrentWorld();
+	if (!World) { return; }
+
+	FScene* Scene =World->GetScene();
     FEditorViewportClient* Viewport = Editor.GetActiveViewport();
     const bool bUseBVH = Editor.bUseBVHPicking && Scene;
     if (!bUseBVH && !Viewport) { return; }

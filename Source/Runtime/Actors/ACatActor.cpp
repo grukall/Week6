@@ -24,9 +24,9 @@ void ACatActor::Initialize()
 	bTickEnabled = true;
 }
 
-void ACatActor::Update(float DeltaTime)
+void ACatActor::Tick(float DeltaTime)
 {
-	Super::Update(DeltaTime);
+	Super::Tick(DeltaTime);
 	ElapsedTime += DeltaTime;
 
 	if (ElapsedTime >= SpinRate)

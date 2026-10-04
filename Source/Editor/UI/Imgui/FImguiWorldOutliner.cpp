@@ -2,10 +2,12 @@
 #include "Runtime/Actors/AActor.h"
 #include "Runtime/CoreUObject/UClass.h"
 #include "Runtime/CoreUObject/USceneComponent.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/ULevel.h"
 #include "ThirdParty/Imgui/imgui.h"
 #include <string>
 #include <algorithm>
+#include <Runtime/Engine/UWorld.h>
+#include <Runtime/Core/TArray.h>
 
 void FImguiWorldOutliner::Process(FEditor& Editor)
 {
@@ -16,10 +18,10 @@ void FImguiWorldOutliner::Process(FEditor& Editor)
 
 	ImGui::Begin("World Outliner");
 
-	UScene* Scene = Editor.GetCurrentScene();
-	if (!Scene)
+	UWorld* CurrentWorld = Editor.GetCurrentWorld();
+	if (!CurrentWorld)
 	{
-		ImGui::TextDisabled("No Active Scene");
+		ImGui::TextDisabled("No Current World");
 		ImGui::End();
 		return;
 	}
@@ -36,19 +38,19 @@ void FImguiWorldOutliner::Process(FEditor& Editor)
 	const bool bFilterChanged = ShowSearchBar();
 	ImGui::Separator();
 
-	auto& Actors = Scene->GetActors();
+	auto Actors = CurrentWorld->GetActors();
 	AActor* SelectedActor = Editor.GetSelectedActor();
 	// 액터 목록 표시
 	ImGui::BeginChild("ActorList", ImVec2(0.0f, -ImGui::GetFrameHeightWithSpacing()), false);
 
 	if (bUseOptimized)
 	{
-		if (bCacheDirty || Scene != LastScene || Actors.size() != LastActorCount)
+		if (bCacheDirty || CurrentWorld != LastWorld || Actors->size() != LastActorCount)
 		{
-			RefreshCache(Scene);
+			RefreshCache(CurrentWorld);
 			UpdateFilter(CurrentFilterStr.c_str());
 			RebuildDisplayList();
-			LastScene = Scene;
+			LastWorld = CurrentWorld;
 			bDisplayListDirty = false;
 		}
 		else if (bFilterChanged || bDisplayListDirty)
@@ -74,15 +76,14 @@ void FImguiWorldOutliner::Process(FEditor& Editor)
 	}
 	else
 	{
-		for (AActor* Actor : Actors)
+		CurrentWorld->ForEachActors([&](AActor* Actor)
 		{
 			if (!Actor)
 			{
-				continue;
+				return;
 			}
-			//액터 노드 표시
 			ShowActorNode(Editor, Actor, CurrentFilterStr.c_str(), SelectedActor);
-		}
+		});
 	}
 
 	ImGui::EndChild();
@@ -108,32 +109,31 @@ void FImguiWorldOutliner::Process(FEditor& Editor)
 	ImGui::End();
 }
 
-void FImguiWorldOutliner::RefreshCache(UScene* Scene)
+void FImguiWorldOutliner::RefreshCache(UWorld* World)
 {
 	CachedActors.clear();
-	const auto& Actors = Scene->GetActors();
-	CachedActors.reserve(Actors.size());
+	size_t ActorCount = World->GetAllActorsCount();
+	CachedActors.reserve(ActorCount);
+	World->ForEachActors([&](AActor* Actor)
+		{
+			if (!Actor) { return; }
 
-	for (AActor* Actor : Actors)
-	{
-		if (!Actor) { continue; }
+			FOutlinerItem Item;
+			Item.Type = EOutlinerItemRowType::Actor;
+			Item.Actor = Actor;
+			Item.UUID = Actor->GetUUID();
 
-		FOutlinerItem Item;
-		Item.Type = EOutlinerItemRowType::Actor;
-		Item.Actor = Actor;
-		Item.UUID = Actor->GetUUID();
+			const char* ClassName = Actor->GetClass() ? Actor->GetClass()->GetDisplayName().c_str() : "Actor";
+			Item.DisplayLabel = FString(ClassName) + " (ID: " + std::to_string(Item.UUID) + ")";
 
-		const char* ClassName = Actor->GetClass() ? Actor->GetClass()->GetDisplayName().c_str() : "Actor";
-		Item.DisplayLabel = FString(ClassName) + " (ID: " + std::to_string(Item.UUID) + ")";
+			Item.LowerLabel = Item.DisplayLabel;
+			std::transform(Item.LowerLabel.begin(), Item.LowerLabel.end(), Item.LowerLabel.begin(),
+				[](unsigned char c) { return static_cast<char>(::tolower(c)); });
 
-		Item.LowerLabel = Item.DisplayLabel;
-		std::transform(Item.LowerLabel.begin(), Item.LowerLabel.end(), Item.LowerLabel.begin(),
-			[](unsigned char c) { return static_cast<char>(::tolower(c)); });
+			CachedActors.push_back(std::move(Item));
+		});
 
-		CachedActors.push_back(std::move(Item));
-	}
-
-	LastActorCount = Actors.size();
+	LastActorCount = ActorCount;
 	bCacheDirty = false;
 }
 

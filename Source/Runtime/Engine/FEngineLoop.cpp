@@ -19,10 +19,11 @@ void FEngineLoop::Init(HINSTANCE Instance)
 		.Height = Globals::WindowHeight,
 	});
 
+	FMemory::Init();
 	// 엔진 객체 초기화
-	Engine = MakeUnique<UEditorEngine>(*this);
+	Engine = NewObject<UEditorEngine>();
 
-	Engine->Init();
+	Engine->Init(*this);
 }
 
 void FEngineLoop::Tick()
@@ -47,6 +48,8 @@ void FEngineLoop::Exit()
 {
 	// 엔진 종료
 	Engine->Exit();
+	DestroyObject(Engine);
+	Engine = nullptr;
 
 	// 윈도우 객체 종료
 	WindowsApplication->Quit();

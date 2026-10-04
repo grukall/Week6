@@ -8,69 +8,42 @@
 #include "Runtime/CoreUObject/UWorld.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
 #include "Runtime/Engine/FScene.h"
+#include "Runtime/CoreUObject/UEngine.h"
 
 class FEngineLoop;
 class FCamera;
 
-struct FWorldContext
-{
-	EWorldType WorldType = None;
-
-	UWorld* World() const
-	{
-		return ThisCurrentWorld; 
-	}
-
-	void    SetCurrentWorld(UWorld* World)
-	{
-		ThisCurrentWorld = World;
-	}
-
-	UWorld* GetCurrentWorld() const
-	{
-		return (ThisCurrentWorld);
-	}
-
-	void    SetCurrentWorldType(EWorldType InWorldType)
-	{
-		WorldType = InWorldType;
-	}
-
-private:
-	UWorld* ThisCurrentWorld = nullptr;
-};
 
 // 엔진의 런타임 계층을 담당하는 클래스
 // 엔진 로직, 시스템을 처리하는 부분은 여기서 담당
-class UEditorEngine// : public UObject 할거 다하고 이거 수정
+class UEditorEngine : public UEngine
 {
-	//GENERATED_BODY()
-	//DECLARE_UCLASS(UEditorEngine, UObject)
+	GENERATED_BODY()
+	DECLARE_UCLASS_NO_COPY(UEditorEngine, UEngine)
 
 private:
 	FRenderer Renderer;
 	FRenderView RenderView{ Renderer };
-	FEngineLoop& EngineLoop;
+	FEngineLoop* EngineLoop = nullptr;
 	TUniquePtr<IApplication> Application;
-	TArray<FWorldContext> WorldContexts;
+
+
+protected:
+	UEditorEngine() = default;
 
 public:
-	UEditorEngine(FEngineLoop& InEngineLoop)
-		: EngineLoop{ InEngineLoop }
-	{
-	}
+	void Init(FEngineLoop& InEngineLoop) override;
+	void Tick(float DeltaTime) override;
+	void Exit() override;
+	void Release() override;
 
-	void Init();
-	void Tick(float DeltaTime);
-	void Exit();
-	const FWorldContext* GetWorldContextFromWorld(UWorld* InWorld) const;
 	FWorldContext& GetEditorWorldContext(bool bEnsureIsGWorld = false);
 
 	void SaveWorld(const FString& path) const;
 	void LoadWorld(const FString& path, FCamera* OutCamera = nullptr);
 	void SetWorld(UWorld* InWorld, EWorldType InWorldType);
-	void AddWorld(UWorld* InWorld, EWorldType InWorldType);
-	void Release();
+	void DestroyWorlds();
+	
 
 	void StartPIE();
 	void EndPIE();

@@ -6,7 +6,7 @@ class AActor;
 class UWorld;
 
 class ULevel final : public UObject {
-    DECLARE_UCLASS(ULevel, UObject)
+    DECLARE_UCLASS_NO_COPY(ULevel, UObject)
     GENERATED_BODY()
 
 public:

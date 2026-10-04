@@ -2,6 +2,7 @@
 #include "UClass.h"
 #include "Runtime/Core/IntTypes.h"
 #include "ThirdParty/Json/json.hpp"
+#include "Runtime/Utility/EngineUtil.h"
 #include <cstddef>
 #include <new>
 #include <concepts>
@@ -58,25 +59,45 @@ UClass* ClassName::GetClass() const		{ return StaticClass(); }												\
 
 
 
-#define DECLARE_UCLASS(ClassName, ParentClass)	\
+#define DECLARE_UCLASS_COMMON(ClassName, ParentClass)\
 public:											\
 	UClass* GetClass() const override;			\
     static UClass* StaticClass();				\
     using Super = ParentClass;					\
 												\
-protected:										\
-	ClassName(const ClassName&) = default;		\
-	UObject* CreateCopy() const override;		\
-												\
 private:										\
     static UObject* CreateObject();				\
 	static inline UClass* ClassInfo = UClass::RegisterToFactory(#ClassName, &ClassName::CreateObject, #ParentClass);	\
 
-#define IMPLEMENT_UCLASS(ClassName, ParentClass)																			\
-UObject* ClassName::CreateObject()		{ return NewObject<ClassName>(); }													\
-UObject* ClassName::CreateCopy() const	{ return NewObject<ClassName>(*this); }												\
-UClass* ClassName::StaticClass()		{ return ClassInfo; }																\
-UClass* ClassName::GetClass() const		{ return StaticClass(); }															\
+
+#define DECLARE_UCLASS(ClassName, ParentClass)	\
+protected:										\
+	ClassName(const ClassName&) = default;		\
+	UObject* CreateCopy() const override;		\
+												\
+DECLARE_UCLASS_COMMON(ClassName, ParentClass)	\
+
+#define DECLARE_UCLASS_NO_COPY(ClassName, ParentClass)	\
+protected:										\
+	ClassName(const ClassName&) = delete;		\
+	UObject* CreateCopy() const override;		\
+												\
+DECLARE_UCLASS_COMMON(ClassName, ParentClass)	\
+
+
+#define IMPLEMENT_UCLASS_COMMON(ClassName, ParentClass)							\
+UObject* ClassName::CreateObject()		{ return NewObject<ClassName>(); }		\
+UClass* ClassName::StaticClass()		{ return ClassInfo; }					\
+UClass* ClassName::GetClass() const		{ return StaticClass(); }				\
+																				
+#define IMPLEMENT_UCLASS(ClassName, ParentClass)								\
+UObject* ClassName::CreateCopy() const	{ return NewObject<ClassName>(*this); }	\
+IMPLEMENT_UCLASS_COMMON	(ClassName, ParentClass)								\
+
+#define IMPLEMENT_UCLASS_NO_COPY(ClassName, ParentClass)						\
+UObject* ClassName::CreateCopy() const	{ throw EngineUtil::CreateError("{}는 복제할 수 없습니다." , #ClassName);}	\
+IMPLEMENT_UCLASS_COMMON	(ClassName, ParentClass)								\
+
 
 #define UCLASS_META(ClassName, Key, Value)					\
 struct _MetaRegister_##ClassName##_##Key					\

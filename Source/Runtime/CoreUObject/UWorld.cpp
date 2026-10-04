@@ -4,7 +4,7 @@
 #include "Runtime/CoreUObject/UObjectGlobals.h"
 #include "Runtime/Engine/FScene.h"
 
-IMPLEMENT_UCLASS(UWorld, UObject)
+IMPLEMENT_UCLASS_NO_COPY(UWorld, UObject)
 
 
 void UWorld::InitializeActorsForPlay()

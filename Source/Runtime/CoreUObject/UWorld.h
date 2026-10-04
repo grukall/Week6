@@ -17,7 +17,7 @@ enum EWorldType
 };
 
 class UWorld final : public UObject {
-    DECLARE_UCLASS(UWorld, UObject)
+    DECLARE_UCLASS_NO_COPY(UWorld, UObject)
     GENERATED_BODY()
 
 public:

@@ -4,7 +4,7 @@
 #include "Runtime/CoreUObject/UWorld.h"
 
 
-IMPLEMENT_UCLASS(ULevel, UObject)
+IMPLEMENT_UCLASS_NO_COPY(ULevel, UObject)
 
 void ULevel::RemoveActor(AActor* Actor) { std::erase(Actors, Actor); }
 void ULevel::AddActor(AActor* Actor) { Actors.push_back(Actor); }

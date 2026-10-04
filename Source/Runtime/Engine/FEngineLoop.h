@@ -14,7 +14,7 @@ private:
 
 	TUniquePtr<FWindowsApplication> WindowsApplication;
 
-	TUniquePtr<UEditorEngine> Engine{ nullptr };
+	UEditorEngine* Engine{ nullptr };
 
 public:
 

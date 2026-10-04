@@ -30,16 +30,18 @@
 #include <Windows.h>
 #include <cassert>
 
-void UEditorEngine::Init()
+IMPLEMENT_UCLASS_NO_COPY(UEditorEngine, UEngine)
+
+void UEditorEngine::Init(FEngineLoop& InEngineLoop)
 {
+	EngineLoop = &InEngineLoop;
 	Globals::GEditor = this;
-	HWND Window = EngineLoop.GetMainWindowHandle();
+	HWND Window = EngineLoop->GetMainWindowHandle();
 	if (!Renderer.Initialize(Window))
 	{
 		throw EngineUtil::CreateError("FRenderer 초기화에 실패했습니다.");
 	}
 	FStatsManager::Get().Initialize(Renderer.GetDevice());
-	FMemory::Init();
 
 	FRenderResourceLibrary& RenderResources = FRenderResourceLibrary::Get();
 	if (!RenderResources.Initialize(Renderer))
@@ -145,6 +147,29 @@ void UEditorEngine::Tick(float DeltaTime)
 	FInputLatencyTimer::Get().Tick();
 }
 
+void UEditorEngine::DestroyWorlds()
+{
+	for (const FWorldContext& WorldContext : WorldContexts)
+	{
+		UWorld* World = WorldContext.GetCurrentWorld();
+		if (World)
+		{
+			if (World == Globals::GWorld)
+			{
+				Globals::GWorld = nullptr;
+			}
+			DestroyObject(World);
+		}
+	}
+	WorldContexts.clear();
+
+	if (Globals::GWorld)
+	{
+		DestroyObject(Globals::GWorld);
+		Globals::GWorld = nullptr;
+	}
+}
+
 void UEditorEngine::Exit()
 {
 
@@ -154,24 +179,9 @@ void UEditorEngine::Exit()
 //	SceneManager.Release();
 //#endif
 	Application.Reset();
-
+	DestroyWorlds();
 	Renderer.Shutdown();
 
-}
-
-const FWorldContext* UEditorEngine::GetWorldContextFromWorld(UWorld* InWorld) const
-{ 
-	if (InWorld == nullptr)
-		return (nullptr);
-
-	for (const FWorldContext& WorldContext : WorldContexts)
-	{
-		if (WorldContext.GetCurrentWorld() && WorldContext.GetCurrentWorld() == InWorld)
-		{
-			return (&WorldContext);
-		}
-	}
-	return (nullptr);
 }
 
 FWorldContext& UEditorEngine::GetEditorWorldContext(bool bEnsureIsGWorld)
@@ -292,32 +302,9 @@ void UEditorEngine::SetWorld(UWorld* InWorld, EWorldType InWorldType)
 	Globals::GEditor->AddWorld(Globals::GWorld, EWorldType::Editor);
 }
 
-void UEditorEngine::AddWorld(UWorld* InWorld, EWorldType InWorldType)
-{
-	FWorldContext WorldContext;
-	WorldContext.SetCurrentWorld(InWorld);
-	WorldContext.SetCurrentWorldType(InWorldType);
-	WorldContexts.push_back(WorldContext);
-}
 
 void UEditorEngine::Release()
 {
-	for (const FWorldContext& WorldContext : WorldContexts)
-	{
-		UWorld* World = WorldContext.GetCurrentWorld();
-		if (World)
-		{
-			if (World == Globals::GWorld)
-			{
-				Globals::GWorld = nullptr;
-			}
-			DestroyObject(World);
-		}
-	}
-
-	if (Globals::GWorld)
-	{
-		DestroyObject(Globals::GWorld);
-		Globals::GWorld = nullptr;
-	}
+	Super::Release();
+	
 }

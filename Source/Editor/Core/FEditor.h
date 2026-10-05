@@ -5,15 +5,16 @@
 #include "Editor/Core/FEditorState.h"
 #include "Runtime/Core/IntTypes.h"
 #include "Runtime/Core/TArray.h"
-#include "Runtime/CoreUObject/UObject.h"
 #include "Runtime/CoreUObject/TWeakObjectPtr.h"
 #include "Runtime/Actors/AActor.h"
 #include "Runtime/Rendering/ShaderConstants.h"
 #include "Runtime/CoreUObject/UTextInstanceComponent.h"
 #include "Runtime/UI/SSplitter.h"
+#include "Runtime/Slate/FViewport.h"
+#include "Runtime/Engine/UWorld.h"
 
 class UEditorEngine;
-class UWorld;
+class UEngine;
 
 enum class EEditorPrimitiveType : uint8 {
   Cube,
@@ -21,6 +22,24 @@ enum class EEditorPrimitiveType : uint8 {
   Sphere,
   Billboard,
   Spotlight,
+};
+
+// Viewport와 Client는 서로의 주소를 가리키므로 엔트리의 주소가 바뀌면 안 된다.
+// 복사/이동을 막고 FEditor는 TUniquePtr로만 들고 있는다.
+struct FEditorViewportEntry {
+
+    // Viewport보다 먼저 선언해야 소멸 순서(역순)상 Viewport가 먼저 정리되어
+    // Viewport의 소멸자가 살아있는 Client를 상대로 연결을 해제할 수 있다.
+    FEditorViewportClient Client;
+    FViewport Viewport;
+
+    explicit FEditorViewportEntry(UEngine* Engine, FWorldContext &Context) : Client(Engine, Context.ContextId)
+    {
+        Viewport.SetViewportClient(&Client);
+    }
+
+    FEditorViewportEntry(const FEditorViewportEntry&) = delete;
+    FEditorViewportEntry& operator=(const FEditorViewportEntry&) = delete;
 };
 
 class FEditor {
@@ -64,11 +83,13 @@ public:
   void SaveMap(const FString &Path);
   void LoadMap(const FString &Path);
 
-  void AddViewport(FEditorViewportClient Viewport);
-  void InitMultiViewport(FEditorViewportClient Viewport);
+  void AddViewport(UEngine* Engine, FWorldContext& Context);
+  void InitMultiViewport(UEngine* Engine, FWorldContext& Context);
   void ResizeView(FEditorState::SplitViewMode mode);
   void DeleteViewport(int32 IndexOfViewport);
-  FEditorViewportClient* GetActiveViewport(); // 임시로 0번 반환
+  FEditorViewportEntry* GetActiveViewport();
+  // 활성 뷰포트의 Client만 필요한 곳(카메라, 뷰모드 등)에서 쓴다.
+  FEditorViewportClient* GetActiveViewportClient();
 
   void UpdateCamera();
 
@@ -78,7 +99,7 @@ public:
   [[nodiscard]] bool ActorSelected() const { return SelectedActor.IsValid(); }
   [[nodiscard]] bool ObjectSelected() const { return SelectedActor.IsValid(); }
 
-  [[nodiscard]] TArray<FEditorViewportClient> &GetViewports() {return EditorViewports;}
+  [[nodiscard]] TArray<TUniquePtr<FEditorViewportEntry>> &GetViewports() {return  Entries;}
   void SpawnActorToCurrentScene(UClass* Type, int Count = 1);
   // 피킹 등에서 현재 씬의 렌더링 대상 컴포넌트가 필요할 때 사용
   [[nodiscard]] const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
@@ -102,7 +123,7 @@ public:
 
 private:
   UEditorEngine* EditorEngine = nullptr;
-  TArray<FEditorViewportClient> EditorViewports;
+  TArray<TUniquePtr<FEditorViewportEntry>> Entries;
   FGizmo Gizmo;
   TWeakObjectPtr<AActor> SelectedActor;
   TWeakObjectPtr<UTextInstanceComponent> SelectedActorTextComp;

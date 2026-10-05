@@ -74,15 +74,15 @@ void FEditor::Process()
 }
 
 void FEditor::SaveState() {
-  const FEditorViewportClient* Viewport = GetActiveViewport();
-  if (!Viewport) { return; }
+  const FEditorViewportEntry* Entry = GetActiveViewport();
+  if (!Entry) { return; }
 
-  const FCamera& Camera = Viewport->ViewportCamera;
+  const FCamera& Camera = Entry->Client.ViewportCamera;
   State.SetCameraLocation(Camera.GetPosition());
   State.SetCameraPitch(Camera.GetPitch());
   State.SetCameraYaw(Camera.GetYaw());
   State.SetCameraFOV(Camera.GetProjection().GetFOV());
-  State.SetGridCellSize(Viewport->GetGrid().GetCellSize());
+  State.SetGridCellSize(Entry->Client.GetGrid().GetCellSize());
   State.SetGizmoMode(static_cast<uint8>(Gizmo.Mode));
   State.SetGizmoSpace(static_cast<uint8>(Gizmo.GetSpace()));
   // 선택된 액터는 저장하지 않는다. 런타임 식별자는 실행마다 달라지므로 파일 사이에서 의미가 없다.
@@ -90,15 +90,15 @@ void FEditor::SaveState() {
 
 void FEditor::LoadState()
 {
-    FEditorViewportClient* Viewport = GetActiveViewport();
-    if (!Viewport) { return; }
+    FEditorViewportEntry *Entry = GetActiveViewport();
+    if (!Entry) { return; }
 
-    FCamera& Camera = Viewport->ViewportCamera;
+    FCamera& Camera = Entry->Client.ViewportCamera;
 
     Camera.SetPosition(State.GetCameraLocation());
     Camera.SetRotation(State.GetCameraPitch(), State.GetCameraYaw());
     Camera.SetFOV(State.GetCameraFOV());
-    Viewport->GetGrid().SetCellSize(State.GetGridCellSize());
+    Entry->Client.GetGrid().SetCellSize(State.GetGridCellSize());
     Gizmo.Mode = static_cast<EGizmoMode>(State.GetGizmoMode());
     Gizmo.SetGizmoSpace(static_cast<EGizmoSpace>(State.GetGizmoSpace()));
 
@@ -133,29 +133,32 @@ void FEditor::LoadMap(const FString &Path)
   // 이전 월드가 파괴되기 전에 선택을 해제한다.
   UnSelectActor();
 
-  FEditorViewportClient* Viewport = GetActiveViewport();
-  EditorEngine->LoadMap(GetCurrentWorld(), Path, Viewport ? &Viewport->ViewportCamera : nullptr);
+  FEditorViewportEntry* Entry = GetActiveViewport();
+  EditorEngine->LoadMap(GetCurrentWorld(), Path, Entry ? &Entry->Client.ViewportCamera : nullptr);
 }
 
-void FEditor::AddViewport(FEditorViewportClient Viewport) {
-  EditorViewports.push_back(Viewport);
+void FEditor::AddViewport(UEngine* Engine, FWorldContext& Context) {
+    Entries.push_back(MakeUnique<FEditorViewportEntry>(Engine, Context));
 }
-void FEditor::InitMultiViewport(FEditorViewportClient Viewport) {
-  EditorViewports.push_back(Viewport);
-  EditorViewports.push_back(Viewport);
-  EditorViewports.push_back(Viewport);
-  EditorViewports.push_back(Viewport);
-
+void FEditor::InitMultiViewport(UEngine* Engine, FWorldContext& Context) {
+    for (int32 i = 0; i < 4; ++i) {
+        AddViewport(Engine, Context);
+    }
 }
 void FEditor::DeleteViewport(int32 IndexOfViewport) {
-  EditorViewports.erase(EditorViewports.begin() + IndexOfViewport);
+   Entries.erase( Entries.begin() + IndexOfViewport);
 }
 
-FEditorViewportClient* FEditor::GetActiveViewport() {
-  if (EditorViewports.empty()) {
+FEditorViewportEntry* FEditor::GetActiveViewport() {
+  if ( Entries.empty()) {
     return nullptr;
   }
-  return &EditorViewports[ActiveViewportIndex];
+  return Entries[ActiveViewportIndex].get();
+}
+
+FEditorViewportClient* FEditor::GetActiveViewportClient() {
+  FEditorViewportEntry* Entry = GetActiveViewport();
+  return Entry ? &Entry->Client : nullptr;
 }
 
 bool FEditor::SelectActor(AActor *Actor) {
@@ -317,14 +320,14 @@ void FEditor::SetViewLayout(FEditorState::SplitViewMode mode) {
 
     auto SetPerspectiveView = [this](int32 ViewportIndex)
     {
-        FEditorViewportClient& Viewport = EditorViewports[ViewportIndex];
-        Viewport.eOrthogonalType = FEditorViewportClient::EOrthogonalType::PERSPECTIVE;
-        Viewport.ViewportCamera.SetProjectionType(EProjectionType::Perspective);
+        FEditorViewportEntry& Entry = *Entries[ViewportIndex];
+        Entry.Client.eOrthogonalType = FEditorViewportClient::EOrthogonalType::PERSPECTIVE;
+        Entry.Client.ViewportCamera.SetProjectionType(EProjectionType::Perspective);
     };
 
     auto SetOrthographicView = [this](int32 ViewportIndex, FEditorViewportClient::EOrthogonalType Type)
     {
-        EditorViewports[ViewportIndex].SetOrthograpihcView(Type);
+         Entries[ViewportIndex]->Client.SetOrthograpihcView(Type);
     };
 
     switch (mode)

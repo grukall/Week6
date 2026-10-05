@@ -41,6 +41,7 @@ public:
 	//인덱스 반환
 	int32 CreateWorldContext(EWorldType WorldType, UWorld* World);
 	void SetWorld(FWorldContext& WorldContext, UWorld *New);
+	UWorld* GetWorld(uint32 WorldContextId);
 
 	bool LoadMap(UWorld* World, const FString& Path, FCamera* OutLegacyCamera = nullptr);
 	bool LoadMap(FWorldContext& WorldContext, const FString& Path, FCamera* OutLegacyCamera = nullptr);

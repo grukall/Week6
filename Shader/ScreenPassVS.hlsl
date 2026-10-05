@@ -1,4 +1,3 @@
-
 struct VS_INPUT
 {
     uint InstanceID : SV_VertexID;
@@ -13,9 +12,9 @@ struct VS_OUTPUT
 VS_OUTPUT MainVS(VS_INPUT Input)
 {
     VS_OUTPUT output;
-    float2 dot0 = float2(0, 2);
-    float2 dot1 = float2(2, 2);
-    float2 dot2 = float2(0, 0);
+    float2 dot0 = float2(0, 1);
+    float2 dot1 = float2(2, 1);
+    float2 dot2 = float2(0, -1);
     
     if (Input.InstanceID == 0)
     {

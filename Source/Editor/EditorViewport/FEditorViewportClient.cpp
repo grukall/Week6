@@ -1,10 +1,8 @@
 #include "FEditorViewportClient.h"
+#include "Runtime/Engine/UWorld.h"
+#include "Runtime/Slate/FViewport.h"
+#include "Runtime/Engine/UEngine.h"
 
-void FEditorViewportClient::UpdateFocusedAndHovered(bool bFocused, bool bHovered)
-{
-	this->bFocused = bFocused; this->bHovered = bHovered;
-	return;
-}
 void FEditorViewportClient::SetOrthograpihcView(FEditorViewportClient::EOrthogonalType type)
 {
 	float distance = 5.0f;
@@ -40,4 +38,14 @@ void FEditorViewportClient::SetOrthograpihcView(FEditorViewportClient::EOrthogon
 		ViewportCamera.SetRotation(0.0f, 180.0f);
 		break;
 	}
+}
+
+void FEditorViewportClient::AddAssociation(FViewport& _Viewport)
+{
+	Viewport = &_Viewport;
+}
+
+void FEditorViewportClient::RemoveAssociation(FViewport & _Viewport)
+{
+	Viewport = nullptr;
 }

@@ -22,12 +22,18 @@ enum class EWorldType {
     Game,
 };
 
+static uint32 ContextIdCount = 0;
+
 struct FWorldContext
 {
 	EWorldType WorldType = EWorldType::Editor;
 	UWorld* World = nullptr;
-
-    FWorldContext(EWorldType InWorldType, UWorld *InWorld) : WorldType(InWorldType), World(InWorld) {}
+    uint32 ContextId = -1;
+    FWorldContext(EWorldType InWorldType, UWorld *InWorld) : WorldType(InWorldType), World(InWorld)
+    {
+        ContextId = ContextIdCount;
+        ++ContextIdCount;
+    }
 };
 
 class UWorld : public UObject

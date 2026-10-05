@@ -192,7 +192,7 @@ void FImguiControlPanelWindow::RunPickBenchmark(FEditor& Editor, int Iterations)
 	if (!World) { return; }
 
 	FScene* Scene =World->GetScene();
-    FEditorViewportClient* Viewport = Editor.GetActiveViewport();
+    FEditorViewportClient* Viewport = Editor.GetActiveViewportClient();
     const bool bUseBVH = Editor.bUseBVHPicking && Scene;
     if (!bUseBVH && !Viewport) { return; }
 
@@ -370,7 +370,7 @@ void FImguiControlPanelWindow::ActorSpawnSetting(FEditor& Editor)
     // 그리드 설정
 void FImguiControlPanelWindow::GridSetting(FEditor& Editor)
 {
-    FEditorViewportClient* Viewport = Editor.GetActiveViewport();
+    FEditorViewportClient* Viewport = Editor.GetActiveViewportClient();
     if (!Viewport) { return; }
 
     float CellSize = Viewport->GetGrid().GetCellSize();
@@ -386,7 +386,7 @@ void FImguiControlPanelWindow::GridSetting(FEditor& Editor)
 void FImguiControlPanelWindow::RenderModeAndShowFlagSetting(FEditor& Editor)
 {
     
-    FEditorViewportClient* ActiveViewport = Editor.GetActiveViewport();
+    FEditorViewportClient* ActiveViewport = Editor.GetActiveViewportClient();
     if (ActiveViewport)
     {
         // 뷰 모드 드롭박스
@@ -429,7 +429,7 @@ void FImguiControlPanelWindow::RenderModeAndShowFlagSetting(FEditor& Editor)
 
 void FImguiControlPanelWindow::CameraSetting(FEditor& Editor)
 {
-    if (FEditorViewportClient* Viewport = Editor.GetActiveViewport())
+    if (FEditorViewportClient* Viewport = Editor.GetActiveViewportClient())
     {
         FCamera& Camera = Viewport->ViewportCamera;
 

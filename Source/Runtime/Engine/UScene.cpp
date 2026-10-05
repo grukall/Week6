@@ -233,6 +233,27 @@ void UScene::RemoveRenderComponent(UPrimitiveComponent *prim) {
   prim->SetSceneIndex(-1);
 }
 
+void UScene::AddLightComponent(ULightComponent* Light)
+{
+    if (Light == nullptr)
+        return;
+
+    if (std::find(LightComponents.begin(), LightComponents.end(), Light) ==
+        LightComponents.end()) {
+        // const int32 NewIndex = static_cast<int32>(LightComponents.size());
+
+        LightComponents.push_back(Light);
+    }
+}
+
+void UScene::RemoveLightComponent(ULightComponent* Light)
+{
+    if (Light == nullptr)
+        return;
+
+    std::erase(LightComponents, Light);
+}
+
 void UScene::RemoveActor(AActor *Actor) { std::erase(Actors, Actor); }
 
 void UScene::DestroyActor(AActor *Actor) {

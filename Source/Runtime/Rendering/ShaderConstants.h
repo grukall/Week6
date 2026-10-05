@@ -126,7 +126,7 @@ struct PointLight
 // Register = b4
 struct FLightConstants {
 	
-	int32 NumDirLights = 1;
+	int32 NumDirLights = 0;
 	int32 NumSpotLights = 0;
 	int32 NumPointLights = 0;
 

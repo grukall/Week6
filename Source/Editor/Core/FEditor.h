@@ -29,7 +29,7 @@ public:
 
   // TODO: 이건 Scene에 들어가야함. 아마 아래와 같은 컴포넌트가 부착된 액터로 들어가야할 것
   // https://dev.epicgames.com/documentation/unreal-engine/API/Runtime/Engine/UDirectionalLightComponent
-  FLightConstants GlobalLight;
+  // FLightConstants GlobalLight;
 
   FEditorState State;
 

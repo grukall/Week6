@@ -6,6 +6,7 @@
 #include "Runtime/CoreUObject/UObjectGlobals.h"
 #include "Runtime/CoreUObject/UPrimitiveComponent.h"
 #include "Runtime/CoreUObject/USceneComponent.h"
+#include "Runtime/CoreUObject/ULightComponent.h"
 #include "Runtime/Rendering/FRenderResourceLibrary.h"
 #include "Runtime/Engine/FSceneBVH.h"
 #include "Runtime/Engine/FCulling.h"
@@ -91,8 +92,12 @@ public:
 
   void AddRenderComponent(UPrimitiveComponent *prim);
   void RemoveRenderComponent(UPrimitiveComponent *prim);
-  void RemoveActor(AActor* Actor);
 
+  void AddLightComponent(ULightComponent* Light);
+  void RemoveLightComponent(ULightComponent* Light);
+  TArray<ULightComponent*> GetLightComponents() const { return LightComponents; }
+
+  void RemoveActor(AActor* Actor);
   void DestroyActor(AActor* Actor);
 
     AActor* SpawnActor(UClass* ClassType);
@@ -115,6 +120,8 @@ private:
   TArray<AActor*> Actors;                        // 액터 목록 (Update용)
   TArray<UPrimitiveComponent*> RenderComponents; // 렌더링큐 (Draw용)
   TMap<UPrimitiveComponent*, size_t> RenderIndices;
+
+  TArray<ULightComponent*> LightComponents;
 
   FRenderResourceLibrary* RenderResourceLibrary = nullptr;
   bool bInitialized = false;

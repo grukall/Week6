@@ -26,10 +26,10 @@ struct SpotLight
 // 40 Bytes
 struct PointLight
 {
-    float Intensity;
-    float AmbientIntensity;
-    float3 LightColor;
     float3 Position;
+    float Intensity;
+    float3 LightColor;
+    float AmbientIntensity;
     float FallOffStart; // Point, Spot Light Only
     float FallOffEnd; // Point, Spot Light Only
 };

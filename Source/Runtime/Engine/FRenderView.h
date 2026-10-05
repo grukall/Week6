@@ -89,6 +89,9 @@ public:
 	//측정 : 다음에 렌더되는 뷰 하나에서 오라클을 실행(한 프레임 멈춤)
 	void RequestOcclusionOracle() { bOracleRequested = true; }
 
+	// Lights
+	void UpdateLight(const UScene& Scene);
+
 private:
 	FCullingSettings CullingSettings;
 	//컬링 후 가시 여부 인덱스(실제 renderComponent 인덱스와 동일하게)

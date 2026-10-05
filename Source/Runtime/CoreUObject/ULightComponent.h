@@ -2,12 +2,16 @@
 #include "Runtime/CoreUObject/USceneComponent.h"
 #include "Runtime/Rendering/ShaderConstants.h"
 
+class UScene;
+
 class ULightComponent : public USceneComponent
 {
 	GENERATED_BODY()
 	DECLARE_UCLASS(ULightComponent, USceneComponent)
 
 public:
+	void Register(UScene& InScene) override;
+
 	virtual void BuildConstants(FLightConstants& Constants);
 
 	void SetInensity(const float& InIntensity) { Intensity = InIntensity; }

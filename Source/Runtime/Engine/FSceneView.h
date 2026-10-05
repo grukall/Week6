@@ -21,7 +21,7 @@ struct FSceneView
 	FVector2 LengthUV;
 	EViewModeIndex ViewMode = EViewModeIndex::VMI_Lit;
 	uint64 ShowFlags = static_cast<uint64>(EEngineShowFlags::SF_Primitives);
-	FLightConstants LightConstants{};
+	// FLightConstants LightConstants{};
 };
 
 // 에디터 렌더링 컨텍스트

@@ -99,7 +99,7 @@ void FEditorApplication::Render() {
               .LengthUV = EditorViewport.LengthUV,
               .ViewMode = EditorViewport.ViewMode,
               .ShowFlags = EditorViewport.ShowFlags,
-              .LightConstants = Editor.GlobalLight
+              //.LightConstants = Editor.GlobalLight
           };
 
           // 에디터 렌더링 컨텍스트 구성
@@ -116,6 +116,9 @@ void FEditorApplication::Render() {
                   EditorCtx.SelectedPrimitive = RootComp->Cast<UPrimitiveComponent>();
               }
           }
+
+          // Light 상수버퍼 세팅
+          RenderView->UpdateLight(*SceneManager->CurrentScene);
 
           // 뷰포트 렌더링 일괄 수행
           RenderView->RenderView(sceneview, *SceneManager->CurrentScene, EditorCtx);
@@ -139,7 +142,7 @@ void FEditorApplication::Render() {
     .LengthUV = Viewport.LengthUV,
     .ViewMode = Viewport.ViewMode,
     .ShowFlags = Viewport.ShowFlags,
-    .LightConstants = Editor.GlobalLight
+    //.LightConstants = Editor.GlobalLight
           };
 
           RenderView->RenderOverlayPass(Viewport.ViewportCamera, SceneView, Editor.SelectedTransform, Editor.GetGizmo(), Editor.GetTextcomp());

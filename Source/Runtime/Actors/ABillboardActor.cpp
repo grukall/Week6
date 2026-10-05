@@ -2,6 +2,7 @@
 #include "Runtime/CoreUObject/UClass.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
 #include "Runtime/CoreUObject/UBillboardComp.h"
+#include "Runtime/CoreUObject/UPointLightComponent.h"
 #include "Runtime/Asset/FAssetRegistry.h"
 
 IMPLEMENT_UCLASS(ABillboardActor, AActor)
@@ -15,6 +16,14 @@ ABillboardActor::ABillboardActor()
 
 	FAssetRegistry& Registry = FAssetRegistry::GetInstance();
 	Object->SetTexture(Registry.Get<UTexture>("Texture/Space.json"));
+
+	ULightComponent* Light = NewObject<UPointLightComponent>();
+	Light->SetAmbientInensity(1.0f);
+	Light->SetInensity(5.0f);
+	Light->SetFallOffStart(0.0f);
+	Light->SetFallOffEnd(1000.0f);
+
+	AddComponent(Light);
 }
 
 UBillBoardComp* ABillboardActor::GetBillboardComponent() const

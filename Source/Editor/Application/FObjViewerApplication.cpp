@@ -81,7 +81,7 @@ void FObjViewerApplication::Render()
 		};
 		Renderer->UpdateViewConstants(ViewConstants);
 
-		Renderer->UpdateLightConstants(Light, EViewModeIndex::VMI_Lit);
+		//Renderer->UpdateLightConstants(Light, EViewModeIndex::VMI_Lit);
 
 		FObjectConstants Constants;
 		Constants.World = World;
@@ -292,13 +292,13 @@ void FObjViewerApplication::RenderSideBar()
 		ImGui::Separator();
 		ImGui::SliderFloat("Light Yaw", &LightYaw, -180.0f, 180.0f);
 		ImGui::SliderFloat("Light Pitch", &LightPitch, -180.0f, 180.0f);
-		ImGui::SliderFloat("Light Intensity", &Light.DirLights[0].Intensity, 0.0f, 3.0f);
+		//ImGui::SliderFloat("Light Intensity", &Light.DirLights[0].Intensity, 0.0f, 3.0f);
 
 		float RadYaw = LightYaw * 3.141592f / 180.0f;
 		float RadPitch = LightPitch * 3.141592f / 180.0f;
 		FVector NewDirection = FVector(cosf(RadPitch) * cosf(RadYaw), cosf(RadPitch) * sinf(RadYaw), sinf(RadPitch));
 		NewDirection.Normalize();
-		Light.DirLights[0].LightDirection = NewDirection;
+		//Light.DirLights[0].LightDirection = NewDirection;
 	}
 
 	ImGui::End();

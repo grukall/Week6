@@ -298,7 +298,7 @@ void FRenderView::BeginView(const FSceneView& View)
     Renderer.BindEditorViewportRenderTargets();
     Renderer.SetViewportUV(View.TopLeftUV, View.LengthUV);
     Renderer.SetRenderMode(View.ViewMode);
-    Renderer.UpdateLightConstants(View.LightConstants, View.ViewMode);
+    // Renderer.UpdateLightConstants(View.LightConstants, View.ViewMode);
 
     // ViewConstants 갱신
     FViewConstants ViewConstants
@@ -651,3 +651,19 @@ void FRenderView::RunOcclusionOracle()
     OracleDrawnCommands.clear();
     OracleOccludedCommands.clear();
 }
+
+
+// Lights Update
+void FRenderView::UpdateLight(const UScene& Scene)
+{
+    FLightConstants Constants;
+
+    for (ULightComponent* Light : Scene.GetLightComponents())
+    {
+        Light->BuildConstants(Constants);
+    }
+
+    Renderer.UpdateLightConstants(Constants, EViewModeIndex::VMI_Lit);
+}
+
+

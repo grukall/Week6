@@ -8,18 +8,7 @@ class UDirectionLightComponent : public ULightComponent
 
 public:
 
-	virtual void BuildConstants(FLightConstants& Constants) override
-	{
-		int32 NumLight = Constants.NumDirLights++;
-		DirectionLight DirLight;
-		DirLight.Intensity = GetInensity();
-		DirLight.AmbientIntensity = GetAmbientInensity();
-		DirLight.LightColor = GetLightColor();
-		DirLight.Position = GetGlobalTransform().GetLocation();
-		DirLight.LightDirection = GetLightDirection();
-		
-		Constants.DirLights[NumLight] = DirLight;
-	}
+	virtual void BuildConstants(FLightConstants& Constants) override;
 
 
 private:

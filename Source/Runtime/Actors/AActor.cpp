@@ -364,7 +364,7 @@ bool AActor::IsActorEditorTickEnabled()
 	return bTickInEditor;
 }
 
-UWorld* AActor::GetOwner() const
+UWorld* AActor::GetWorld() const
 { 
 	return Owner; 
 }

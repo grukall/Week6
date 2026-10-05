@@ -14,19 +14,10 @@ IMPLEMENT_UCLASS(USceneComponent, UObject)
 void USceneComponent::Initialize()
 {
     Super::Initialize();
-    World = nullptr;
-    bHasBegunPlay = false;
-    bTickEnabled = false;
 }
 void USceneComponent::Release()
 {
-    if (bHasBegunPlay) { EndPlay(); }
-    if (World) { Unregister(); }
-
-    ActorOwner = nullptr;
     SceneOwner = nullptr;
-    World = nullptr;
-
     Super::Release();
 }
 
@@ -34,36 +25,7 @@ void USceneComponent::DuplicateSubObjects()
 {
     Super::DuplicateSubObjects();
 
-    World = nullptr;
-    BatchIndex = -1;
-    bHasBegunPlay = false;
     bGlobalDirty = true;
-}
-
-void USceneComponent::Register(UWorld& InWorld)
-{
-    if (World == &InWorld) { return; }
-    if (World) { Unregister(); }
-
-    World = &InWorld;
-}
-
-void USceneComponent::BeginPlay()
-{
-    if (!World || bHasBegunPlay) { return; }
-    bHasBegunPlay = true;
-}
-
-void USceneComponent::EndPlay()
-{
-    if (!bHasBegunPlay) { return; }
-    bHasBegunPlay = false;
-}
-
-void USceneComponent::Unregister()
-{
-    if (bHasBegunPlay) { EndPlay(); }
-    World = nullptr;
 }
 
 void USceneComponent::SetupAttachment(USceneComponent* InParent)
@@ -76,11 +38,6 @@ void USceneComponent::SetupAttachment(USceneComponent* InParent)
     {
         ActorOwner = InParent->GetActorOwner();
     }
-}
-
-bool USceneComponent::IsRegistered() const
-{
-    return World != nullptr; 
 }
 
 void USceneComponent::Serialize(FArchive& Archive) const

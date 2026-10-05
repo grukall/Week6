@@ -36,7 +36,7 @@ public:
 	void DuplicateSubObjects() override;
 	void Initialize() override;
 	void Release() override;
-	UWorld* GetOwner() const;
+	UWorld* GetWorld() const;
 
 	void CreateRootComponent(UClass* ClassType);
 

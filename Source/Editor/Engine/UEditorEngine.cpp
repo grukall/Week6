@@ -6,7 +6,6 @@
 #include <Windows.h>
 #include <Runtime/Core/PointerTypes.h>
 #include "Runtime/Core/Globals.h"
-#include "Runtime/Slate/FViewport.h"
 
 IMPLEMENT_UCLASS(UEditorEngine, UEngine)
 
@@ -22,7 +21,7 @@ void UEditorEngine::Init(HWND Window)
 	ObjViewer = MakeUnique<FObjViewerApplication>(Renderer);
 	ObjViewer->Initialize(Window, Device, Context);
 #else
-	// 새 빈 월드 생성
+	// 새 빈 월드 생성, TODO : 
     UWorld* World = NewObject<UWorld>();
     World->Initialize(EWorldType::Editor);
     if (ULevel* Level = World->GetPersistentLevel())
@@ -30,7 +29,7 @@ void UEditorEngine::Init(HWND Window)
         Level->Activate();
     }
 
-    int32 ContextIndex = CreateWorldContext(EWorldType::Editor, World);
+    CreateWorldContext(EWorldType::Editor, World);
     CurrentWorld = World;
 
 	ID3D11Device* Device = nullptr;
@@ -39,9 +38,7 @@ void UEditorEngine::Init(HWND Window)
 	ImguiManager.Initialize_ImplWin32DX11(Window, Device, Context);
 
 	Editor.Initialize(this);
-
-    //뷰포트를 4개 확정으로 생성하네, 이래도 되는건가
-    Editor.InitMultiViewport(this, WorldContexts[ContextIndex]);
+	Editor.InitMultiViewport(FEditorViewportClient{});
 	Editor.LoadState();
 	Editor.SetViewLayout(Editor.State.GetSplitMode());
 
@@ -70,12 +67,12 @@ void UEditorEngine::OnWindowResize(UINT Width, UINT Height)
     ObjViewer->OnWindowSize(Width, Height);
 #else
 	// 뷰포트 종횡비 갱신
-	for (auto& Entry : Editor.GetViewports()) {
+	for (auto& Viewport : Editor.GetViewports()) {
 		const FVector2 SizePixels =
-			Entry->Viewport.LengthUV *
+			Viewport.LengthUV *
 			FVector2{ static_cast<float>(Width), static_cast<float>(Height) };
 
-		auto& Camera = Entry->Client.ViewportCamera;
+		auto& Camera = Viewport.ViewportCamera;
 		Camera.SetAspectRatio(SizePixels.X / SizePixels.Y);
 	}
 #endif
@@ -124,7 +121,7 @@ void UEditorEngine::Render()
 #ifdef _OBJVIEWER
     ObjViewer->Render();
 #else
-    TArray<TUniquePtr<FEditorViewportEntry>>& Entries = Editor.GetViewports();
+    TArray<FEditorViewportClient>& EditorViewports = Editor.GetViewports();
 
     // 렌더 준비
     RenderView.PrepareRender();
@@ -143,15 +140,14 @@ void UEditorEngine::Render()
     for (SWindow& Leaf : Editor.Leaf)
     {
         if (!Leaf.bisActive) continue;
-        FEditorViewportEntry& Entry = *Entries[Leaf.ViewportIndex];
-        FEditorViewportClient& EditorViewport = Entry.Client;
+        FEditorViewportClient& EditorViewport = EditorViewports[Leaf.ViewportIndex];
 
         // 뷰포트 렌더링 명세 구성
         FSceneView sceneview{
             .Camera = EditorViewport.ViewportCamera,
             .ViewProj = EditorViewport.ViewportCamera.GetViewProjectionMatrix(),
-            .TopLeftUV = Entry.Viewport.TopLeftUV,
-            .LengthUV = Entry.Viewport.LengthUV,
+            .TopLeftUV = EditorViewport.TopLeftUV,
+            .LengthUV = EditorViewport.LengthUV,
             .ViewMode = EditorViewport.ViewMode,
             .ShowFlags = EditorViewport.ShowFlags,
             .LightConstants = Editor.GlobalLight
@@ -188,14 +184,13 @@ void UEditorEngine::Render()
             if (!Leaf.bisActive)
                 continue;
 
-            const FEditorViewportEntry& Entry = *Entries[Leaf.ViewportIndex];
-            const FEditorViewportClient& Viewport = Entry.Client;
+            const auto& Viewport = EditorViewports[Leaf.ViewportIndex];
 
             FSceneView SceneView{
       .Camera = Viewport.ViewportCamera,
       .ViewProj = Viewport.ViewportCamera.GetViewProjectionMatrix(),
-      .TopLeftUV = Entry.Viewport.TopLeftUV,
-      .LengthUV = Entry.Viewport.LengthUV,
+      .TopLeftUV = Viewport.TopLeftUV,
+      .LengthUV = Viewport.LengthUV,
       .ViewMode = Viewport.ViewMode,
       .ShowFlags = Viewport.ShowFlags,
       .LightConstants = Editor.GlobalLight
@@ -208,8 +203,8 @@ void UEditorEngine::Render()
             RenderView.RenderGizmo(
                 Editor.SelectedTransform,
                 Viewport.ViewportCamera,
-                Entry.Viewport.TopLeftUV,
-                Entry.Viewport.LengthUV,
+                Viewport.TopLeftUV,
+                Viewport.LengthUV,
                 Editor.GetGizmo());
         }
     }

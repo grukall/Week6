@@ -119,19 +119,6 @@ void UEngine::SetWorld(FWorldContext& WorldContext, UWorld* New)
 	Scene->GetSceneBVH().Build(Scene->GetPrimitives());
 }
 
-UWorld* UEngine::GetWorld(uint32 WorldContextId)
-{
-	for (FWorldContext &Context : WorldContexts)
-	{
-		if (Context.ContextId == WorldContextId)
-		{
-			return Context.World;
-		}
-	}
-
-	return nullptr;
-}
-
 bool UEngine::LoadMap(UWorld* World, const FString& Path, FCamera* OutLegacyCamera)
 {
 	if (!World)

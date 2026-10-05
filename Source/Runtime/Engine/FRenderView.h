@@ -46,10 +46,13 @@ public:
 	void DrawGrid(const FCamera& Camera, FGrid& Grid);
 	void FlushBasePass(const FCamera& Camera);
 	void FlushLinePass(const FCamera& Camera);
-	void RenderPostProcessPass(const FCamera& Camera, const AActor* SelectedActor);
+	void ScreenPass();
+	void RenderOutlinePostProcessPass(const FCamera& Camera, const AActor* SelectedActor);
 	void RenderOverlayPass(const FCamera& Camera, const FSceneView& SceneView, const FTransform& SelectedTransform, const FGizmo& Gizmo, UTextInstanceComponent* TextComp);
 
 	void FXAAPostProcessPass();
+	void RenderScenePostProcess();
+	void RenderEditorPostProcess();
 
 	// 개별 렌더 및 디버그 라인
 	void RenderGizmo(const FTransform& Transform, const FCamera& Camera, FVector2 TopLeftUV, FVector2 LengthUV, const FGizmo& Gizmo);
@@ -60,6 +63,7 @@ public:
 	void RenderQuad(const FVector& A, const FVector& B, const FVector& C, const FVector& D, const FVector4& Color);
 	void RenderSphere(const FVector& Center, float Radius, const FVector4& Color, uint32 Segments = 16);
 
+	void RenderScreenPass(const FCamera& Camera, const AActor* SelectedActor);
 	void RenderOutline(const FCamera& Camera, const AActor* SelectedActor);
 	void DrawStencilMask(const FCamera& Camera, const AActor* SelectedActor);
 	void RenderVerticetoline();

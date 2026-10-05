@@ -139,7 +139,7 @@ private:
   bool CreateOutlinePipeline(FRenderer &Renderer);
   bool CreateOutlinePostProcessPipeline(FRenderer& Renderer);
   bool CreateFXAAPostProcessPipeline(FRenderer& Renderer);
-
+  bool CreateScreenPass(FRenderer& Renderer);
   bool CreateInstancingArrayMap();
   FRenderer *RendererRef = nullptr;
 };

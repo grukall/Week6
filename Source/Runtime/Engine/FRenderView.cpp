@@ -281,13 +281,22 @@ void FRenderView::RenderView(const FSceneView& View, const UScene& Scene, const 
 
     Renderer.ClearLastRenderState();
 
+    RenderScreenPass(View.Camera, EditorCtx.SelectedActor);
+
     // 후처리 외곽선 패스
-    RenderPostProcessPass(View.Camera, EditorCtx.SelectedActor);
+    RenderOutlinePostProcessPass(View.Camera, EditorCtx.SelectedActor);
+    
 
     if (bIsFXAA)
     {
         FXAAPostProcessPass();
+        RenderScenePostProcess();
     }
+    else
+    {
+        RenderEditorPostProcess();
+    }
+    
 
     Renderer.ClearLastRenderState();
 }
@@ -337,7 +346,12 @@ void FRenderView::FlushLinePass(const FCamera& Camera)
     FlushLineBatch(Camera.GetViewProjectionMatrix());
 }
 
-void FRenderView::RenderPostProcessPass(const FCamera& Camera, const AActor* SelectedActor)
+void FRenderView::ScreenPass()
+{
+    //RenderScreenPass();
+}
+
+void FRenderView::RenderOutlinePostProcessPass(const FCamera& Camera, const AActor* SelectedActor)
 {
     RenderOutline(Camera, SelectedActor);
 }
@@ -345,6 +359,16 @@ void FRenderView::RenderPostProcessPass(const FCamera& Camera, const AActor* Sel
 void FRenderView::FXAAPostProcessPass()
 {
     Renderer.FXAA();
+}
+
+void FRenderView::RenderScenePostProcess()
+{
+    Renderer.RenderSceneColor();
+}
+
+void FRenderView::RenderEditorPostProcess()
+{
+    Renderer.RenderEditorViewPort();
 }
 
 void FRenderView::RenderOverlayPass(const FCamera& Camera, const FSceneView& SceneView, const FTransform& SelectedTransform, const FGizmo& Gizmo, UTextInstanceComponent* TextComp)
@@ -415,9 +439,17 @@ void FRenderView::RenderSphere(const FVector &Center, float Radius,
   LineBatcher.DrawSphere(Center, Radius, Color, Segments);
 }
 
+void FRenderView::RenderScreenPass(const FCamera& Camera,
+                                   const AActor* SelectedActor)
+{
+    DrawStencilMask(Camera, SelectedActor);
+
+    Renderer.RenderScreenPass();
+}
+
 void FRenderView::RenderOutline(const FCamera &Camera,
                                 const AActor *SelectedActor) {
-  DrawStencilMask(Camera, SelectedActor);
+  
   Renderer.RenderOutline();
 }
 

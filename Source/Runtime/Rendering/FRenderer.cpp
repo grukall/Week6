@@ -1543,7 +1543,7 @@ void FRenderer::RenderScreenPass()
 
     // 씬 텍스처 바인딩
     ID3D11ShaderResourceView* SRV = EditorViewPortSRV.Get();
-    Context->PSSetShaderResources(0, 1, &SRV);
+    Context->PSSetShaderResources(6, 1, &SRV);
 
     FRenderResourceLibrary::Get()
         .GetPipeline(FName("#ScreenPass"))
@@ -1554,7 +1554,7 @@ void FRenderer::RenderScreenPass()
 
     // 슬롯 해제
     ID3D11ShaderResourceView* NullSRV = { nullptr };
-    Context->PSSetShaderResources(0, 1, &NullSRV);
+    Context->PSSetShaderResources(6, 1, &NullSRV);
 }
 
 void FRenderer::RenderOutline() {

@@ -1,3 +1,6 @@
+Texture2D SceneTexture : register(t6);
+SamplerState SceneSampler : register(s0);
+
 struct PS_INPUT
 {
     float4 Position : SV_Position;
@@ -12,7 +15,10 @@ struct PS_OUTPUT
 PS_OUTPUT MainPS(PS_INPUT Input)
 {
     PS_OUTPUT output;
-    output.Color = float4(1.0f, 0.0f, 0.0f, 1.0f);
+    
+    float4 Sampled = SceneTexture.Sample(SceneSampler, Input.UV);
+    
+    output.Color = Sampled.rgba;
     
     return output;
 }

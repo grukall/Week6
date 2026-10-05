@@ -99,7 +99,6 @@ void FEditorApplication::Render() {
               .LengthUV = EditorViewport.LengthUV,
               .ViewMode = EditorViewport.ViewMode,
               .ShowFlags = EditorViewport.ShowFlags,
-              //.LightConstants = Editor.GlobalLight
           };
 
           // 에디터 렌더링 컨텍스트 구성
@@ -142,7 +141,6 @@ void FEditorApplication::Render() {
     .LengthUV = Viewport.LengthUV,
     .ViewMode = Viewport.ViewMode,
     .ShowFlags = Viewport.ShowFlags,
-    //.LightConstants = Editor.GlobalLight
           };
 
           RenderView->RenderOverlayPass(Viewport.ViewportCamera, SceneView, Editor.SelectedTransform, Editor.GetGizmo(), Editor.GetTextcomp());

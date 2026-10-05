@@ -54,7 +54,6 @@ private:
 	FCamera Camera;
 	FViewerCameraController CameraController;
 
-	// FLightConstants Light;
 	float LightYaw = 45.0f;
 	float LightPitch = -45.0f;
 

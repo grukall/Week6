@@ -21,9 +21,9 @@ float4 MainPS(PS_INPUT Input) : SV_Target
     float3 N = normalize(Input.NormalW);
 
     Material Mat;
-    Mat.DiffAlbedo = BaseColor;
-    Mat.SpecAlbedo = float3(1.0f, 1.0f, 1.0f);
-    Mat.Shininess = 1.0f;
+    Mat.DiffAlbedo = diffAlbedo * BaseColor;
+    Mat.SpecAlbedo = specAlbedo;
+    Mat.Shininess = Shininess;
     
     float3 ToEye = normalize(CamPos - Input.PosW);
     

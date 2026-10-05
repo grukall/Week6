@@ -146,9 +146,9 @@ static_assert(sizeof(FLightConstants) % 16 == 0);
 // Register = b5
 struct FMaterialConstants
 {
-	FVector DiffAlbedo{1.0f, 1.0f, 1.0f};
+	FVector DiffAlbedo{};
 	float Shininess = 0.0f;
-	FVector SpecAlbedo{0.0f, 0.0f, 0.0f};
+	FVector SpecAlbedo{};
 	float Padding = 0.0f;
 };
 

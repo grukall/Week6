@@ -447,6 +447,10 @@ void FResourceLoader::LoadMaterialAsset(const FArchive& Archive, const FName& ID
 		}
 	}
 
+	if (!Archive.IsNull("Diffuse")) { MaterialDesc.Diffuse = Archive.GetVector("Diffuse"); }
+	if (!Archive.IsNull("Specular")) { MaterialDesc.Specular = Archive.GetVector("Specular"); }
+	if (!Archive.IsNull("Shininess")) { MaterialDesc.Shininess = Archive.GetFloat("Shininess"); }
+
 	Material->Load(MaterialDesc);
 	Registry.Register(ID, Material);
 
@@ -454,6 +458,9 @@ void FResourceLoader::LoadMaterialAsset(const FArchive& Archive, const FName& ID
 	RenderMaterial->SetPipeLine(MaterialDesc.Pipeline->Get());
 	if (MaterialDesc.Texture) { RenderMaterial->SetTexture(MaterialDesc.Texture->Get()); }
 	RenderMaterial->SetSamplerDesc(MaterialDesc.TextureSamplerDesc);
+	RenderMaterial->SetDiffuse(MaterialDesc.Diffuse);
+	RenderMaterial->SetSpecular(MaterialDesc.Specular);
+	RenderMaterial->SetShininess(MaterialDesc.Shininess);
 	FRenderResourceLibrary::Get().RegisterMaterial(MaterialDesc.Name, RenderMaterial);
 }
 

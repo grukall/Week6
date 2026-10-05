@@ -33,9 +33,9 @@ float4 MainPS(PS_INPUT Input) : SV_Target
     //float3 DirectionalLight = max(Ambient + Diffuse, 0.5f);
 
     Material Mat;
-    Mat.DiffAlbedo = BaseColor;
-    Mat.SpecAlbedo = float3(0.0f, 0.0f, 0.0f);
-    Mat.Shininess = 0.0f;
+    Mat.DiffAlbedo = diffAlbedo * BaseColor;
+    Mat.SpecAlbedo = specAlbedo;
+    Mat.Shininess = Shininess;
     
     float3 ToEye = normalize(CamPos - Input.PosW);
     

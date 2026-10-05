@@ -22,6 +22,7 @@ ABillboardActor::ABillboardActor()
 	Light->SetInensity(5.0f);
 	Light->SetFallOffStart(0.0f);
 	Light->SetFallOffEnd(1000.0f);
+	Light->SetLightColor(FVector(1.0f, 1.0f, 1.0f));
 
 	AddComponent(Light);
 }

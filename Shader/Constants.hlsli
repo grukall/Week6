@@ -43,16 +43,6 @@ cbuffer LightConstants : register(b4)
     float Padding = 0.0f;
 };
 
-/*
-float3 LightDirection;
-    float Intensity;
-    float3 LightColor;
-    float AmbientIntensity;
-    float SpotIntensity; 
-    float FallOffStart;
-    float FallOffEnd;
-    float3 Position;*/
-
 cbuffer MaterialConstants : register(b5)
 {
     float3 diffAlbedo;

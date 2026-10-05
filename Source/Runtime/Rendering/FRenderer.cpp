@@ -1006,7 +1006,7 @@ bool FRenderer::InitializeConstantBuffers() {
     return false;
   }
 
-  /*D3D11_BUFFER_DESC MaterialConstantBufferDesc = {
+  D3D11_BUFFER_DESC MaterialConstantBufferDesc = {
       .ByteWidth = sizeof(FMaterialConstants),
       .Usage = D3D11_USAGE_DEFAULT,
       .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
@@ -1017,7 +1017,7 @@ bool FRenderer::InitializeConstantBuffers() {
 
   if (FAILED(Result)) {
       return false;
-  }*/
+  }
 
   for (int32 i = 0; i < NumFrameResourceCount; i++)
   {
@@ -1307,18 +1307,18 @@ void FRenderer::DrawUploadedCommand(const FDrawCommand& Command, bool bApplyView
                 bApplyViewMode
             );
 
+            FMaterialConstants MaterialConstants;
+            MaterialConstants.DiffAlbedo = Material.GetDiffuse();
+            MaterialConstants.Shininess = Material.GetShininess();
+            MaterialConstants.SpecAlbedo = Material.GetSpecular();
+
+            UpdateMaterialConstants(MaterialConstants);
+
             Context->DrawIndexed(
                 Section.IndexCount,
                 Section.StartIndex,
                 0
             );
-
-            // FMaterialConstants MaterialConstants;
-            //MConstants.diffAlbedo = Material.;
-            //MConstants.Shininess = Material.;
-            //MConstants.specAlbedo = Material.;
-
-            // UpdateMaterialConstants(MaterialConstants);
 
             INC_DWORD_STAT_BY(
                 "Prims",

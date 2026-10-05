@@ -156,7 +156,7 @@ private:
   Microsoft::WRL::ComPtr<ID3D11Buffer> ObjectConstantUploadBuffer;
 
   Microsoft::WRL::ComPtr<ID3D11RenderTargetView> EditorViewPortRTV;
-  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> EditorViewPortSRV;
+  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>  EntriesRV;
   Microsoft::WRL::ComPtr<ID3D11Texture2D> renderTexture;
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> DepthStencilSRV;
 

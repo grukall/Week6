@@ -141,7 +141,7 @@ void FRenderer::OnWindowSize(UINT Width, UINT Height) {
   DepthStencilSRV.Reset();
   DepthStencilBuffer.Reset();
   EditorViewPortRTV.Reset();
-  EditorViewPortSRV.Reset();
+   EntriesRV.Reset();
   renderTexture.Reset();
 
   SwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, 0);
@@ -820,7 +820,7 @@ bool FRenderer::InitializeEditorViewportRenderTarget() {
   }
 
   Result = Device->CreateShaderResourceView(renderTexture.Get(), nullptr,
-                                            &EditorViewPortSRV);
+                                            & EntriesRV);
   if (FAILED(Result)) {
     return false;
   }
@@ -1521,7 +1521,7 @@ void FRenderer::RenderOutline() {
 
   Context->OMSetRenderTargets(1, BackBufferRTV.GetAddressOf(), nullptr);
   // 씬 텍스처와 스텐실 텍스처 바인딩
-  ID3D11ShaderResourceView *SRVs[] = {EditorViewPortSRV.Get(),
+  ID3D11ShaderResourceView *SRVs[] = { EntriesRV.Get(),
                                       DepthStencilSRV.Get()};
   Context->PSSetShaderResources(0, 2, SRVs);
 

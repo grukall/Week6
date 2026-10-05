@@ -3,6 +3,7 @@
 #include "Runtime/CoreUObject/UObject.h"
 #include "Runtime/CoreUObject/USceneComponent.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
+#include "Runtime/Engine/EngineBaseTypes.h"
 #include "Runtime/Core/FName.h"
 #include "Runtime/Core/FGuid.h"
 #include <type_traits>
@@ -19,10 +20,6 @@ class AActor : public UObject
 	friend class ULevel;
 
 protected:
-	USceneComponent* RootComponent = nullptr;
-	TArray<USceneComponent*> AttachedComp;
-	bool bTickEnabled = false;
-
 	explicit AActor() = default;
 
 	virtual void Serialize(FArchive& Archive) const override;
@@ -31,9 +28,7 @@ protected:
 public:
 	void Initialize() override;
 	void Release() override;
-	// 이 액터가 속한 레벨 (로드/스폰 시 ULevel::AddActor가 설정. 등록 여부와 무관)
 	[[nodiscard]] ULevel* GetLevel() const { return OwningLevel; }
-	// 소속 레벨이 속한 월드. 레벨이 없으면 nullptr
 	[[nodiscard]] UWorld* GetWorld() const;
 
 	// 액터를 식별하는 값들 (런타임 약참조는 FUObjectArray의 슬롯/시리얼 번호가 맡는다)
@@ -58,14 +53,26 @@ public:
 	void AddComponent(USceneComponent* Addcomp);
 	virtual void Register(UWorld *World);
 	virtual void BeginPlay();
-	virtual void Tick(float DeltaTime);
+	virtual void Tick(float DeltaTime, ELevelTick eTickType);
 	virtual void EndPlay();
 	virtual void Unregister();
 
 	[[nodiscard]] bool IsRegistered() const { return RegisteredWorld != nullptr; }
 	[[nodiscard]] bool HasBegunPlay() const { return bHasBegunPlay; }
+	bool IsTickEnabled() const { return bTickEnabled; }
+	bool IsShouldTickIfViewportsOnly() const { return bShouldTickIfViewportsOnly; }
+	bool ShouldTick(ELevelTick TickType) const;
 
 	void Destroy();
+
+protected:
+	USceneComponent* RootComponent = nullptr;
+	TArray<USceneComponent*> AttachedComp;
+	bool bTickEnabled = false;
+	bool bRegistered = false;
+
+	//에디터에서만 Tick해야 하는 액터인 경우 true로 설정
+	bool bShouldTickIfViewportsOnly = false;
 
 private:
 	ULevel* OwningLevel = nullptr;     // 소속 레벨 (ULevel::AddActor/RemoveActor가 관리)

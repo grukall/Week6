@@ -48,3 +48,15 @@ void UActorComponent::Unregister()
     if (bHasBegunPlay) { EndPlay(); }
     World = nullptr;
 }
+
+bool UActorComponent::ShouldTick(ELevelTick TickType) const
+{
+    if (!bTickEnabled || !IsRegistered()) return false;
+
+    switch (TickType)
+    {
+    case LEVELTICK_All:           return bHasBegunPlay;              // 게임 틱은 BeginPlay 이후만
+    case LEVELTICK_ViewportsOnly: return bTickInEditor || (ActorOwner && ActorOwner->IsShouldTickIfViewportsOnly());              // 편집 월드는 opt-in한 액터만
+    default:                      return false;                      // TimeOnly, PauseTick
+    }
+}

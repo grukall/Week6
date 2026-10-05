@@ -22,17 +22,19 @@ void ACatActor::Initialize()
 {
 	Super::Initialize();
 	bTickEnabled = true;
+	bShouldTickIfViewportsOnly = true;
 }
 
-void ACatActor::Tick(float DeltaTime)
+void ACatActor::Tick(float DeltaTime, ELevelTick eTickType)
 {
-	Super::Tick(DeltaTime);
+	Super::Tick(DeltaTime, eTickType);
+
 	ElapsedTime += DeltaTime;
 
 	if (ElapsedTime >= SpinRate)
 	{
 		ElapsedTime = 0.0f;
-		
+
 		FAssetRegistry& Registry = FAssetRegistry::GetInstance();
 		if (bIsSpin)
 		{

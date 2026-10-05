@@ -6,7 +6,7 @@
 
 IMPLEMENT_UCLASS(UWorld, UObject)
 
-void UWorld::Initialize()
+void UWorld::Initialize(EWorldType _WorldType)
 {
 	if (bInitialized) {
 		return;
@@ -18,6 +18,8 @@ void UWorld::Initialize()
 	PersistentLevel->SetOwningWorld(this);
 
 	Scene = MakeUnique<FScene>();
+
+	WorldType = _WorldType;
 }
 
 void UWorld::Release()
@@ -143,11 +145,16 @@ void UWorld::DestroyActor(AActor* Actor)
 }
 
 
-void UWorld::Tick(float DeltaTime)
+void UWorld::Tick(float DeltaTime, ELevelTick eTickType)
 {
-	if (bHasBegunPlay) {
-		if (PersistentLevel) {
-			PersistentLevel->Tick(DeltaTime);
-		}
+	//TODO : World 시간이라는 개념이 생기면 여기에 시간 갱신
+
+	if (eTickType == ELevelTick::LEVELTICK_TimeOnly)
+	{
+		return;
+	}
+
+	if (PersistentLevel) {
+		PersistentLevel->Tick(DeltaTime, eTickType);
 	}
 }

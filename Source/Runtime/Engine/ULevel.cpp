@@ -61,12 +61,18 @@ void ULevel::Deactivate()
     bActive = false;
 }
 
-void ULevel::Tick(float DeltaTime)
+void ULevel::Tick(float DeltaTime, ELevelTick eTickType)
 {
-    for (AActor* Actor : Actors) {
-        if (Actor) {
-            Actor->Tick(DeltaTime);
-        }
+    for (AActor* Actor : Actors)
+    {
+        if (!Actor) continue;
+
+        if (Actor->ShouldTick(eTickType))
+            Actor->Tick(DeltaTime, eTickType);
+
+        for (USceneComponent* C : Actor->GetAttachedComponents())
+            if (C && C->ShouldTick(eTickType))
+                C->Tick(DeltaTime);
     }
 }
 
@@ -116,6 +122,7 @@ void ULevel::Deserialize(const FArchive& Archive)
     }
 }
 
+// Actor->OwningLevel을 이 레벨로 설정한다 (AActor가 friend로 허용).
 void ULevel::AddActor(AActor* Actor)
 {
     if (!Actor) {
@@ -138,6 +145,7 @@ void ULevel::AddActor(AActor* Actor)
     ActorsByGuid[Actor->Guid] = Actor;
 }
 
+// 목록에서 제외하고 Actor->OwningLevel을 해제한다 (파괴하지는 않음).
 void ULevel::RemoveActor(AActor* Actor)
 {
     if (!Actor) {
@@ -170,6 +178,7 @@ AActor* ULevel::FindActorByGuid(const FGuid& Guid) const
     return It != ActorsByGuid.end() ? It->second : nullptr;
 }
 
+// 액터의 이름을 바꾼다. 이미 다른 액터가 쓰는 이름이면 변경하지 않고 false를 반환한다.
 bool ULevel::SetActorName(AActor* Actor, const FName& NewName)
 {
     if (!Actor || Actor->OwningLevel != this || NewName.IsNone()) {
@@ -192,6 +201,7 @@ bool ULevel::SetActorName(AActor* Actor, const FName& NewName)
     return true;
 }
 
+// 액터의 Guid를 바꾼다. 무효하거나 이미 다른 액터가 쓰는 Guid면 변경하지 않고 false를 반환한다.
 bool ULevel::SetActorGuid(AActor* Actor, const FGuid& NewGuid)
 {
     if (!Actor || Actor->OwningLevel != this || !NewGuid.IsValid()) {
@@ -214,6 +224,7 @@ bool ULevel::SetActorGuid(AActor* Actor, const FGuid& NewGuid)
     return true;
 }
 
+// "클래스이름_번호" 형식의 아직 쓰이지 않은 이름을 만든다.
 FName ULevel::MakeUniqueActorName(const AActor* Actor)
 {
     // "AAppleNormalActor" -> "AppleNormalActor" (UE처럼 접두 'A' 제거)

@@ -265,6 +265,8 @@ void AActor::Register(UWorld* World)
 			Component->Register(World);
 		}
 	}
+
+	bRegistered = true;
 }
 
 void AActor::BeginPlay() {
@@ -283,22 +285,13 @@ void AActor::BeginPlay() {
 	}
 }
 
-void AActor::Tick(float DeltaTime) {
-	if (!bTickEnabled || !bHasBegunPlay)
-	{
-		return;
-	}
-
-	for (USceneComponent* Component : AttachedComp)
-	{
-		if (Component && Component->IsTickEnabled())
-		{
-			Component->Tick(DeltaTime);
-		}
-	}
+void AActor::Tick(float DeltaTime, ELevelTick eTickType) 
+{
+	
 }
 
-void AActor::EndPlay() {
+void AActor::EndPlay()
+{
 	if (!bHasBegunPlay)
 	{
 		return;
@@ -333,6 +326,19 @@ void AActor::Unregister() {
 		}
 	}
 	RegisteredWorld = nullptr;
+	bRegistered = false;
+}
+
+bool AActor::ShouldTick(ELevelTick TickType) const
+{
+	if (!bTickEnabled || !bRegistered) return false;
+
+	switch (TickType)
+	{
+	case LEVELTICK_All:           return bHasBegunPlay;              // 게임 틱은 BeginPlay 이후만
+	case LEVELTICK_ViewportsOnly: return bShouldTickIfViewportsOnly; // 편집 월드는 opt-in한 액터만
+	default:                      return false;                      // TimeOnly, PauseTick
+	}
 }
 
 void AActor::Destroy() {

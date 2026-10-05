@@ -23,7 +23,7 @@ void UEditorEngine::Init(HWND Window)
 #else
 	// 새 빈 월드 생성, TODO : 
     UWorld* World = NewObject<UWorld>();
-    World->Initialize();
+    World->Initialize(EWorldType::Editor);
     if (ULevel* Level = World->GetPersistentLevel())
     {
         Level->Activate();
@@ -97,9 +97,16 @@ void UEditorEngine::Tick(float DeltaTime)
     for (FWorldContext& WorldContext : WorldContexts)
     {
         UWorld* World = WorldContext.World;
-        if (World && WorldContext.WorldType == EWorldType::Game)
+        if (!World) continue;
+
+        if (WorldContext.WorldType == EWorldType::Editor || WorldContext.WorldType == EWorldType::EditorPreview)
         {
-            World->Tick(FTimeManager::GetDeltaTime());
+            World->Tick(FTimeManager::GetDeltaTime(), ELevelTick::LEVELTICK_ViewportsOnly);
+        }
+
+        if (WorldContext.WorldType == EWorldType::Game || WorldContext.WorldType == EWorldType::PIE)
+        {
+            World->Tick(FTimeManager::GetDeltaTime(), ELevelTick::LEVELTICK_All);
         }
     }
 

@@ -14,7 +14,7 @@ public:
 	explicit ACatActor();
 
 	void Initialize() override;
-	virtual void Tick(float DeltaTime) override;
+	virtual void Tick(float DeltaTime, ELevelTick eTickType) override;
 
 private:
 	UStaticMeshComponent* CatStaticMeshComp;

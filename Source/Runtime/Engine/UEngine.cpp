@@ -100,7 +100,7 @@ void UEngine::SetWorld(FWorldContext& WorldContext, UWorld* New)
 		DestroyObject(Old);
 	}
 
-	New->Initialize();
+	New->Initialize(WorldContext.WorldType);
 	WorldContext.World = New;
 
 	// 교체된 월드가 현재 월드였다면 따라가야 한다 (파괴된 월드를 가리키지 않도록).
@@ -182,7 +182,7 @@ bool UEngine::LoadMap(FWorldContext& WorldContext, const FString& Path, FCamera*
 	FArchive WorldArchive = Archive.GetArchive("map");
 
 	UWorld* World = NewObject<UWorld>();
-	World->Initialize();
+	World->Initialize(WorldContext.WorldType);
 
 	World->Deserialize(WorldArchive);
 	SetWorld(WorldContext, World);

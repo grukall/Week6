@@ -1,6 +1,7 @@
 #pragma once
 
 #include "UObject.h"
+#include "Runtime/Engine/EngineBaseTypes.h"
 
 class UWorld;
 class AActor;
@@ -31,11 +32,13 @@ public:
 
 	void SetBatchIndex(int32 Index) { BatchIndex = Index; }
 	int32 GetBatchIndex() const { return BatchIndex; }
+	bool ShouldTick(ELevelTick TickType) const;
 
 protected:
 	AActor* ActorOwner = nullptr;
 	UWorld* World = nullptr;
 	bool bHasBegunPlay = false;
 	bool bTickEnabled = false;
+	bool bTickInEditor = false;
 	int32 BatchIndex = -1;
 };

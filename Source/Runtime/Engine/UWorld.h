@@ -9,6 +9,7 @@
 #include "Runtime/Core/PointerTypes.h"
 #include "Runtime/Engine/FScene.h"
 #include "Runtime/Engine/ULevel.h"
+#include "EngineBaseTypes.h"
 #include <concepts>
 #include <utility>
 
@@ -38,11 +39,11 @@ public:
 
     [[nodiscard]] bool HasBegunPlay() const { return bHasBegunPlay; }
 
-    void Initialize();
+    void Initialize(EWorldType _WorldType);
     void Release();
 
     void BeginPlay();
-    void Tick(float DeltaTime);
+    void Tick(float DeltaTime, ELevelTick eTickType);
     void EndPlay();
 
 	ULevel* GetPersistentLevel() const { return PersistentLevel; }

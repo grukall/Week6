@@ -16,8 +16,3 @@ AAppleNormalActor::AAppleNormalActor()
 	FAssetRegistry& Registry = FAssetRegistry::GetInstance();
 	AppleStaticMeshComp->SetMesh(Registry.Get<UStaticMesh>("StaticMesh/JungleApple/Apple_Normal.json"));
 }
-
-void AAppleNormalActor::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-}

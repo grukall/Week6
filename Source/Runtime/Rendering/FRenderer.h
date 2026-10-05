@@ -163,6 +163,7 @@ private:
   Microsoft::WRL::ComPtr<ID3D11Texture2D> renderTexture;
   Microsoft::WRL::ComPtr<ID3D11Texture2D> SceneColorTexture;
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> DepthStencilSRV;
+  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> DepthSRV;
 
   TMap<FRasterizerDesc, Microsoft::WRL::ComPtr<ID3D11RasterizerState>> RasterizerStateMap;
   TMap<FDepthStencilDesc, Microsoft::WRL::ComPtr<ID3D11DepthStencilState>> DepthStencilStateMap;

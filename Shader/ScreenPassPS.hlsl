@@ -1,4 +1,5 @@
 Texture2D SceneTexture : register(t6);
+Texture2D DepthTexture : register(t7);
 SamplerState SceneSampler : register(s0);
 
 struct PS_INPUT
@@ -16,9 +17,10 @@ PS_OUTPUT MainPS(PS_INPUT Input)
 {
     PS_OUTPUT output;
     
-    float4 Sampled = SceneTexture.Sample(SceneSampler, Input.UV);
+    // float4 Sampled = SceneTexture.Sample(SceneSampler, Input.UV); // 기존 색상 출력
+    float4 Depth = DepthTexture.Sample(SceneSampler, Input.UV).r;
     
-    output.Color = Sampled.rgba;
+    output.Color = Depth.rgba;
     
     return output;
 }

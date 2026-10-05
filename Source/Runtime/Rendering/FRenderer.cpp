@@ -139,6 +139,7 @@ void FRenderer::OnWindowSize(UINT Width, UINT Height) {
   BackBufferRTV.Reset();
   DepthStencilView.Reset();
   DepthStencilSRV.Reset();
+  DepthSRV.Reset();
   DepthStencilBuffer.Reset();
   EditorViewPortRTV.Reset();
   EditorViewPortSRV.Reset();
@@ -781,6 +782,17 @@ bool FRenderer::InitializeBackBufferAndDepthStencil() {
                                             &StencilSrvDesc, &DepthStencilSRV);
   if (FAILED(Result)) {
     return false;
+  }
+
+  D3D11_SHADER_RESOURCE_VIEW_DESC DepthSrvDesc{
+      .Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
+      .ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
+      .Texture2D = { .MostDetailedMip = 0, .MipLevels = 1 },
+  };
+  Result = Device->CreateShaderResourceView(DepthStencilBuffer.Get(),
+      &DepthSrvDesc, &DepthSRV);
+  if (FAILED(Result)) {
+      return false;
   }
 
   return true;
@@ -1541,9 +1553,10 @@ void FRenderer::RenderScreenPass()
 
     Context->OMSetRenderTargets(1, SceneColorRTV.GetAddressOf(), nullptr);
 
-    // 씬 텍스처 바인딩
-    ID3D11ShaderResourceView* SRV = EditorViewPortSRV.Get();
-    Context->PSSetShaderResources(6, 1, &SRV);
+    // 텍스처 바인딩
+    ID3D11ShaderResourceView* SRVs[] = { EditorViewPortSRV.Get(),
+                                      DepthSRV.Get() };
+    Context->PSSetShaderResources(6, 2, SRVs);
 
     FRenderResourceLibrary::Get()
         .GetPipeline(FName("#ScreenPass"))
@@ -1553,8 +1566,8 @@ void FRenderer::RenderScreenPass()
     INC_DWORD_STAT_BY("Prims", 1);
 
     // 슬롯 해제
-    ID3D11ShaderResourceView* NullSRV = { nullptr };
-    Context->PSSetShaderResources(6, 1, &NullSRV);
+    ID3D11ShaderResourceView* NullSRV[2] = {nullptr, nullptr};
+    Context->PSSetShaderResources(6, 2, NullSRV);
 }
 
 void FRenderer::RenderOutline() {

@@ -100,6 +100,7 @@ public:
 
   void DrawUploadedCommand(const FDrawCommand& Command, bool bApplyViewMode = true);
 
+  void RenderScreenPass();
   void RenderOutline();
   ID3D11RenderTargetView* GetBackBuffer() { return BackBufferRTV.Get(); }
   ID3D11DepthStencilView* GetDepthStencilView() { return DepthStencilView.Get(); }

@@ -234,7 +234,7 @@ bool FRenderResourceLibrary::CreateScreenPass(FRenderer& Renderer)
     // 래스터라이저 상태 생성
     D3D11_RASTERIZER_DESC RasterizerDesc{
         .FillMode = D3D11_FILL_SOLID,
-        .CullMode = D3D11_CULL_BACK,
+        .CullMode = D3D11_CULL_FRONT,
         .FrontCounterClockwise = false,
     };
     Result = Device->CreateRasterizerState(&RasterizerDesc, &RasterizerState);

@@ -1529,6 +1529,34 @@ void FRenderer::ClearTextInstances() {
   FRenderResourceLibrary::Get().DestroyAllInstancingArray();
 }
 
+void FRenderer::RenderScreenPass()
+{
+    Context->RSSetViewports(1, &Viewport);
+    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    Context->IASetInputLayout(nullptr);
+
+    ID3D11Buffer* NullVB = nullptr;
+    UINT Zero = 0;
+    Context->IASetVertexBuffers(0, 1, &NullVB, &Zero, &Zero);
+
+    Context->OMSetRenderTargets(1, SceneColorRTV.GetAddressOf(), nullptr);
+
+    // 씬 텍스처 바인딩
+    ID3D11ShaderResourceView* SRV = EditorViewPortSRV.Get();
+    Context->PSSetShaderResources(0, 1, &SRV);
+
+    FRenderResourceLibrary::Get()
+        .GetPipeline(FName("#ScreenPass"))
+        ->Bind(*Context.Get());
+    Context->Draw(3, 0);
+    INC_DWORD_STAT("Draws");
+    INC_DWORD_STAT_BY("Prims", 1);
+
+    // 슬롯 해제
+    ID3D11ShaderResourceView* NullSRV = { nullptr };
+    Context->PSSetShaderResources(0, 1, &NullSRV);
+}
+
 void FRenderer::RenderOutline() {
   // 백버퍼 뷰포트 및 토폴로지 복구
 
@@ -1542,7 +1570,7 @@ void FRenderer::RenderOutline() {
 
   Context->OMSetRenderTargets(1, BackBufferRTV.GetAddressOf(), nullptr);
   // 씬 텍스처와 스텐실 텍스처 바인딩
-  ID3D11ShaderResourceView *SRVs[] = {EditorViewPortSRV.Get(),
+  ID3D11ShaderResourceView *SRVs[] = { SceneColorSRV.Get(),
                                       DepthStencilSRV.Get()};
   Context->PSSetShaderResources(0, 2, SRVs);
 

@@ -137,6 +137,7 @@ private:
   bool InitializePipelines(FRenderer &Renderer);
   bool CreateWireframePipeline(FRenderer &Renderer);
   bool CreateOutlinePipeline(FRenderer &Renderer);
+  bool CreateScreenPass(FRenderer& Renderer);
   bool CreatePostProcessPipeline(FRenderer &Renderer);
 
   bool CreateInstancingArrayMap();

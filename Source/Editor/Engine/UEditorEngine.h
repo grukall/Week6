@@ -11,8 +11,23 @@
 #include "Editor/UI/Imgui/FImguiContentsDrawer.h"
 #include "Editor/Visualizer/FVisualizerRegistry.h"
 #include "Editor/Application/FObjViewerApplication.h"
+#include "Runtime/Core/TOptional.h"
 #include "Editor/Core/FEditor.h"
-#include "Runtime/Core/PointerTypes.h"
+#include "Runtime/Engine/UWorld.h"
+
+//세선 실행 요청
+struct FRequestPlaySessionParams
+{
+	EWorldType WorldType;
+};
+
+//PIE, SIE 실행 시 복구를 위한 상태 저장
+struct FPlaySession
+{
+	uint32 PIEContextId;
+	uint32 ViewEntryIndex;
+	uint32 PrevViewContextId;
+};
 
 class UEditorEngine : public UEngine
 {
@@ -30,11 +45,23 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void Render() override;
 	void ExecuteCommand(const char* Command);
-	[[nodiscard]] UWorld* GetEditorWorld() const { return CurrentWorld; }
+	// 에디터 월드 (저장/로드/New의 대상). PIE 중에도 CurrentWorld와 무관하게 항상 Editor 컨텍스트의 월드를 가리킨다.
+	[[nodiscard]] UWorld* GetEditorWorld() { return GetWorld(EditorContextId); }
+	// PIE가 실행 중인지
+	[[nodiscard]] bool IsPlaySessionActive() const { return PlaySession.IsSet(); }
+
+	//PiE, SIE
+	void StartQueuedPlaySessionRequest();
+	void StartQueuedEndSessionRequest();
+	TOptional<FRequestPlaySessionParams> PlaySessionRequest;
+	TOptional<FPlaySession> PlaySession;
+	bool bRequestEndPlay = false;
 
 private:
-	//EWorldType::Editor
-	UWorld* EditorWorld;
+	void StartQueuedPlaySessionRequestInternal();
+
+	//EWorldType::Editor 컨텍스트의 ID
+	uint32 EditorContextId = InvalidContextId;
 
 
 	FImguiEditorViewportWindow EditorViewportWindow;

@@ -79,7 +79,7 @@ private:
 	void ShowViewportHorizontalSplitter(SSplitter& Splitter);
 	void ApplyPendingViewportMaximize(FEditor& Editor);
 	bool GetViewportSceneRect(const ImVec2& Origin, FRect& OutRect) const;
-	void DrawViewportHeader(int32 ViewportIndex,FEditor& Editor);
+	void DrawViewportHeader(int32 EntryIndex,FEditor& Editor);
 	int32 PendingMaximizeViewport = -1;
 	FCameraInputController CameraController;
 };

@@ -52,10 +52,16 @@ void FEditor::Process()
         Target->Destroy();
     }
 
-    // 선택된 액터는 에디터 월드에 속하므로 현재 월드의 BVH만 갱신한다.
+    // 활성 뷰포트가 다른 월드를 보게 되면(PIE 시작/종료, 뷰포트 전환) 선택이 그 월드의 액터가 아니므로 해제한다.
+    if (SelectedActor && SelectedActor->GetWorld() != GetViewWorld())
+    {
+        UnSelectActor();
+    }
+
+    // 선택된 액터가 속한 월드의 BVH만 갱신한다.
     if (SelectedActor)
     {
-        UWorld* World = GetCurrentWorld();
+        UWorld* World = SelectedActor->GetWorld();
 
         USceneComponent* Root = SelectedActor->GetRootComponent();
         const bool bChanged = Root && !(Root->GetRelativeTransform() == SelectedTransform);
@@ -109,32 +115,54 @@ void FEditor::LoadState()
     
 }
 
-UWorld* FEditor::GetCurrentWorld() const {
+UWorld* FEditor::GetEditorWorld() const {
   return EditorEngine ? EditorEngine->GetEditorWorld() : nullptr;
 }
 
+UWorld* FEditor::GetViewWorld() const {
+  if (Entries.empty() || ActiveViewportIndex < 0 || ActiveViewportIndex >= static_cast<int32>(Entries.size())) {
+    return nullptr;
+  }
+  return Entries[ActiveViewportIndex]->Client.GetWorld();
+}
+
 void FEditor::NewMap() {
+  if (EditorEngine->IsPlaySessionActive()) {
+    UE_LOG_WARN("[NewMap] PIE 실행 중에는 새 씬을 만들 수 없습니다. 먼저 PIE를 종료하세요.");
+    return;
+  }
+
   // 이전 월드가 파괴되기 전에 선택을 해제한다.
   UnSelectActor();
-  EditorEngine->NewMap(GetCurrentWorld(), EWorldType::Editor);
+  EditorEngine->NewMap(GetEditorWorld(), EWorldType::Editor);
   State.ResetToDefaults();
   LoadState();
 }
 
 void FEditor::SaveMap(const FString &Path)
 {
-  if (UWorld* World = GetCurrentWorld()) {
+  if (EditorEngine->IsPlaySessionActive()) {
+    UE_LOG_WARN("[SaveMap] PIE 실행 중에는 씬을 저장할 수 없습니다. 먼저 PIE를 종료하세요.");
+    return;
+  }
+
+  if (UWorld* World = GetEditorWorld()) {
     EditorEngine->SaveMap(*World, Path);
   }
 }
 
 void FEditor::LoadMap(const FString &Path)
 {
+  if (EditorEngine->IsPlaySessionActive()) {
+    UE_LOG_WARN("[LoadMap] PIE 실행 중에는 씬을 불러올 수 없습니다. 먼저 PIE를 종료하세요.");
+    return;
+  }
+
   // 이전 월드가 파괴되기 전에 선택을 해제한다.
   UnSelectActor();
 
   FEditorViewportEntry* Entry = GetActiveViewport();
-  EditorEngine->LoadMap(GetCurrentWorld(), Path, Entry ? &Entry->Client.ViewportCamera : nullptr);
+  EditorEngine->LoadMap(GetEditorWorld(), Path, Entry ? &Entry->Client.ViewportCamera : nullptr);
 }
 
 void FEditor::AddViewport(UEngine* Engine, FWorldContext& Context) {
@@ -199,7 +227,7 @@ void FEditor::UnSelectActor() {
 
 const TArray<UPrimitiveComponent *> &FEditor::GetPrimitiveComponents() const {
     static const TArray<UPrimitiveComponent*> Empty;
-  UWorld* World = GetCurrentWorld();
+  UWorld* World = GetViewWorld();
   if (!World || !World->GetScene()) {
     return Empty;
   }
@@ -214,7 +242,7 @@ void FEditor::ClearSelectionForGC() {
 
 void FEditor::SpawnActorToCurrentScene(UClass* Type, int Size)
 {
-    UWorld* World = GetCurrentWorld();
+    UWorld* World = GetViewWorld();
     FScene* Scene = World ? World->GetScene() : nullptr;
     if (!Scene)
     {
@@ -262,7 +290,7 @@ void FEditor::ResizeView(FEditorState::SplitViewMode mode)
     //=== 초기화 ===//
     for (int32 i = 0; i < 4; ++i)
     {
-        Leaf[i].ViewportIndex = i;
+        Leaf[i].EntryIndex = i;
         Leaf[i].bisActive = false;
     }
 
@@ -318,16 +346,16 @@ void FEditor::ResizeView(FEditorState::SplitViewMode mode)
 void FEditor::SetViewLayout(FEditorState::SplitViewMode mode) {
     ResizeView(mode);
 
-    auto SetPerspectiveView = [this](int32 ViewportIndex)
+    auto SetPerspectiveView = [this](int32 EntryIndex)
     {
-        FEditorViewportEntry& Entry = *Entries[ViewportIndex];
+        FEditorViewportEntry& Entry = *Entries[EntryIndex];
         Entry.Client.eOrthogonalType = FEditorViewportClient::EOrthogonalType::PERSPECTIVE;
         Entry.Client.ViewportCamera.SetProjectionType(EProjectionType::Perspective);
     };
 
-    auto SetOrthographicView = [this](int32 ViewportIndex, FEditorViewportClient::EOrthogonalType Type)
+    auto SetOrthographicView = [this](int32 EntryIndex, FEditorViewportClient::EOrthogonalType Type)
     {
-         Entries[ViewportIndex]->Client.SetOrthograpihcView(Type);
+         Entries[EntryIndex]->Client.SetOrthograpihcView(Type);
     };
 
     switch (mode)

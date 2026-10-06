@@ -92,13 +92,13 @@ void FImguiEditorViewportWindow::Process(FEditor& Editor, float DeltaTime)
 
         if (Width <= 0.0f || Height <= 0.0f) continue;
 
-        FEditorViewportEntry& CurrentEntry = *Viewports[leaf.ViewportIndex];
+        FEditorViewportEntry& CurrentEntry = *Viewports[leaf.EntryIndex];
 
         // 스플리터 여백을 제외한 자식 창 위치를 ImGui 화면 좌표로 변환
         ImGui::SetCursorScreenPos(ImVec2(Origin.x + ChildRect.Left, Origin.y + ChildRect.Top));
 
         // 자식 창과 내부 UI의 ID를 뷰포트별로 분리
-        ImGui::PushID(leaf.ViewportIndex);
+        ImGui::PushID(leaf.EntryIndex);
 
         const bool bVisible = ImGui::BeginChild(
             "ViewportChild",
@@ -111,7 +111,7 @@ void FImguiEditorViewportWindow::Process(FEditor& Editor, float DeltaTime)
         if (bVisible)
         {
             //상단바 생성
-            DrawViewportHeader(leaf.ViewportIndex,Editor);
+            DrawViewportHeader(leaf.EntryIndex,Editor);
 
             //상단바 아래의 실제 3D 영역을 별도 함수로 계산
             FRect SceneRect{};
@@ -127,7 +127,7 @@ void FImguiEditorViewportWindow::Process(FEditor& Editor, float DeltaTime)
                 if (Input.bPickRequested || ImGui::IsItemClicked(ImGuiMouseButton_Right))
                 {
                     Client = &CurrentEntry.Client;
-                    Editor.ActiveViewportIndex = leaf.ViewportIndex;
+                    Editor.ActiveViewportIndex = leaf.EntryIndex;
                     ImGui::SetWindowFocus();
                     Input.bFocused = true;
                 }
@@ -379,7 +379,8 @@ void FImguiEditorViewportWindow::HandlePicking(FEditor &Editor,
     FVector ImpactPoint;
     bool bHit = false;
 
-	UWorld* World = Editor.GetCurrentWorld();
+	// 클릭한 뷰포트가 보는 월드에서 피킹한다 (PIE 중에는 PIE 월드)
+	UWorld* World = Viewport.GetWorld();
 	if (!World)
 	{
 		UE_LOG("[Picking] No world available for picking.");
@@ -521,7 +522,7 @@ bool FImguiEditorViewportWindow::GetViewportSceneRect(
 }
 
 // 변경: 뷰포트 번호 추가, const 제거
-void FImguiEditorViewportWindow::DrawViewportHeader(int32 ViewportIndex,FEditor& Editor)
+void FImguiEditorViewportWindow::DrawViewportHeader(int32 EntryIndex,FEditor& Editor)
 {
     const float HeaderHeight = ImGui::GetFrameHeight();
     const float ButtonSize = HeaderHeight - 6.0f;
@@ -577,7 +578,7 @@ void FImguiEditorViewportWindow::DrawViewportHeader(int32 ViewportIndex,FEditor&
 
         if (bCameraOpen)
         {
-            FEditorViewportEntry& Entry = *Editor.GetViewports()[ViewportIndex];
+            FEditorViewportEntry& Entry = *Editor.GetViewports()[EntryIndex];
             FCamera& Camera = Entry.Client.ViewportCamera;
 
             ImGui::TextUnformatted("PERSPECTIVE");
@@ -643,7 +644,7 @@ void FImguiEditorViewportWindow::DrawViewportHeader(int32 ViewportIndex,FEditor&
         if (ImGui::Button("##Maximize", ImVec2(ButtonSize, ButtonSize)))
         {
             //실제 배치 변경은 다음 Process() 시작에서 처리
-            PendingMaximizeViewport = ViewportIndex;
+            PendingMaximizeViewport = EntryIndex;
         }
 
         const ImVec2 ButtonMin = ImGui::GetItemRectMin();
@@ -670,7 +671,7 @@ void FImguiEditorViewportWindow::ApplyPendingViewportMaximize(FEditor& Editor)
 {
     if (PendingMaximizeViewport == -1) return;
 
-    const int32 ViewportIndex = PendingMaximizeViewport;
+    const int32 EntryIndex = PendingMaximizeViewport;
     PendingMaximizeViewport = -1;
 
     const auto SplitMode = Editor.State.GetSplitMode();
@@ -682,7 +683,7 @@ void FImguiEditorViewportWindow::ApplyPendingViewportMaximize(FEditor& Editor)
     bool bViewportVisible = false;
     for (const SWindow& Leaf : Editor.Leaf)
     {
-        if (Leaf.bisActive && Leaf.ViewportIndex == ViewportIndex)
+        if (Leaf.bisActive && Leaf.EntryIndex == EntryIndex)
         {
             bViewportVisible = true;
             break;
@@ -698,10 +699,10 @@ void FImguiEditorViewportWindow::ApplyPendingViewportMaximize(FEditor& Editor)
     else
     {
         Editor.ResizeView(FEditorState::SplitViewMode::SINGLE);
-        Editor.Leaf[0].ViewportIndex = ViewportIndex;
+        Editor.Leaf[0].EntryIndex = EntryIndex;
     }
 
     // ResizeView()가 활성 번호를 0으로 초기화하므로 다시 지정
-    Editor.ActiveViewportIndex = ViewportIndex;
+    Editor.ActiveViewportIndex = EntryIndex;
 }
 

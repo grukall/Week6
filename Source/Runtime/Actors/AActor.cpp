@@ -78,10 +78,25 @@ void AActor::Serialize(FArchive& Archive) const
 		FArchive RootArchive{};
 		RootComponent->Serialize(RootArchive);
 		Archive.SetArchive("RootComponent", RootArchive);
+
+		//TODO: USceneComponent 계층 구조와 계층과 상관없느 UActorComponent 모두 직렬화 하도록 변경
+		TArray<FArchive> CompArchives;
+		CompArchives.reserve(AttachedComp.size() - 1);
+		for (USceneComponent* ActorComponent : AttachedComp)
+		{
+			if (ActorComponent == RootComponent) continue;
+
+			FArchive CompAcrchive;
+			ActorComponent->Serialize(CompAcrchive);
+			CompArchives.push_back(CompAcrchive);
+		}
+
+		Archive.SetArchiveArray("AttachedComponent", CompArchives);
 	}
 	else
 	{
 		Archive.SetNull("RootComponent");
+		Archive.SetNull("AttachedComponent");
 	}
 }
 
@@ -157,6 +172,26 @@ void AActor::Deserialize(const FArchive& Archive)
 	}
 
 	RootComponent->Deserialize(RootComponentArchive);
+
+	TArray<FArchive> AttachedCompArchive = Archive.GetArchiveArray("AttachedComponent");
+	if (!AttachedCompArchive.empty())
+	{
+		for (const FArchive& Archive : AttachedCompArchive)
+		{
+			const FString& CompSavedTypeName = RootComponentArchive.GetString("Type");
+			SavedClass = UClass::FindByName(SavedTypeName);
+
+			USceneComponent* SceneComponent = NewObject(SavedClass)->Cast<USceneComponent>();
+			if (!SceneComponent)
+			{
+				UE_LOG_WARN("[%s::Deserialize] AttachedComponent %s를 생성할 수 없습니다.",
+					GetClass()->GetUClassName(), CompSavedTypeName);
+				return;
+			}
+
+			AddComponent(SceneComponent);
+		}
+	}
 }
 
 void AActor::CreateRootComponent(UClass* ClassType)

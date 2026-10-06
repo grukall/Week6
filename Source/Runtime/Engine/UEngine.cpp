@@ -66,11 +66,10 @@ void UEngine::Init(HWND Window)
 void UEngine::Exit()
 {
 #if !defined(_OBJVIEWER)
-	for (int i = WorldContexts.size() - 1; i >= 0; --i)
+	while (!WorldContexts.empty())
 	{
-		DestroyObject(WorldContexts[i].World);
+		DestroyWorld(WorldContexts.back().ContextId);
 	}
-	WorldContexts.clear();
 #endif
 
 	Renderer.Shutdown();
@@ -85,51 +84,157 @@ void UEngine::Render()
 {
 }
 
-int32 UEngine::CreateWorldContext(EWorldType WorldType, UWorld* World)
+UWorld* UEngine::BuildWorld(EWorldType Type, const FArchive* Source)
 {
-	WorldContexts.push_back(FWorldContext{ WorldType, World });
-	return WorldContexts.size() - 1;
+	UWorld* World = NewObject<UWorld>();
+	World->Initialize(Type);
+
+	if (Source)
+	{
+		// 역직렬화 중 예외가 나면 이 월드는 아직 아무도 소유하지 않으므로 여기서 정리한다.
+		try
+		{
+			World->Deserialize(*Source);
+		}
+		catch (const std::exception& Error)
+		{
+			UE_LOG_ERROR("[BuildWorld] 월드 역직렬화에 실패했습니다: %s", Error.what());
+			DestroyObject(World);
+			return nullptr;
+		}
+	}
+
+	return World;
 }
 
-void UEngine::SetWorld(FWorldContext& WorldContext, UWorld* New)
+void UEngine::ActivateWorld(UWorld* World)
 {
-	UWorld* Old = WorldContext.World;
-	if (Old)
+	if (ULevel* Level = World->GetPersistentLevel())
 	{
-		Old->EndPlay();
-		DestroyObject(Old);
-	}
-
-	New->Initialize(WorldContext.WorldType);
-	WorldContext.World = New;
-
-	// 교체된 월드가 현재 월드였다면 따라가야 한다 (파괴된 월드를 가리키지 않도록).
-	if (CurrentWorld == Old)
-	{
-		CurrentWorld = New;
-	}
-
-	if (ULevel* Level = New->GetPersistentLevel())
-	{ 
 		Level->Activate();
 	}
 
-	//새로운 월드로 설정되면 BVH를 재구축한다.
-	FScene* Scene = New->GetScene();
+	// 활성화로 FScene에 컴포넌트가 등록된 뒤에 BVH를 만든다.
+	FScene* Scene = World->GetScene();
 	Scene->GetSceneBVH().Build(Scene->GetPrimitives());
+
+	// 에디터 월드는 BeginPlay하지 않는다. 플레이하는 월드만 시작한다.
+	const EWorldType Type = World->GetWorldType();
+	if (Type == EWorldType::PIE || Type == EWorldType::Game)
+	{
+		World->BeginPlay();
+	}
 }
 
-UWorld* UEngine::GetWorld(uint32 WorldContextId)
+void UEngine::ShutdownWorld(UWorld* World)
 {
-	for (FWorldContext &Context : WorldContexts)
+	if (!World)
 	{
-		if (Context.ContextId == WorldContextId)
+		return;
+	}
+
+	World->EndPlay();
+	DestroyObject(World);
+}
+
+//새 컨텍스트와 월드를 만든다.Source가 있으면 그 내용으로 채운다(PIE 복제 등).
+//CurrentWorld가 비어 있으면 이 월드가 CurrentWorld가 된다. (이미 있으면 바꾸지 않는다)
+uint32 UEngine::CreateWorld(EWorldType Type, const FArchive* Source)
+{
+	UWorld* World = BuildWorld(Type, Source);
+	if (!World)
+	{
+		return InvalidContextId;
+	}
+
+	const uint32 ContextId = NextContextId++;
+	WorldContexts.push_back(FWorldContext{ Type, World, ContextId });
+
+	// 첫 월드(에디터 월드)만 자동으로 CurrentWorld가 된다. PIE 월드가 생겨도 CurrentWorld는 바뀌지 않는다.
+	if (!CurrentWorld)
+	{
+		CurrentWorld = World;
+	}
+
+	// 컨텍스트에 등록된 뒤에 시작한다. BeginPlay 중에 컨텍스트를 조회해도 찾을 수 있도록.
+	ActivateWorld(World);
+	return ContextId;
+}
+
+//같은 컨텍스트의 월드를 새 월드로 바꾼다 (LoadMap, NewMap). 새 월드를 완성한 뒤에 이전 월드를 파괴하므로
+//실패하면 false를 반환하고 이전 월드는 그대로 남김
+bool UEngine::ReplaceWorld(uint32 ContextId, const FArchive* Source)
+{
+	FWorldContext* Context = FindWorldContext(ContextId);
+	if (!Context)
+	{
+		UE_LOG_ERROR("[ReplaceWorld] 등록되지 않은 컨텍스트입니다. ContextId=%u", ContextId);
+		return false;
+	}
+
+	// 새 월드를 먼저 완성한다. 실패하면 이전 월드는 그대로 둔다.
+	UWorld* NewWorld = BuildWorld(Context->WorldType, Source);
+	if (!NewWorld)
+	{
+		return false;
+	}
+
+	UWorld* OldWorld = Context->World;
+	Context->World = NewWorld;
+
+	// 교체된 월드가 현재 월드였다면 따라가야 한다 (파괴된 월드를 가리키지 않도록).
+	if (CurrentWorld == OldWorld)
+	{
+		CurrentWorld = NewWorld;
+	}
+
+	ShutdownWorld(OldWorld);
+	ActivateWorld(NewWorld);
+	return true;
+}
+
+//월드를 종료(EndPlay)하고 파괴하고 컨텍스트를 제거한다.
+//월드를 가리키는 엔진 밖의 참조(뷰포트의 ContextId, 선택 등)는 호출하는 쪽이 먼저 정리해야 한다.
+void UEngine::DestroyWorld(uint32 ContextId)
+{
+	for (size_t i = 0; i < WorldContexts.size(); ++i)
+	{
+		if (WorldContexts[i].ContextId != ContextId)
 		{
-			return Context.World;
+			continue;
+		}
+
+		UWorld* World = WorldContexts[i].World;
+
+		// CurrentWorld가 이 월드였다면 비운다. (엔진 종료 때가 아니면 보통 CurrentWorld는 에디터 월드다)
+		if (CurrentWorld == World)
+		{
+			CurrentWorld = nullptr;
+		}
+
+		WorldContexts.erase(WorldContexts.begin() + i);
+		ShutdownWorld(World);
+		return;
+	}
+}
+
+FWorldContext* UEngine::FindWorldContext(uint32 ContextId)
+{
+	for (FWorldContext& Context : WorldContexts)
+	{
+		if (Context.ContextId == ContextId)
+		{
+			return &Context;
 		}
 	}
 
 	return nullptr;
+}
+
+UWorld* UEngine::GetWorld(uint32 ContextId)
+{
+	FWorldContext* Context = FindWorldContext(ContextId);
+	return Context ? Context->World : nullptr;
 }
 
 bool UEngine::LoadMap(UWorld* World, const FString& Path, FCamera* OutLegacyCamera)
@@ -193,14 +298,7 @@ bool UEngine::LoadMap(FWorldContext& WorldContext, const FString& Path, FCamera*
 	}
 
 	FArchive WorldArchive = Archive.GetArchive("map");
-
-	UWorld* World = NewObject<UWorld>();
-	World->Initialize(WorldContext.WorldType);
-
-	World->Deserialize(WorldArchive);
-	SetWorld(WorldContext, World);
-
-	return true;
+	return ReplaceWorld(WorldContext.ContextId, &WorldArchive);
 }
 
 bool UEngine::SaveMap(const UWorld& World, const FString& Path) const
@@ -259,6 +357,6 @@ void UEngine::NewMap(UWorld* World, EWorldType WorldType)
 
 void UEngine::NewMap(FWorldContext& WorldContext, EWorldType WorldType)
 {
-	UWorld* World = NewObject<UWorld>();
-	SetWorld(WorldContext, World);
+	// 월드 타입은 컨텍스트의 것을 따른다. 빈 월드로 교체한다.
+	ReplaceWorld(WorldContext.ContextId, nullptr);
 }

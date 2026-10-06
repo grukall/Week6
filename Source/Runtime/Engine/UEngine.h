@@ -11,6 +11,7 @@
 
 class FEngineLoop;
 class FCamera;
+class FArchive;
 
 // 엔진의 런타임 계층을 담당하는 클래스
 // 엔진 로직, 시스템을 처리하는 부분은 여기서 담당
@@ -38,10 +39,12 @@ public:
 	virtual void OnWindowResize(UINT Width, UINT Height);
 	virtual void Render();
 
-	//인덱스 반환
-	int32 CreateWorldContext(EWorldType WorldType, UWorld* World);
-	void SetWorld(FWorldContext& WorldContext, UWorld *New);
-	UWorld* GetWorld(uint32 WorldContextId);
+	uint32 CreateWorld(EWorldType Type, const FArchive* Source = nullptr);
+	bool ReplaceWorld(uint32 ContextId, const FArchive* Source = nullptr);
+	void DestroyWorld(uint32 ContextId);
+
+	FWorldContext* FindWorldContext(uint32 ContextId);
+	UWorld* GetWorld(uint32 ContextId);
 
 	bool LoadMap(UWorld* World, const FString& Path, FCamera* OutLegacyCamera = nullptr);
 	bool LoadMap(FWorldContext& WorldContext, const FString& Path, FCamera* OutLegacyCamera = nullptr);
@@ -53,4 +56,15 @@ public:
 protected:
 	FRenderer Renderer;
 	FRenderView RenderView{ Renderer };
+
+private:
+	// 월드 하나를 만드는 단계를 한 가지씩 나눈 내부 함수
+	// BuildWorld   : NewObject -> Initialize -> (Source가 있으면) Deserialize. 가동 전 상태. 실패하면 nullptr
+	// ActivateWorld: 레벨 Activate(FScene 등록) -> BVH 빌드 -> 월드 타입이 PIE/Game이면 BeginPlay
+	// ShutdownWorld: EndPlay -> DestroyObject
+	UWorld* BuildWorld(EWorldType Type, const FArchive* Source);
+	void ActivateWorld(UWorld* World);
+	void ShutdownWorld(UWorld* World);
+
+	uint32 NextContextId = 0;
 };

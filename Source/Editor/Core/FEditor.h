@@ -77,7 +77,10 @@ public:
   void Process();
 
   // 월드의 소유자는 UEditorEngine이다. FEditor는 접근만 위임한다.
-  [[nodiscard]] UWorld* GetCurrentWorld() const;
+  // 에디터 월드: 저장/로드/New의 대상. PIE 중에도 항상 에디터 월드를 가리킨다.
+  [[nodiscard]] UWorld* GetEditorWorld() const;
+  // 활성 뷰포트가 보는 월드: 아웃라이너, 선택, 피킹, 기즈모, 스폰의 대상. PIE 중에는 PIE 월드가 된다.
+  [[nodiscard]] UWorld* GetViewWorld() const;
 
   void NewMap();
   void SaveMap(const FString &Path);
@@ -112,6 +115,7 @@ public:
   void LoadState();
   void SetViewLayout(FEditorState::SplitViewMode mode);
   UTextInstanceComponent* GetTextcomp() { return SelectedActorTextComp; }
+  UEditorEngine* GetEditorEngine() const { return EditorEngine; }
   
  //Viewport관련
   int32 ActiveViewportIndex = 0;

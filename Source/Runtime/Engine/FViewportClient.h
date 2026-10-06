@@ -18,10 +18,13 @@ public:
 	FViewportClient(UEngine* InEngine, uint32 InContextId) : Engine(InEngine), ContextId(InContextId) {}
 
 	virtual ~FViewportClient() = default;
-	UWorld* GetWorld();
+	UWorld* GetWorld() const;
 	virtual bool IsOrtho() const { return false;}
 	virtual void AddAssociation(FViewport& Viewport) {}
 	virtual void RemoveAssociation(FViewport& Viewport) {}
+
+	void SetContextId(const uint32 NewContextId) { ContextId = NewContextId; }
+	uint32 GetContextId() const { return ContextId; }
 
 protected:
 	UEngine* Engine = nullptr;

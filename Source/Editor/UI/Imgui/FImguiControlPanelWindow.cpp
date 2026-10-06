@@ -188,7 +188,7 @@ void FImguiControlPanelWindow::RunPickBenchmark(FEditor& Editor, int Iterations)
 {
     if (!FRayCastingManager::bHasLastPickRay || Iterations <= 0) { return; }
 
-	UWorld* World = Editor.GetCurrentWorld();
+	UWorld* World = Editor.GetViewWorld();
 	if (!World) { return; }
 
 	FScene* Scene =World->GetScene();

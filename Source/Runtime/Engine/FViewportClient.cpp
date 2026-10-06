@@ -2,7 +2,7 @@
 #include "FViewportClient.h"
 #include "Runtime/Engine/UEngine.h"
 
-UWorld* FViewportClient::GetWorld()
+UWorld* FViewportClient::GetWorld() const
 {
-     return Engine->GetWorld(ContextId);
+     return Engine ? Engine->GetWorld(ContextId) : nullptr;
 }

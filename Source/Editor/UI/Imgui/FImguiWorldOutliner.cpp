@@ -18,7 +18,8 @@ void FImguiWorldOutliner::Process(FEditor& Editor)
 
 	ImGui::Begin("World Outliner");
 
-	UWorld* CurrentWorld = Editor.GetCurrentWorld();
+	// 활성 뷰포트가 보는 월드의 액터를 보여 준다 (PIE 중에는 PIE 월드)
+	UWorld* CurrentWorld = Editor.GetViewWorld();
 	if (!CurrentWorld)
 	{
 		ImGui::TextDisabled("No Current World");

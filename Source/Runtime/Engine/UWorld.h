@@ -22,18 +22,18 @@ enum class EWorldType {
     Game,
 };
 
-static uint32 ContextIdCount = 0;
+// 유효하지 않은 컨텍스트 ID
+constexpr uint32 InvalidContextId = ~0u;
 
 struct FWorldContext
 {
 	EWorldType WorldType = EWorldType::Editor;
 	UWorld* World = nullptr;
-    uint32 ContextId = -1;
-    FWorldContext(EWorldType InWorldType, UWorld *InWorld) : WorldType(InWorldType), World(InWorld)
-    {
-        ContextId = ContextIdCount;
-        ++ContextIdCount;
-    }
+	// 컨텍스트를 가리키는 고유 번호. UEngine이 부여한다 (배열 인덱스와 달리 컨텍스트가 삭제되어도 밀리지 않는다).
+	uint32 ContextId = InvalidContextId;
+
+	FWorldContext(EWorldType InWorldType, UWorld* InWorld, uint32 InContextId)
+		: WorldType(InWorldType), World(InWorld), ContextId(InContextId) {}
 };
 
 class UWorld : public UObject

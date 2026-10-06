@@ -35,6 +35,33 @@ const FMatrix& FTransform::GetMatrix() const
 	return TransformMatrix;
 }
 
+namespace
+{
+	float SafeDivide(float Value, float Divisor)
+	{
+		return (std::fabs(Divisor) > 1e-8f ? Value / Divisor : 0.0f);
+	}
+}
+
+FTransform FTransform::GetRelativeTo(const FTransform& Parent) const
+{
+	const FQuaternion InverseParentRotation = Parent.Rotation.Conjugate();
+	const FVector Delta = InverseParentRotation.RotateVector(Location - Parent.Location);
+
+	FTransform Result;
+	Result.SetScale3D(FVector(
+		SafeDivide(Scale3D.X, Parent.Scale3D.X),
+		SafeDivide(Scale3D.Y, Parent.Scale3D.Y),
+		SafeDivide(Scale3D.Z, Parent.Scale3D.Z)));
+	Result.SetRotation((InverseParentRotation * Rotation).Normalized());
+	Result.SetLocation(FVector(
+		SafeDivide(Delta.X, Parent.Scale3D.X),
+		SafeDivide(Delta.Y, Parent.Scale3D.Y),
+		SafeDivide(Delta.Z, Parent.Scale3D.Z)));
+	return Result;
+}
+
+
 FTransform FTransform::operator*(const FTransform& Child) const
 {
 	FTransform Result;

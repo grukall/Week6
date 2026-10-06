@@ -1,31 +1,16 @@
-﻿#include "FUObjectArray.h"
+#include "FUObjectArray.h"
 
-#include <algorithm>
 #include <cassert>
-
-void FUObjectArray::SetNextUUID(uint32 UUID)
-{
-	NextUUID = UUID;
-}
 
 void FUObjectArray::AddObject(UObject* Object)
 {
-	Object->InternalIndex = static_cast<uint32>(Objects.size());
-	Object->UUID = AcquireUUID();
-	Objects.push_back(Object);
+	Object->InternalIndex = Objects.Emplace(Object, AcquireSerialNumber());
 }
 
 void FUObjectArray::RemoveObject(UObject* Object)
 {
 	const uint32 Index = Object->InternalIndex;
-	assert(Index < Objects.size() && Objects[Index] == Object);
-
-	UObject* LastObject = Objects.back();
-
-	Objects[Index] = LastObject;
-	LastObject->InternalIndex = Index;
-
-	Objects.pop_back();
+	Objects.RemoveAt(Index);
 }
 
 void FUObjectArray::DestroyObject(UObject* Object) {
@@ -36,10 +21,8 @@ void FUObjectArray::DestroyObject(UObject* Object) {
 	delete Object; // 오버라이드해서 통계 구현 필요
 }
 
-bool FUObjectArray::IsValid(const UObject* Object, uint32 UUID) const
+bool FUObjectArray::IsValid(uint32 Index, uint32 SerialNumber) const
 {
-	if (Object == nullptr || UUID == 0) return false;
-
-	const auto It = std::find(Objects.begin(), Objects.end(), Object);
-	return It != Objects.end() && (*It)->UUID == UUID;
+	// 슬롯이 비어 있거나 다른 객체로 재사용되었다면 시리얼 번호가 달라서 무효가 된다.
+	return SerialNumber != 0 && Objects.IsValidIndex(Index) && Objects[Index].SerialNumber == SerialNumber;
 }

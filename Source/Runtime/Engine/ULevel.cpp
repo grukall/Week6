@@ -70,7 +70,7 @@ void ULevel::Tick(float DeltaTime, ELevelTick eTickType)
         if (Actor->ShouldTick(eTickType))
             Actor->Tick(DeltaTime, eTickType);
 
-        for (USceneComponent* C : Actor->GetAttachedComponents())
+        for (UActorComponent* C : Actor->GetOwnedComponents())
             if (C && C->ShouldTick(eTickType))
                 C->Tick(DeltaTime);
     }

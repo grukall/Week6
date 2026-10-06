@@ -17,3 +17,4 @@ struct FOutlinerDragPayload
 
 inline constexpr const char* ContentDragPayloadType = "ENGINE_CONTENT";
 inline constexpr const char* OutlinerDragPayloadType = "ENGINE_OUTLINER";
+inline constexpr const char* ComponentDragPayloadType = "ENGINE_COMPONENT";

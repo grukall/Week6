@@ -66,14 +66,48 @@ LightStrength : Intensity * LightColor
 float3 BlinnPhong(float3 LightStrength, float3 LightVec,
                    float3 Normal, float3 ToEye, Material Mat)
 {
-    float3 HalfVec = normalize(ToEye + LightVec);
-    const float M = Mat.Shininess * 256.0f;
-    float RoughnessFactor = (M + 8.0f) * pow(max(dot(HalfVec, Normal), 0.0f), M) / 8.0f;
+    //float3 HalfVec = normalize(ToEye + LightVec);
+    //const float M = Mat.Shininess * 256.0f;
+    //float RoughnessFactor = (M + 8.0f) * pow(max(dot(HalfVec, Normal), 0.0f), M) / 8.0f;
+    
+    //float3 SpecFactor = Mat.SpecAlbedo * RoughnessFactor;
+    //SpecFactor = SpecFactor / (SpecFactor + 1.0f);
+    
+    //return (Mat.DiffAlbedo + SpecFactor) * LightStrength;
+    
+    float3 Diffuse = Mat.DiffAlbedo * LightStrength;
+
+    // 직접 조명이 없으면 반사광도 없음
+    if (all(LightStrength == 0.0f))
+    {
+        return Diffuse;
+    }
+
+    float3 HalfSum = ToEye + LightVec;
+    float HalfLengthSq = dot(HalfSum, HalfSum);
+
+    // 빛 방향과 시선 방향이 반대면 합이 0이 될 수 있음
+    if (HalfLengthSq < 1e-8f)
+    {
+        return Diffuse;
+    }
+
+    float3 HalfVec = HalfSum * rsqrt(HalfLengthSq);
+
+    float M = max(Mat.Shininess * 256.0f, 1.0f);
+    float NdotH = saturate(dot(HalfVec, Normal));
+
+    // pow(0, M) 계산 경로를 피함
+    float RoughnessFactor = 0.0f;
+    if (NdotH > 0.0f)
+    {
+        RoughnessFactor = (M + 8.0f) * pow(NdotH, M) / 8.0f;
+    }
     
     float3 SpecFactor = Mat.SpecAlbedo * RoughnessFactor;
     SpecFactor = SpecFactor / (SpecFactor + 1.0f);
     
-    return (Mat.DiffAlbedo + SpecFactor) * LightStrength;
+    return Diffuse + SpecFactor * LightStrength;
 }
 
 
@@ -142,12 +176,12 @@ float3 ComputeLight(DirectionLight DirLights[MAXLIGHTS],
     
     for (int j = 0; j < NumPointLights; ++j)
     {
-        Result += ComputePointLight(PointLights[i], Mat, Pos, Normal, ToEye);
+        Result += ComputePointLight(PointLights[j], Mat, Pos, Normal, ToEye);
     }
     
     for (int k = 0; k < NumSpotLights; ++k)
     {
-        Result += ComputeSpotLight(SpotLights[i], Mat, Pos, Normal, ToEye);
+        Result += ComputeSpotLight(SpotLights[k], Mat, Pos, Normal, ToEye);
     }
     
     return Result;

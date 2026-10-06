@@ -312,6 +312,7 @@ void FRenderView::BeginView(const FSceneView& View)
     // ViewConstants 갱신
     FViewConstants ViewConstants
     {
+        .Pos = View.Camera.GetPosition(),
         .View = View.Camera.GetViewMatrix(),
         .Projection = View.Camera.GetProjectionMatrix(),
         .ViewportSize = FVector2

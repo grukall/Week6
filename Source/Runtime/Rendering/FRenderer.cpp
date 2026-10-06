@@ -1328,12 +1328,11 @@ void FRenderer::DrawUploadedCommand(const FDrawCommand& Command, bool bApplyView
                 bApplyViewMode
             );
 
-            FMaterialConstants MaterialConstants;
-            MaterialConstants.DiffAlbedo = Material.GetDiffuse();
-            MaterialConstants.Shininess = Material.GetShininess();
-            MaterialConstants.SpecAlbedo = Material.GetSpecular();
-
-            UpdateMaterialConstants(MaterialConstants);
+            FMaterialConstants Constants{};
+            Constants.DiffAlbedo = Material.GetDiffuse();
+            Constants.Shininess = Material.GetShininess();
+            Constants.SpecAlbedo = Material.GetSpecular();
+            UpdateMaterialConstants(Constants);
 
             Context->DrawIndexed(
                 Section.IndexCount,
@@ -1357,6 +1356,12 @@ void FRenderer::DrawUploadedCommand(const FDrawCommand& Command, bool bApplyView
             Material,
             bApplyViewMode
         );
+
+        FMaterialConstants Constants{};
+        Constants.DiffAlbedo = Material.GetDiffuse();
+        Constants.Shininess = Material.GetShininess();
+        Constants.SpecAlbedo = Material.GetSpecular();
+        UpdateMaterialConstants(Constants);
 
         if (Mesh.HasIndices())
         {            

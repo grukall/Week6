@@ -7,5 +7,5 @@
     "TextureSampler": { "FilterMode": "Bilinear", "WrapMode": "Wrap" },
     "Diffuse": [1.0, 1.0, 1.0],
     "Specular": [0.3, 0.3, 0.3],
-    "Shininess": 32.0 
+    "Shininess": 0.125 
 }

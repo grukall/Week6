@@ -254,6 +254,13 @@ void FRenderView::RenderView(const FSceneView& View, const FScene& Scene, const 
 
     Renderer.ClearLastRenderState();
 
+    RenderScreenPass(View.Camera, EditorCtx.SelectedActor, View.TopLeftUV, View.LengthUV);
+    if (View.ViewMode == EViewModeIndex::VMI_SceneDepth)
+    {
+        // 깊이 버퍼를 화면에 출력
+        Renderer.RenderDepthPass(View.TopLeftUV, View.LengthUV);
+    }
+
     // 에디터 라인 패스
     if (EditorCtx.Grid && (View.ShowFlags & static_cast<uint32>(EEngineShowFlags::SF_Grid)) != 0) {
         DrawGrid(View.Camera, *EditorCtx.Grid);
@@ -280,14 +287,6 @@ void FRenderView::RenderView(const FSceneView& View, const FScene& Scene, const 
     FlushLinePass(View.Camera);
 
     Renderer.ClearLastRenderState();
-
-    RenderScreenPass(View.Camera, EditorCtx.SelectedActor, View.TopLeftUV, View.LengthUV);
-
-	if (View.ViewMode == EViewModeIndex::VMI_SceneDepth)
-	{
-		// 깊이 버퍼를 화면에 출력
-		Renderer.RenderDepthPass(View.TopLeftUV, View.LengthUV);
-	}
 
     // 후처리 외곽선 패스
     RenderPostProcessPass(View.Camera, EditorCtx.SelectedActor, View.TopLeftUV, View.LengthUV);

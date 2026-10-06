@@ -150,3 +150,24 @@ void FScene::UpdateDirtyBounds()
     }
     DirtyBoundsList.clear();
 }
+
+void FScene::AddLightComponent(ULightComponent* Light)
+{
+    if (Light == nullptr)
+        return;
+
+    if (std::find(LightComponents.begin(), LightComponents.end(), Light) ==
+        LightComponents.end()) {
+        // const int32 NewIndex = static_cast<int32>(LightComponents.size());
+
+        LightComponents.push_back(Light);
+    }
+}
+
+void FScene::RemoveLightComponent(ULightComponent* Light)
+{
+    if (Light == nullptr)
+        return;
+
+    std::erase(LightComponents, Light);
+}

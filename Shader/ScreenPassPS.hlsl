@@ -1,4 +1,6 @@
+#include "Constants.hlsli"
 Texture2D SceneTexture : register(t6);
+Texture2D DepthTexture : register(t7);
 SamplerState SceneSampler : register(s0);
 
 struct PS_INPUT
@@ -16,9 +18,10 @@ PS_OUTPUT MainPS(PS_INPUT Input)
 {
     PS_OUTPUT output;
     
-    float4 Sampled = SceneTexture.Sample(SceneSampler, Input.UV);
+    const int2 pixelCoord = int2(Input.Position.xy);
+    float4 Sampled = SceneTexture.Load(int3(pixelCoord, 0)); // 기존 색상 출력
     
-    output.Color = Sampled.rgba;
+    output.Color = Sampled;
     
     return output;
 }

@@ -280,10 +280,10 @@ void FImguiPropertyWindow::ShowComponentDetails(FEditor& Editor, AActor& Actor,
 	{
 		ShowBillboardSettings(static_cast<UBillBoardComp&>(Comp));
 	}
-	else if (Comp.IsA<USpotLightComponent>())
+	/*else if (Comp.IsA<USpotLightComponent>())
 	{
 		ShowSpotLightSettings(static_cast<USpotLightComponent&>(Comp));
-	}
+	}*/
 
 	else if (Comp.IsA<UStaticMeshComponent>())
 	{
@@ -479,7 +479,7 @@ void FImguiPropertyWindow::ShowSpotLightSettings(USpotLightComponent& LightComp)
 	ImGui::Separator();
 	ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.3f, 1.0f), "Spot Light Settings");
 
-	FVector LightCol = LightComp.GetLightColor();
+	/*FVector LightCol = LightComp.GetLightColor();
 	if (ImGui::ColorEdit3("Light Color", &LightCol.X))
 	{
 		LightComp.SetLightColor(LightCol);
@@ -501,7 +501,7 @@ void FImguiPropertyWindow::ShowSpotLightSettings(USpotLightComponent& LightComp)
 	if (ImGui::DragFloat("Range", &LightRange, 0.1f, 0.1f, 100.0f))
 	{
 		LightComp.SetRange(LightRange);
-	}
+	}*/
 }
 
 void FImguiPropertyWindow::ShowStaticMeshSettings(AActor& Actor, UStaticMeshComponent& MeshComp, bool bIsRoot) const

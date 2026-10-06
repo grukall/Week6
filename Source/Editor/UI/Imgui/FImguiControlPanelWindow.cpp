@@ -33,11 +33,6 @@ void FImguiControlPanelWindow::Process(FEditor& Editor)
 
     ImGui::Separator();
 
-    if (ImGui::Button("대회 씬 바로 불러오기"))
-    {
-        Editor.LoadMap("DefaultScene/Default.scene");
-    }
-
     //액터 스폰
     ActorSpawnSetting(Editor);
     // 그리드 설정
@@ -49,7 +44,7 @@ void FImguiControlPanelWindow::Process(FEditor& Editor)
     CameraSetting(Editor);
     ImGui::Separator();
     //전역조명
-    DirectionLightSetting(Editor);
+    // DirectionLightSetting(Editor);
 
     ImGui::Separator();
     BVHDebugSetting(Editor);
@@ -192,7 +187,7 @@ void FImguiControlPanelWindow::RunPickBenchmark(FEditor& Editor, int Iterations)
 	if (!World) { return; }
 
 	FScene* Scene =World->GetScene();
-    FEditorViewportClient* Viewport = Editor.GetActiveViewportClient();
+    FEditorViewportClient* Viewport = Editor.GetActiveEditorClient();
     const bool bUseBVH = Editor.bUseBVHPicking && Scene;
     if (!bUseBVH && !Viewport) { return; }
 
@@ -214,7 +209,7 @@ void FImguiControlPanelWindow::RunPickBenchmark(FEditor& Editor, int Iterations)
         else
         {
             FRayCastingManager::RayIntersectsMeshes(
-                Ray, Viewport->ViewportCamera, Editor.GetPrimitiveComponents(), HitComponent, ImpactPoint);
+                Ray, Viewport->GetCamera(), Editor.GetPrimitiveComponents(), HitComponent, ImpactPoint);
         }
         Times.push_back(Counter.Finish());
     }
@@ -370,7 +365,7 @@ void FImguiControlPanelWindow::ActorSpawnSetting(FEditor& Editor)
     // 그리드 설정
 void FImguiControlPanelWindow::GridSetting(FEditor& Editor)
 {
-    FEditorViewportClient* Viewport = Editor.GetActiveViewportClient();
+    FEditorViewportClient* Viewport = Editor.GetActiveEditorClient();
     if (!Viewport) { return; }
 
     float CellSize = Viewport->GetGrid().GetCellSize();
@@ -386,12 +381,12 @@ void FImguiControlPanelWindow::GridSetting(FEditor& Editor)
 void FImguiControlPanelWindow::RenderModeAndShowFlagSetting(FEditor& Editor)
 {
     
-    FEditorViewportClient* ActiveViewport = Editor.GetActiveViewportClient();
+    FEditorViewportClient* ActiveViewport = Editor.GetActiveEditorClient();
     if (ActiveViewport)
     {
         // 뷰 모드 드롭박스
         int CurrentViewMode = static_cast<int>(ActiveViewport->ViewMode);
-        const char* ViewModes[] = { "Lit", "Unlit", "Wireframe" };
+        const char* ViewModes[] = { "Lit", "Unlit", "Wireframe", "Scene Depth"};
         ImGui::SetNextItemWidth(180.0f);
         if (ImGui::Combo("##ViewMode", &CurrentViewMode, ViewModes, IM_ARRAYSIZE(ViewModes)))
         {
@@ -429,9 +424,9 @@ void FImguiControlPanelWindow::RenderModeAndShowFlagSetting(FEditor& Editor)
 
 void FImguiControlPanelWindow::CameraSetting(FEditor& Editor)
 {
-    if (FEditorViewportClient* Viewport = Editor.GetActiveViewportClient())
+    if (FEditorViewportClient* Viewport = Editor.GetActiveEditorClient())
     {
-        FCamera& Camera = Viewport->ViewportCamera;
+        FCamera& Camera = Viewport->GetCamera();
 
         bool bOrthographic =
             (Camera.GetProjection().GetProjectionType() == EProjectionType::Orthographic);
@@ -523,68 +518,3 @@ void FImguiControlPanelWindow::CameraSetting(FEditor& Editor)
         }
     }
 }
-
-void FImguiControlPanelWindow::DirectionLightSetting(FEditor& Editor)
-{
-    ImGui::SeparatorText("Sun Light Control");
-    // 엑스축 조명 방향 설정
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.85f, 0.22f, 0.22f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.95f, 0.32f, 0.32f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.15f, 0.15f, 1.0f));
-    ImGui::Button("X", ImVec2(22.0f, 0.0f));
-    ImGui::PopStyleColor(3);
-    ImGui::SameLine();
-    ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.85f, 0.22f, 0.22f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(1.0f, 0.35f, 0.35f, 1.0f));
-    ImGui::SetNextItemWidth(180.0f);
-    ImGui::SliderFloat("##LightDirX", &Editor.GlobalLight.LightDirection.X, -1.0f, 1.0f, "%.2f");
-    ImGui::PopStyleColor(2);
-    ImGui::SameLine();
-    ImGui::Text("Light Dir X (Forward/Back)");
-
-    // 와이축 조명 방향 설정
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.22f, 0.75f, 0.22f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.32f, 0.85f, 0.32f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.15f, 0.65f, 0.15f, 1.0f));
-    ImGui::Button("Y", ImVec2(22.0f, 0.0f));
-    ImGui::PopStyleColor(3);
-    ImGui::SameLine();
-    ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.22f, 0.75f, 0.22f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.35f, 0.95f, 0.35f, 1.0f));
-    ImGui::SetNextItemWidth(180.0f);
-    ImGui::SliderFloat("##LightDirY", &Editor.GlobalLight.LightDirection.Y, -1.0f, 1.0f, "%.2f");
-    ImGui::PopStyleColor(2);
-    ImGui::SameLine();
-    ImGui::Text("Light Dir Y (Right/Left)");
-
-    // 제트축 조명 방향 설정
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.45f, 0.95f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.35f, 0.55f, 1.0f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.18f, 0.35f, 0.85f, 1.0f));
-    ImGui::Button("Z", ImVec2(22.0f, 0.0f));
-    ImGui::PopStyleColor(3);
-    ImGui::SameLine();
-    ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.25f, 0.45f, 0.95f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.4f, 0.6f, 1.0f, 1.0f));
-    ImGui::SetNextItemWidth(180.0f);
-    ImGui::SliderFloat("##LightDirZ", &Editor.GlobalLight.LightDirection.Z, -1.0f, 1.0f, "%.2f");
-    ImGui::PopStyleColor(2);
-    ImGui::SameLine();
-    ImGui::Text("Light Dir Z (Up/Down)");
-
-    ImGui::SetNextItemWidth(180.0f);
-    ImGui::ColorEdit3("##LightColor", &Editor.GlobalLight.LightColor.X);
-    ImGui::SameLine();
-    ImGui::Text("Color");
-
-    ImGui::SetNextItemWidth(180.0f);
-    ImGui::SliderFloat("##LightIntensity", &Editor.GlobalLight.Intensity, 0.0f, 5.0f, "%.2f");
-    ImGui::SameLine();
-    ImGui::Text("Intensity");
-
-    ImGui::SetNextItemWidth(180.0f);
-    ImGui::SliderFloat("##LightAmbient", &Editor.GlobalLight.AmbientIntensity, 0.0f, 1.0f, "%.2f");
-    ImGui::SameLine();
-    ImGui::Text("Ambient");
-}
-

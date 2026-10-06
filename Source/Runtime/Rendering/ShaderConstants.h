@@ -5,6 +5,8 @@
 #include "Runtime/Math/FVector2.h"
 #include "Runtime/Math/FVector4.h"
 
+#define MAXLIGHTS 16
+
 // Register = b0
 struct FFrameConstants {
 	float Time;
@@ -15,10 +17,12 @@ static_assert(sizeof(FFrameConstants) % 16 == 0);
 
 // Register = b1
 struct FViewConstants {
+	FVector Pos;
 	FMatrix View;
 	FMatrix Projection;
 	FVector2 ViewportSize;
-	FVector2 Padding;
+	float Near;
+	float Far;
 };
 static_assert(sizeof(FViewConstants) % 16 == 0);
 
@@ -80,15 +84,73 @@ struct FGridLineConstants {
 
 static_assert(sizeof(FGridLineConstants) % 16 == 0);
 
+struct DirectionLight
+{
+	FVector Position{ 0.0f, 0.0f, 0.0f };
+	float Intensity = 1.0f;	
+	FVector LightColor{ 1.0f, 1.0f, 1.0f };
+	float AmbientIntensity = 0.2f;
+
+	FVector LightDirection{ -0.5f, -0.5f, -1.0f }; 
+	float Padding = 0;
+};
+
+struct SpotLight
+{
+	FVector Position{ 0.0f, 0.0f, 0.0f };
+	float Intensity = 1.0f;
+	FVector LightColor{ 1.0f, 1.0f, 1.0f };
+	float AmbientIntensity = 0.2f;
+
+	FVector LightDirection{ -0.5f, -0.5f, -1.0f }; 
+	float SpotPower = 64.0f;
+	
+	float FallOffStart = 0.0f;	// Point, Spot Light Only
+	float FallOffEnd = 0.0f;	// Point, Spot Light Only
+	float Padding[2]{};
+};
+
+struct PointLight
+{
+	FVector Position{ 0.0f, 0.0f, 0.0f };
+	float Intensity = 1.0f;
+	FVector LightColor{ 1.0f, 1.0f, 1.0f };
+	float AmbientIntensity = 0.2f;
+
+	float FallOffStart = 0.0f;	// Point, Spot Light Only
+	float FallOffEnd = 0.0f;	// Point, Spot Light Only
+	float PaddingB[2]{};
+};
+
+
 // 나중에 수정 필요
 // Register = b4
 struct FLightConstants {
-  // 기본 조명 파라미터
-  FVector LightDirection{-0.5f, -0.5f, -1.0f};
-  float Intensity = 1.0f;
+	
+	int32 NumDirLights = 0;
+	int32 NumSpotLights = 0;
+	int32 NumPointLights = 0;
 
-  FVector LightColor{1.0f, 1.0f, 1.0f};
-  float AmbientIntensity = 0.2f;
+	int32 Padding = 0;
+
+	FVector AmbientLight{0.25f, 0.25f, 0.35f}; float Padding1 = 0;
+
+	DirectionLight DirLights[MAXLIGHTS];
+	SpotLight SpotLights[MAXLIGHTS];
+	PointLight PointLights[MAXLIGHTS];
 };
 
 static_assert(sizeof(FLightConstants) % 16 == 0);
+
+
+// 머티리얼
+// Register = b5
+struct FMaterialConstants
+{
+	FVector DiffAlbedo{};
+	float Shininess = 0.0f;
+	FVector SpecAlbedo{};
+	float Padding = 0.0f;
+};
+
+static_assert(sizeof(FMaterialConstants) % 16 == 0);

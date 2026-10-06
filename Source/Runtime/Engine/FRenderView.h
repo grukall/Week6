@@ -46,9 +46,14 @@ public:
 	void DrawGrid(const FCamera& Camera, FGrid& Grid);
 	void FlushBasePass(const FCamera& Camera);
 	void FlushLinePass(const FCamera& Camera);
-	void ScreenPass();
-	void RenderPostProcessPass(const FCamera& Camera, const AActor* SelectedActor);
+	void ScreenPass(const FCamera& Camera, const AActor* SelectedActor, const FVector2& TopLeftUV, const FVector2& LengthUV);
+	void DepthPass(const FVector2& TopLeftUV, const FVector2& LengthUV);
+	void RenderPostProcessPass(const FCamera& Camera, const AActor* SelectedActor, const FVector2& TopLeftUV, const FVector2& LengthUV);
 	void RenderOverlayPass(const FCamera& Camera, const FSceneView& SceneView, const FTransform& SelectedTransform, const FGizmo& Gizmo, UTextInstanceComponent* TextComp);
+
+	void FXAAPostProcessPass();
+	void RenderScenePostProcess();
+	void RenderEditorPostProcess();
 
 	// 개별 렌더 및 디버그 라인
 	void RenderGizmo(const FTransform& Transform, const FCamera& Camera, FVector2 TopLeftUV, FVector2 LengthUV, const FGizmo& Gizmo);
@@ -59,8 +64,9 @@ public:
 	void RenderQuad(const FVector& A, const FVector& B, const FVector& C, const FVector& D, const FVector4& Color);
 	void RenderSphere(const FVector& Center, float Radius, const FVector4& Color, uint32 Segments = 16);
 
-	void RenderScreenPass();
-	void RenderOutline(const FCamera& Camera, const AActor* SelectedActor);
+	void RenderScreenPass(const FCamera& Camera, const AActor* SelectedActor, const FVector2& TopLeftUV, const FVector2& LengthUV);
+	void RenderDepthPass(const FVector2& TopLeftUV, const FVector2& LengthUV);
+	void RenderOutline(const FCamera& Camera, const AActor* SelectedActor, const FVector2& TopLeftUV, const FVector2& LengthUV);
 	void DrawStencilMask(const FCamera& Camera, const AActor* SelectedActor);
 	void RenderVerticetoline();
 
@@ -88,6 +94,9 @@ public:
 
 	//측정 : 다음에 렌더되는 뷰 하나에서 오라클을 실행(한 프레임 멈춤)
 	void RequestOcclusionOracle() { bOracleRequested = true; }
+
+	// Lights
+	void UpdateLight(const FScene& Scene);
 
 private:
 	FCullingSettings CullingSettings;
@@ -124,4 +133,7 @@ private:
 	TArray<FDrawCommand> OracleOccludedCommands;  // 오클루전으로 지운 것 (검증 대상)
 
 	void RunOcclusionOracle();
+
+public:
+	bool bIsFXAA = false;
 };

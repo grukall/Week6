@@ -28,9 +28,13 @@ struct FMaterialInstance
 
 	bool bDisableShading = false;
 
-	float Albedo = 1.0f;
-	float Diffuse = 1.0f;
-	float Specular = 1.0f;
+	//float Albedo = 1.0f;
+	//float Diffuse = 1.0f;
+	//float Specular = 1.0f;
+
+	FVector Diffuse{};
+	FVector Specular{};
+	float Shininess = 0.0f;
 
 	FVector4 Color = { 1.0f, 1.0f, 1.0f, 0.0f };
 
@@ -47,6 +51,9 @@ struct FMaterialInstance
 		Pipeline = Material->GetPipeline();
 		Texture = Material->GetTexture();
 		SamplerDesc = Material->GetSamplerDesc();
+		Diffuse = Material->GetDiffuse();
+		Specular = Material->GetSpecular();
+		Shininess = Material->GetShininess();
 	}
 
 	// TODO: 위에 [Shader Constant Buffer] 영역을 치우고

@@ -442,6 +442,8 @@ void AActor::AddComponent(UActorComponent* Addcomp)
 		return;
 	}
 
+	Addcomp->SetActorOwner(this);
+
 	USceneComponent* CastSceneComponent = Addcomp->Cast<USceneComponent>();
 	if (CastSceneComponent)
 	{
@@ -460,6 +462,7 @@ void AActor::AddComponent(UActorComponent* Addcomp)
 		{
 			CastSceneComponent->SetActorOwner(this);
 		}
+
 
 		AttachedComp.push_back(CastSceneComponent);
 	}

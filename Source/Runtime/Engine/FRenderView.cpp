@@ -225,6 +225,8 @@ void FRenderView::RenderView(const FSceneView& View, const FScene& Scene, const 
 {
     // 뷰포트 시작
     BeginView(View);
+    UpdateLight(Scene);
+
 
     //컬링 측정
     {
@@ -254,6 +256,13 @@ void FRenderView::RenderView(const FSceneView& View, const FScene& Scene, const 
 
     Renderer.ClearLastRenderState();
 
+    RenderScreenPass(View.Camera, EditorCtx.SelectedActor, View.TopLeftUV, View.LengthUV);
+    if (View.ViewMode == EViewModeIndex::VMI_SceneDepth)
+    {
+        // 깊이 버퍼를 화면에 출력
+        Renderer.RenderDepthPass(View.TopLeftUV, View.LengthUV);
+    }
+
     // 에디터 라인 패스
     if (EditorCtx.Grid && (View.ShowFlags & static_cast<uint32>(EEngineShowFlags::SF_Grid)) != 0) {
         DrawGrid(View.Camera, *EditorCtx.Grid);
@@ -281,10 +290,19 @@ void FRenderView::RenderView(const FSceneView& View, const FScene& Scene, const 
 
     Renderer.ClearLastRenderState();
 
-    RenderScreenPass();
-
     // 후처리 외곽선 패스
-    RenderPostProcessPass(View.Camera, EditorCtx.SelectedActor);
+    RenderPostProcessPass(View.Camera, EditorCtx.SelectedActor, View.TopLeftUV, View.LengthUV);
+    
+
+    if (bIsFXAA)
+    {
+        FXAAPostProcessPass();
+        RenderScenePostProcess();
+    }
+    else
+    {
+        RenderEditorPostProcess();
+    }
 
     Renderer.ClearLastRenderState();
 }
@@ -295,11 +313,12 @@ void FRenderView::BeginView(const FSceneView& View)
     Renderer.BindEditorViewportRenderTargets();
     Renderer.SetViewportUV(View.TopLeftUV, View.LengthUV);
     Renderer.SetRenderMode(View.ViewMode);
-    Renderer.UpdateLightConstants(View.LightConstants, View.ViewMode);
+    // Renderer.UpdateLightConstants(View.LightConstants, View.ViewMode);
 
     // ViewConstants 갱신
     FViewConstants ViewConstants
     {
+        .Pos = View.Camera.GetPosition(),
         .View = View.Camera.GetViewMatrix(),
         .Projection = View.Camera.GetProjectionMatrix(),
         .ViewportSize = FVector2
@@ -307,6 +326,8 @@ void FRenderView::BeginView(const FSceneView& View)
             View.LengthUV.X * Renderer.GetWidth(),
             View.LengthUV.Y * Renderer.GetHeight(),
         },
+        .Near = View.Camera.GetNearPlane(),
+        .Far = View.Camera.GetFarPlane(),
     };
 
     Renderer.UpdateViewConstants(ViewConstants);
@@ -334,14 +355,36 @@ void FRenderView::FlushLinePass(const FCamera& Camera)
     FlushLineBatch(Camera.GetViewProjectionMatrix());
 }
 
-void FRenderView::ScreenPass()
+void FRenderView::ScreenPass(const FCamera& Camera, const AActor* SelectedActor, const FVector2& TopLeftUV, const FVector2& LengthUV)
 {
-    RenderScreenPass();
+    RenderScreenPass(Camera, SelectedActor, TopLeftUV, LengthUV);
 }
 
-void FRenderView::RenderPostProcessPass(const FCamera& Camera, const AActor* SelectedActor)
+void FRenderView::DepthPass(const FVector2& TopLeftUV, const FVector2& LengthUV)
+
 {
-    RenderOutline(Camera, SelectedActor);
+    RenderDepthPass(TopLeftUV, LengthUV);
+}
+
+
+void FRenderView::RenderPostProcessPass(const FCamera& Camera, const AActor* SelectedActor, const FVector2& TopLeftUV, const FVector2& LengthUV)
+{
+    RenderOutline(Camera, SelectedActor, TopLeftUV, LengthUV);
+}
+
+void FRenderView::FXAAPostProcessPass()
+{
+    Renderer.FXAA();
+}
+
+void FRenderView::RenderScenePostProcess()
+{
+    Renderer.RenderSceneColor();
+}
+
+void FRenderView::RenderEditorPostProcess()
+{
+    Renderer.RenderEditorViewPort();
 }
 
 void FRenderView::RenderOverlayPass(const FCamera& Camera, const FSceneView& SceneView, const FTransform& SelectedTransform, const FGizmo& Gizmo, UTextInstanceComponent* TextComp)
@@ -412,15 +455,20 @@ void FRenderView::RenderSphere(const FVector &Center, float Radius,
   LineBatcher.DrawSphere(Center, Radius, Color, Segments);
 }
 
-void FRenderView::RenderScreenPass()
+void FRenderView::RenderScreenPass(const FCamera& Camera, const AActor* SelectedActor, 
+                                    const FVector2& TopLeftUV, const FVector2& LengthUV)
 {
-    Renderer.RenderScreenPass();
+    DrawStencilMask(Camera, SelectedActor);
+    Renderer.RenderScreenPass(TopLeftUV, LengthUV);
+}
+
+void FRenderView::RenderDepthPass(const FVector2& TopLeftUV, const FVector2& LengthUV) {
+	Renderer.RenderDepthPass(TopLeftUV, LengthUV);
 }
 
 void FRenderView::RenderOutline(const FCamera &Camera,
-                                const AActor *SelectedActor) {
-  DrawStencilMask(Camera, SelectedActor);
-  Renderer.RenderOutline();
+                                const AActor *SelectedActor, const FVector2& TopLeftUV, const FVector2& LengthUV) {
+  Renderer.RenderOutline(TopLeftUV, LengthUV);
 }
 
 void FRenderView::DrawStencilMask(const FCamera& Camera,
@@ -658,3 +706,19 @@ void FRenderView::RunOcclusionOracle()
     OracleDrawnCommands.clear();
     OracleOccludedCommands.clear();
 }
+
+
+// Lights Update
+void FRenderView::UpdateLight(const FScene& Scene)
+{
+    FLightConstants Constants;
+
+    for (ULightComponent* Light : Scene.GetLightComponents())
+    {
+        Light->BuildConstants(Constants);
+    }
+
+    Renderer.UpdateLightConstants(Constants, EViewModeIndex::VMI_Lit);
+}
+
+

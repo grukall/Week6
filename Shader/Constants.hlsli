@@ -1,3 +1,5 @@
+#include "LightingUtil.hlsli"
+
 cbuffer FrameConstants : register(b0)
 {
     float Time;
@@ -7,10 +9,12 @@ cbuffer FrameConstants : register(b0)
 
 cbuffer ViewConstants : register(b1)
 {
+    float3 CamPos;
     row_major float4x4 View;
     row_major float4x4 Projection;
     float2 ViewportSize;
-    float2 ViewPadding;
+    float Near;
+    float Far;
 }
 
 cbuffer ObjectConstants : register(b2)
@@ -27,8 +31,22 @@ cbuffer ObjectConstants : register(b2)
 
 cbuffer LightConstants : register(b4)
 {
-    float3 LightDirection;
-    float Intensity;
-    float3 LightColor;
-    float AmbientIntensity;
+    int NumDirLights;
+    int NumSpotLights;
+    int NumPointLights;
+
+    float3 AmbientLight;
+    
+    DirectionLight DirLights[MAXLIGHTS];
+    SpotLight SpotLights[MAXLIGHTS];
+    PointLight PointLights[MAXLIGHTS];
+
+    float Padding = 0.0f;
 };
+
+cbuffer MaterialConstants : register(b5)
+{
+    float3 diffAlbedo;
+    float Shininess;
+    float3 specAlbedo;
+}

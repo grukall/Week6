@@ -15,18 +15,29 @@
 #include "Editor/Core/FEditor.h"
 #include "Runtime/Engine/UWorld.h"
 
+class FViewport;
+
+enum EPlaySessionType
+{
+	PIE,
+	SIE
+};
+
 //세선 실행 요청
 struct FRequestPlaySessionParams
 {
 	EWorldType WorldType;
+	EPlaySessionType SessionType;
 };
 
 //PIE, SIE 실행 시 복구를 위한 상태 저장
 struct FPlaySession
 {
+	//ContextId : 고유번호, UEngine::FindWorldContext로 찾을 수 있음
 	uint32 PIEContextId;
 	uint32 ViewEntryIndex;
 	uint32 PrevViewContextId;
+	EPlaySessionType SessionType;
 };
 
 class UEditorEngine : public UEngine
@@ -49,10 +60,12 @@ public:
 	[[nodiscard]] UWorld* GetEditorWorld() { return GetWorld(EditorContextId); }
 	// PIE가 실행 중인지
 	[[nodiscard]] bool IsPlaySessionActive() const { return PlaySession.IsSet(); }
+	FEditor &GetEditor() { return Editor; }
 
 	//PiE, SIE
 	void StartQueuedPlaySessionRequest();
 	void StartQueuedEndSessionRequest();
+	void SwitchPlaySessionMode(FViewport* TargetViewport, EPlaySessionType SessionType);
 	TOptional<FRequestPlaySessionParams> PlaySessionRequest;
 	TOptional<FPlaySession> PlaySession;
 	bool bRequestEndPlay = false;

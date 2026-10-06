@@ -173,17 +173,40 @@ void FImguiToolbar::ShowPIEUI(FEditor& Editor)
     bool bPlayingSession = Engine->PlaySession.IsSet();
     if (bPlayingSession)
     {
-        if (ImGui::Button("End PIE", { 150.0f, 0.0f }))
+        if (ImGui::Button("End", { 150.0f, 0.0f }))
         {
             Engine->bRequestEndPlay = true;
+        }
+
+        EPlaySessionType SessionType = Engine->PlaySession.Get()->SessionType;
+        if (SessionType == EPlaySessionType::PIE)
+        {
+            if (ImGui::Button("Simulate in Editor", { 150.0f, 0.0f }))
+            {
+                FEditor &Editor = Engine->GetEditor();
+                Engine->SwitchPlaySessionMode(Editor.GetActiveViewport(), EPlaySessionType::SIE);
+            }
+        }
+        if (SessionType == EPlaySessionType::SIE)
+        {
+            if (ImGui::Button("Play in Editor", { 150.0f, 0.0f }))
+            {
+                FEditor& Editor = Engine->GetEditor();
+                Engine->SwitchPlaySessionMode(Editor.GetActiveViewport(), EPlaySessionType::PIE);
+            }
         }
     }
     else
     {
-        if (ImGui::Button("Start PIE", { 150.0f, 0.0f }))
+        if (ImGui::Button("Play in Editor", { 150.0f, 0.0f }))
         {
-            Engine->PlaySessionRequest.Set(FRequestPlaySessionParams(EWorldType::PIE));
+            Engine->PlaySessionRequest.Set(FRequestPlaySessionParams(EWorldType::PIE, EPlaySessionType::PIE));
         }
+        if (ImGui::Button("Simulate in Editor", { 150.0f, 0.0f }))
+        {
+            Engine->PlaySessionRequest.Set(FRequestPlaySessionParams(EWorldType::PIE, EPlaySessionType::SIE));
+        }
+
     }
 }
 

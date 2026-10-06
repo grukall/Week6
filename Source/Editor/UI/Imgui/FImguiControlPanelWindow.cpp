@@ -33,11 +33,6 @@ void FImguiControlPanelWindow::Process(FEditor& Editor)
 
     ImGui::Separator();
 
-    if (ImGui::Button("대회 씬 바로 불러오기"))
-    {
-        Editor.LoadMap("DefaultScene/Default.scene");
-    }
-
     //액터 스폰
     ActorSpawnSetting(Editor);
     // 그리드 설정
@@ -192,7 +187,7 @@ void FImguiControlPanelWindow::RunPickBenchmark(FEditor& Editor, int Iterations)
 	if (!World) { return; }
 
 	FScene* Scene =World->GetScene();
-    FEditorViewportClient* Viewport = Editor.GetActiveViewportClient();
+    FEditorViewportClient* Viewport = Editor.GetActiveEditorClient();
     const bool bUseBVH = Editor.bUseBVHPicking && Scene;
     if (!bUseBVH && !Viewport) { return; }
 
@@ -214,7 +209,7 @@ void FImguiControlPanelWindow::RunPickBenchmark(FEditor& Editor, int Iterations)
         else
         {
             FRayCastingManager::RayIntersectsMeshes(
-                Ray, Viewport->ViewportCamera, Editor.GetPrimitiveComponents(), HitComponent, ImpactPoint);
+                Ray, Viewport->GetCamera(), Editor.GetPrimitiveComponents(), HitComponent, ImpactPoint);
         }
         Times.push_back(Counter.Finish());
     }
@@ -370,7 +365,7 @@ void FImguiControlPanelWindow::ActorSpawnSetting(FEditor& Editor)
     // 그리드 설정
 void FImguiControlPanelWindow::GridSetting(FEditor& Editor)
 {
-    FEditorViewportClient* Viewport = Editor.GetActiveViewportClient();
+    FEditorViewportClient* Viewport = Editor.GetActiveEditorClient();
     if (!Viewport) { return; }
 
     float CellSize = Viewport->GetGrid().GetCellSize();
@@ -386,7 +381,7 @@ void FImguiControlPanelWindow::GridSetting(FEditor& Editor)
 void FImguiControlPanelWindow::RenderModeAndShowFlagSetting(FEditor& Editor)
 {
     
-    FEditorViewportClient* ActiveViewport = Editor.GetActiveViewportClient();
+    FEditorViewportClient* ActiveViewport = Editor.GetActiveEditorClient();
     if (ActiveViewport)
     {
         // 뷰 모드 드롭박스
@@ -429,9 +424,9 @@ void FImguiControlPanelWindow::RenderModeAndShowFlagSetting(FEditor& Editor)
 
 void FImguiControlPanelWindow::CameraSetting(FEditor& Editor)
 {
-    if (FEditorViewportClient* Viewport = Editor.GetActiveViewportClient())
+    if (FEditorViewportClient* Viewport = Editor.GetActiveEditorClient())
     {
-        FCamera& Camera = Viewport->ViewportCamera;
+        FCamera& Camera = Viewport->GetCamera();
 
         bool bOrthographic =
             (Camera.GetProjection().GetProjectionType() == EProjectionType::Orthographic);

@@ -9,13 +9,15 @@
 #include "Runtime/Engine/FCulling.h"
 #include "Runtime/Rendering/FMaterial.h"
 
+class UWorld;
+
 class UPrimitiveComponent : public USceneComponent {
   GENERATED_BODY()
   DECLARE_UCLASS(UPrimitiveComponent, USceneComponent)
 
 public:
     void Initialize() override;
-    void Register(UScene& InScene) override;
+    void Register(UWorld *InWorld) override;
     void Unregister() override;
 
     virtual void SetMesh(UStaticMesh* Mesh);

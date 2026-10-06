@@ -2,7 +2,7 @@
 #include "Runtime/CoreUObject/USceneComponent.h"
 #include "Runtime/Rendering/ShaderConstants.h"
 
-class UScene;
+class UWorld;
 
 class ULightComponent : public USceneComponent
 {
@@ -10,7 +10,7 @@ class ULightComponent : public USceneComponent
 	DECLARE_UCLASS(ULightComponent, USceneComponent)
 
 public:
-	void Register(UScene& InScene) override;
+	void Register(UWorld* InWorld) override;
 
 	virtual void BuildConstants(FLightConstants& Constants);
 

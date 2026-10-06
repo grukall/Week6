@@ -15,7 +15,7 @@ class FCamera;
 class FGizmo;
 class FGrid;
 class AActor;
-class UScene;
+class FScene;
 
 // 커맨드로 제어하는 컬링 옵션
 struct FCullingSettings
@@ -38,8 +38,8 @@ public:
 	void PrepareRender();
 
 	// 전체 뷰포트 렌더링
-	void RenderView(const FSceneView& View, const UScene& Scene, const FEditorRenderContext& EditorCtx);
-	void CollectScenePrimitives(const UScene& Scene, const FSceneView& View, const AActor* SelectedActor);
+	void RenderView(const FSceneView& View, const FScene& Scene, const FEditorRenderContext& EditorCtx);
+	void CollectScenePrimitives(const FScene& Scene, const FSceneView& View, const AActor* SelectedActor);
 
 	// 뷰포트 패스 파이프라인
 	void BeginView(const FSceneView& View);
@@ -84,7 +84,7 @@ public:
 	void SetCullingEnabled(bool pCullingEnable);
 
 	//렌더 전에 컬링 판정
-	void CullScene(const FSceneView& View, const UScene& Scene);
+	void CullScene(const FSceneView& View, const FScene& Scene);
 
 	//void SetOcclusionEnabled(bool bEnable) { bOcclusionEnabled = bEnable; }
 	//bool IsOcclusionEnabled() const { return bOcclusionEnabled; }
@@ -94,7 +94,7 @@ public:
 	void RequestOcclusionOracle() { bOracleRequested = true; }
 
 	// Lights
-	void UpdateLight(const UScene& Scene);
+	void UpdateLight(const FScene& Scene);
 
 private:
 	FCullingSettings CullingSettings;

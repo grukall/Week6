@@ -29,7 +29,7 @@ AAppleBittenActor::AAppleBittenActor()
 	AddComponent(Light);
 }
 
-void AAppleBittenActor::Update(float DeltaTime)
+void AAppleBittenActor::Tick(float DeltaTime, ELevelTick eTickType)
 {
-	Super::Update(DeltaTime);
+	Super::Tick(DeltaTime, eTickType);
 }

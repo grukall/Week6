@@ -5,7 +5,7 @@
     "UPipelineID": "Pipeline/UVScroll.json",
     "UTextureID": "Texture/oiiaii.json",
     "TextureSampler": { "FilterMode": "Bilinear", "WrapMode": "Wrap" },
-    "Diffuse": [0.2, 0.2, 0.2],
-    "Specular": [1.0, 1.0, 1.0],
-    "Shininess": 0.125
+    "Diffuse": [0.4, 0.4, 0.4],
+    "Specular": [0.3, 0.3, 0.3],
+    "Shininess": 0.065
 }

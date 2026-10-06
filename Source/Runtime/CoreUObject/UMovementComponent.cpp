@@ -1,18 +1,18 @@
 #include "Runtime/CoreUObject/UMovementComponent.h"
 
-IMPLEMENT_UCLASS(UMovementComponent, USceneComponent)
+IMPLEMENT_UCLASS(UMovementComponent, UActorComponent)
 
 void UMovementComponent::Initialize()
 {
 	Super::Initialize();
-	UpdatedComponent = SceneOwner;
+	UpdatedComponent = GetActorOwner()->GetRootComponent();
 	bTickEnabled = true;
 
 }
 
 void UMovementComponent::Update(float DeltaTime)
 {
-	Super::Update(DeltaTime);
+	//Super::Update(DeltaTime);
 }
 
 bool UMovementComponent::MoveUpdatedComponent(const FVector& Delta, const FQuaternion& newRotation, bool bSweep)

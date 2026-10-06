@@ -22,7 +22,7 @@ class SWindow
 {	
 public:
 	FRect Rect;
-	int32 ViewportIndex = -1;   // -1 = 스플리터, 0 이상 = 뷰포트 리프
+	int32 EntryIndex = -1;   // -1 = 스플리터, 0 이상 = 뷰포트 리프
 	virtual ~SWindow() = default;         // 파생을 포인터로 다루니 가상 소멸자
 	//bool ISHover();
 	

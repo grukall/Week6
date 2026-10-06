@@ -16,8 +16,3 @@ AAppleNormalActor::AAppleNormalActor()
 	FAssetRegistry& Registry = FAssetRegistry::GetInstance();
 	AppleStaticMeshComp->SetMesh(Registry.Get<UStaticMesh>("StaticMesh/JungleApple/Apple_Normal.json"));
 }
-
-void AAppleNormalActor::Update(float DeltaTime)
-{
-	Super::Update(DeltaTime);
-}

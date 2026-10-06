@@ -1,19 +1,19 @@
 #pragma once
-#include "Runtime/CoreUObject/USceneComponent.h"
+#include "Runtime/CoreUObject/UActorComponent.h"
 #include "Runtime/CoreUObject/UPrimitiveComponent.h"
 #include "Runtime/Core/PointerTypes.h"
 #include "Runtime/Math/FQuaternion.h"
 #include "Runtime/Math/FVector.h"
 
 
-class UMovementComponent : public USceneComponent
+class UMovementComponent : public UActorComponent
 {
 	GENERATED_BODY()
-	DECLARE_UCLASS(UMovementComponent, USceneComponent)
+	DECLARE_UCLASS(UMovementComponent, UActorComponent)
 
 public:
 	virtual void Initialize() override;
-	virtual void Update(float DeltaTime) override;
+	virtual void Update(float DeltaTime);
 	virtual void SetUpdatedComponent(USceneComponent* InUpdatedComponent) { UpdatedComponent = InUpdatedComponent; }
 	USceneComponent* GetUpdatedComponet() { return UpdatedComponent; }
 

@@ -41,7 +41,7 @@ void FObjViewerApplication::Initialize(HWND hWnd, ID3D11Device* Device, ID3D11De
 	//OpenMtl("Resources/test.mtl");
 }
 
-void FObjViewerApplication::Update(float DeltaTime)
+void FObjViewerApplication::Tick(float DeltaTime)
 {
 	if (!ImGui::GetIO().WantCaptureMouse)
 	{

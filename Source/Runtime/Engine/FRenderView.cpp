@@ -15,7 +15,7 @@
 #include "Runtime/Rendering/FRenderer.h"
 #include "Runtime/Rendering/ShaderConstants.h"
 #include "Runtime/Engine/FRenderData.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/FScene.h"
 #include "Runtime/Engine/FTimeManager.h"
 #include "Runtime/Core/Globals.h"
 #include <fstream>
@@ -95,9 +95,9 @@ namespace
     }
 }
 
-void FRenderView::CollectScenePrimitives(const UScene& Scene, const FSceneView& View, const AActor* SelectedActor)
+void FRenderView::CollectScenePrimitives(const FScene& Scene, const FSceneView& View, const AActor* SelectedActor)
 {
-    const TArray<UPrimitiveComponent*>& Primitives = Scene.GetRenderComponents();
+    const TArray<UPrimitiveComponent*>& Primitives = Scene.GetPrimitives();
     // Primitives[i]의 SceneIndex는 i이므로 CullDataList[i]가 그 컴포넌트의 월드 바운드다 (VisibleFlags와 같은 규칙)
     const TArray<FAxisAlignedBoundingBox>& CullDataList = Scene.GetCullDataList();
     const UStaticMeshComponent::FLODView LODView = UStaticMeshComponent::MakeLODView(View.Camera);
@@ -221,7 +221,7 @@ void FRenderView::PrepareRender()
     Renderer.UpdateFrameConstants(FrameConstants);
 }
 
-void FRenderView::RenderView(const FSceneView& View, const UScene& Scene, const FEditorRenderContext& EditorCtx)
+void FRenderView::RenderView(const FSceneView& View, const FScene& Scene, const FEditorRenderContext& EditorCtx)
 {
     // 뷰포트 시작
     BeginView(View);
@@ -461,22 +461,27 @@ void FRenderView::DrawStencilMask(const FCamera& Camera,
     USceneComponent* RootComp = SelectedActor->GetRootComponent();
     if (!RootComp) return;
 
-    UPrimitiveComponent* PrimComp = RootComp->Cast<UPrimitiveComponent>();
-    if (!PrimComp) return;
-
-    const FMatrix ModelMatrix = PrimComp->GetRenderMatrix(Camera);
-    FDrawCommand DrawCommand = GetDrawCommand(*PrimComp, Camera, PrimComp->GetWorldBounds(), UStaticMeshComponent::MakeLODView(Camera));
-
-    DrawCommand.Constants.DisableShading = true;
-    DrawCommand.Constants.World = ModelMatrix;
-
     auto OutlineMaterial = FRenderResourceLibrary::Get().GetMaterial("#Outline");
-    if (OutlineMaterial)
+    if (!OutlineMaterial)
     {
-        OutlineMaterial->GetPipeline()->SetStencilRef(1);
+        return;
+    }
+    OutlineMaterial->GetPipeline()->SetStencilRef(1);
+
+    for (USceneComponent* SceneComp : SelectedActor->GetAttachedComponents())
+    {
+        UPrimitiveComponent* PrimComp = SceneComp->Cast<UPrimitiveComponent>();
+        if (!PrimComp) continue;
+
+        const FMatrix ModelMatrix = PrimComp->GetRenderMatrix(Camera);
+        FDrawCommand DrawCommand = GetDrawCommand(*PrimComp, Camera, PrimComp->GetWorldBounds(), UStaticMeshComponent::MakeLODView(Camera));
+
+        DrawCommand.Constants.DisableShading = true;
+        DrawCommand.Constants.World = ModelMatrix;
         DrawCommand.Materials = std::span<const FMaterial>(OutlineMaterial.get(), 1);
         Renderer.Draw(DrawCommand, 2, false);
     }
+
 }
 
 void FRenderView::SetRenderMode(EViewModeIndex InMode)
@@ -569,7 +574,7 @@ void FRenderView::SetCullingEnabled(bool pCullingEnable)
     Globals::bEnableFrustumCulling = pCullingEnable;
 }
 
-void FRenderView::CullScene(const FSceneView& View, const UScene& Scene)
+void FRenderView::CullScene(const FSceneView& View, const FScene& Scene)
 {
     const TArray<FAxisAlignedBoundingBox>& CullDataList = Scene.GetCullDataList();
     
@@ -687,7 +692,7 @@ void FRenderView::RunOcclusionOracle()
 
 
 // Lights Update
-void FRenderView::UpdateLight(const UScene& Scene)
+void FRenderView::UpdateLight(const FScene& Scene)
 {
     FLightConstants Constants;
 

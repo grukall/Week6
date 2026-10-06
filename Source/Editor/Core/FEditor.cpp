@@ -1,10 +1,5 @@
 #include "FEditor.h"
 #include "Runtime/Actors/AActor.h"
-#include "Runtime/Actors/ACubeActor.h"
-#include "Runtime/Actors/ASphereActor.h"
-#include "Runtime/Actors/ACylinderActor.h"
-#include "Runtime/Actors/ABillboardActor.h"
-#include "Runtime/Actors/ASpotlightActor.h"
 #include "Runtime/CoreUObject/UObject.h"
 #include "Runtime/Engine/FTimeManager.h"
 #include "Runtime/Input/FInputManager.h"
@@ -12,9 +7,11 @@
 #include "Runtime/Math/Random.h"
 #include "Runtime/Asset/FAssetRegistry.h"
 #include <numbers>
-#include <Runtime/Engine/FSceneBVH.h>
+#include "Runtime/Engine/FSceneBVH.h"
+#include "Editor/Engine/UEditorEngine.h"
+#include "Runtime/Engine/UWorld.h"
 
-void FEditor::Initialize(USceneManager *SceneManager) {
+void FEditor::Initialize(UEditorEngine *Engine) {
   State.ReadFromFile();
   Gizmo.Initialize();
   SelectedActorTextComp = NewObject<UTextInstanceComponent>();
@@ -27,7 +24,8 @@ void FEditor::Initialize(USceneManager *SceneManager) {
     SelectedActorTextComp->SetMaterial(Registry.Get<UMaterial>("Material/SelectedActor_Text.json"));
     SelectedActorTextComp->SetFont(FName("bazziotf"));
   }
-  this->SceneManager = SceneManager;
+
+  this->EditorEngine = Engine;
 }
 
 void FEditor::Shutdown() {
@@ -39,67 +37,90 @@ FRenderResourceLibrary *FEditor::GetRendererLibrary() {
   return &FRenderResourceLibrary::Get();
 }
 
-void FEditor::Process() {
-  if (FInputManager::Get().IsKeyDown(VK_F11))
-  {
-    bZenMode = !bZenMode;
-  }
+void FEditor::Process()
+{
+    if (FInputManager::Get().IsKeyDown(VK_F11))
+    {
+        bZenMode = !bZenMode;
+    }
 
-  // 씬의 액터 업데이트
-  
+    // 씬의 액터 업데이트
     if (FInputManager::Get().IsKeyPressed(VK_DELETE) && SelectedActor)
     {
         AActor* Target = SelectedActor;
         UnSelectActor();
         Target->Destroy();
     }
-    
-  if (SceneManager && SceneManager->CurrentScene) {
-    SceneManager->CurrentScene->Update(FTimeManager::GetDeltaTime());
-  }
 
-  if (SelectedActor) {
-    USceneComponent* Root = SelectedActor->GetRootComponent();
-    const bool bChanged = Root && !(Root->GetRelativeTransform() == SelectedTransform);
-    
-    SelectedActor->SetTransform(SelectedTransform);
-
-    // Transform이 변경되었을 때만 Refit
-    if (bChanged && SceneManager && SceneManager->CurrentScene) {
-        RefitActorInBVH(SceneManager->CurrentScene->GetSceneBVH(), SelectedActor);
+    // 활성 뷰포트가 다른 월드를 보게 되면(PIE 시작/종료, 뷰포트 전환) 선택이 그 월드의 액터가 아니므로 해제한다.
+    if (SelectedActor && SelectedActor->GetWorld() != GetViewWorld())
+    {
+        UnSelectActor();
     }
-  }
+
+    bool bChanged = false;
+
+    // 선택된 액터가 속한 월드의 BVH만 갱신한다.
+    if (SelectedActor)
+    {
+        UWorld* World = SelectedActor->GetWorld();
+
+        if (SelectedComponent)
+        {
+            USceneComponent* CastSceneComponent = SelectedComponent->Cast<USceneComponent>();
+            bChanged = CastSceneComponent && !(CastSceneComponent->GetGlobalTransform() == SelectedTransform);
+
+            if (CastSceneComponent)
+            {
+                CastSceneComponent->SetRelativeTransformFromGlobal(SelectedTransform);
+            }
+        }
+        else
+        {
+            USceneComponent* RootComponent = SelectedActor->GetRootComponent();
+            bChanged = RootComponent && !(RootComponent->GetGlobalTransform() == SelectedTransform);
+            if (RootComponent)
+            {
+                RootComponent->SetRelativeTransformFromGlobal(SelectedTransform);
+            }
+        }
+        // Transform이 변경되었을 때만 Refit
+        if (bChanged && World && World->GetScene())
+        {
+            RefitActorInBVH(World->GetScene()->GetSceneBVH(), SelectedActor);
+        }
+    }
 
   SaveState();
   State.Tick(FTimeManager::GetDeltaTime());
 }
 
 void FEditor::SaveState() {
-  const FEditorViewportClient* Viewport = GetActiveViewport();
-  if (!Viewport) { return; }
+  const FEditorViewportEntry* Entry = GetActiveViewport();
+  if (!Entry) { return; }
 
-  const FCamera& Camera = Viewport->ViewportCamera;
+  const FCamera& Camera = Entry->Client.ViewportCamera;
   State.SetCameraLocation(Camera.GetPosition());
   State.SetCameraPitch(Camera.GetPitch());
   State.SetCameraYaw(Camera.GetYaw());
   State.SetCameraFOV(Camera.GetProjection().GetFOV());
-  State.SetGridCellSize(Viewport->GetGrid().GetCellSize());
+  State.SetGridCellSize(Entry->Client.GetGrid().GetCellSize());
   State.SetGizmoMode(static_cast<uint8>(Gizmo.Mode));
   State.SetGizmoSpace(static_cast<uint8>(Gizmo.GetSpace()));
-  State.SetSelectedActor(SelectedActor ? SelectedActor->GetUUID() : static_cast<uint32>(-1));
+  // 선택된 액터는 저장하지 않는다. 런타임 식별자는 실행마다 달라지므로 파일 사이에서 의미가 없다.
 }
 
 void FEditor::LoadState()
 {
-    FEditorViewportClient* Viewport = GetActiveViewport();
-    if (!Viewport) { return; }
+    FEditorViewportEntry *Entry = GetActiveViewport();
+    if (!Entry) { return; }
 
-    FCamera& Camera = Viewport->ViewportCamera;
+    FCamera& Camera = Entry->Client.ViewportCamera;
 
     Camera.SetPosition(State.GetCameraLocation());
     Camera.SetRotation(State.GetCameraPitch(), State.GetCameraYaw());
     Camera.SetFOV(State.GetCameraFOV());
-    Viewport->GetGrid().SetCellSize(State.GetGridCellSize());
+    Entry->Client.GetGrid().SetCellSize(State.GetGridCellSize());
     Gizmo.Mode = static_cast<EGizmoMode>(State.GetGizmoMode());
     Gizmo.SetGizmoSpace(static_cast<EGizmoSpace>(State.GetGizmoSpace()));
 
@@ -110,108 +131,202 @@ void FEditor::LoadState()
     
 }
 
-void FEditor::NewScene() {
+UWorld* FEditor::GetEditorWorld() const {
+  return EditorEngine ? EditorEngine->GetEditorWorld() : nullptr;
+}
+
+UWorld* FEditor::GetViewWorld() const {
+  if (Entries.empty() || ActiveViewportIndex < 0 || ActiveViewportIndex >= static_cast<int32>(Entries.size())) {
+    return nullptr;
+  }
+  return Entries[ActiveViewportIndex]->Client.GetWorld();
+}
+
+void FEditor::NewMap() {
+  if (EditorEngine->IsPlaySessionActive()) {
+    UE_LOG_WARN("[NewMap] PIE 실행 중에는 새 씬을 만들 수 없습니다. 먼저 PIE를 종료하세요.");
+    return;
+  }
+
+  // 이전 월드가 파괴되기 전에 선택을 해제한다.
   UnSelectActor();
-  SceneManager->SetScene(NewObject<UScene>());
+  EditorEngine->NewMap(GetEditorWorld(), EWorldType::Editor);
   State.ResetToDefaults();
   LoadState();
 }
 
-void FEditor::SaveScene(const FString &Path) { SceneManager->SaveScene(Path); }
-
-void FEditor::LoadScene(const FString &Path) 
+void FEditor::SaveMap(const FString &Path)
 {
-  // 씬 로드
-  FEditorViewportClient* Viewport = GetActiveViewport();
-  SceneManager->LoadScene(Path, Viewport ? &Viewport->ViewportCamera : nullptr);
-  SelectedActor = nullptr;
+  if (EditorEngine->IsPlaySessionActive()) {
+    UE_LOG_WARN("[SaveMap] PIE 실행 중에는 씬을 저장할 수 없습니다. 먼저 PIE를 종료하세요.");
+    return;
+  }
 
-  // 로드된 컴포넌트는 대기열에만 쌓이므로, 트랜스폼이 모두 설정된 지금 트리를 만든다.
-  if (SceneManager->CurrentScene)
-  {
-    UScene* Scene = SceneManager->CurrentScene;
-    Scene->GetSceneBVH().Build(Scene->GetRenderComponents());
+  if (UWorld* World = GetEditorWorld()) {
+    EditorEngine->SaveMap(*World, Path);
   }
 }
 
-bool FEditor::CheckSceneExists() {
-  if (SceneManager->CurrentScene == nullptr)
-    return false;
-  return true;
+void FEditor::LoadMap(const FString &Path)
+{
+  if (EditorEngine->IsPlaySessionActive()) {
+    UE_LOG_WARN("[LoadMap] PIE 실행 중에는 씬을 불러올 수 없습니다. 먼저 PIE를 종료하세요.");
+    return;
+  }
+
+  // 이전 월드가 파괴되기 전에 선택을 해제한다.
+  UnSelectActor();
+
+  FEditorViewportEntry* Entry = GetActiveViewport();
+  EditorEngine->LoadMap(GetEditorWorld(), Path, Entry ? &Entry->Client.ViewportCamera : nullptr);
 }
 
-void FEditor::AddViewport(FEditorViewportClient Viewport) {
-  EditorViewports.push_back(Viewport);
+void FEditor::AddViewport(UEngine* Engine, FWorldContext& Context) {
+    Entries.push_back(MakeUnique<FEditorViewportEntry>(Engine, Context));
 }
-void FEditor::InitMultiViewport(FEditorViewportClient Viewport) {
-  EditorViewports.push_back(Viewport);
-  EditorViewports.push_back(Viewport);
-  EditorViewports.push_back(Viewport);
-  EditorViewports.push_back(Viewport);
-
+void FEditor::InitMultiViewport(UEngine* Engine, FWorldContext& Context) {
+    for (int32 i = 0; i < 4; ++i) {
+        AddViewport(Engine, Context);
+    }
 }
 void FEditor::DeleteViewport(int32 IndexOfViewport) {
-  EditorViewports.erase(EditorViewports.begin() + IndexOfViewport);
+   Entries.erase( Entries.begin() + IndexOfViewport);
 }
 
-FEditorViewportClient* FEditor::GetActiveViewport() {
-  if (EditorViewports.empty()) {
+FEditorViewportEntry* FEditor::GetActiveViewport() {
+  if ( Entries.empty()) {
     return nullptr;
   }
-  return &EditorViewports[ActiveViewportIndex];
+  return Entries[ActiveViewportIndex].get();
+}
+
+FEditorViewportClient* FEditor::GetActiveViewportClient() {
+  FEditorViewportEntry* Entry = GetActiveViewport();
+  return Entry ? &Entry->Client : nullptr;
 }
 
 bool FEditor::SelectActor(AActor *Actor) {
-  if (SelectedActor) {
-    UnSelectActor();
-  }
+    if (SelectedActor) {
+        UnSelectActor();
+    }
 
-  SelectedActor = Actor;
-  if (SelectedActor) {
-    SelectedTransform = SelectedActor->GetTransform();
-    SelectedEulerDegDisplay = SelectedTransform.GetRotation().GetEulerXYZ();
+    SelectedActor = Actor;
+    if (SelectedActor) {
+        USceneComponent* RootComponent = SelectedActor->GetRootComponent();
+        SelectedTransform = RootComponent ? RootComponent->GetGlobalTransform() : FTransform{};
+        SelectedTransform = SelectedActor->GetTransform();
+        SelectedEulerDegDisplay = SelectedTransform.GetRotation().GetEulerXYZ();
     if (Gizmo.Mode == EGizmoMode::None) {
-      Gizmo.Mode = EGizmoMode::Translate;
+        Gizmo.Mode = EGizmoMode::Translate;
     }
 
     if (SelectedActorTextComp) {
-      SelectedActorTextComp->SetActorOwner(SelectedActor.Get());
-      FTransform RelativeTrans;
-      RelativeTrans.SetLocation(FVector{ 0.0f, 0.0f, 1.5f });
-      SelectedActorTextComp->SetRelativeTransform(RelativeTrans);
-      SelectedActorTextComp->SetText(L"UUID : " + std::to_wstring(SelectedActor->GetUUID()));
+        SelectedActorTextComp->SetActorOwner(SelectedActor.Get());
+        FTransform RelativeTrans;
+        RelativeTrans.SetLocation(FVector{ 0.0f, 0.0f, 1.5f });
+        SelectedActorTextComp->SetRelativeTransform(RelativeTrans);
+        const FString ActorName = SelectedActor->GetName().ToString();
+        SelectedActorTextComp->SetText(L"Name : " + FWString(ActorName.begin(), ActorName.end()));
     }
-  }
+    }
 
-  return true;
+    return true;
+}
+
+bool FEditor::SelectComponent(UActorComponent* InActorComponent)
+{
+    if (!InActorComponent)
+    {
+        SelectedComponent = nullptr;
+        return false;
+    }
+
+    if (InActorComponent->GetActorOwner() != SelectedActor.Get())
+    {
+        SelectActor(InActorComponent->GetActorOwner());
+    }
+
+    SelectedComponent = InActorComponent;
+
+    USceneComponent* CastSceneComponent = SelectedComponent->Cast<USceneComponent>();
+
+    if (CastSceneComponent)
+    {
+        SelectedTransform = CastSceneComponent->GetGlobalTransform();
+        SelectedEulerDegDisplay = SelectedTransform.GetRotation().GetEulerXYZ();
+        if (Gizmo.Mode == EGizmoMode::None) {
+            Gizmo.Mode = EGizmoMode::Translate;
+        }
+    }
+
+    return true;
 }
 
 void FEditor::UnSelectActor() {
-  if (SelectedActor) {
-    SelectedActor->SetTransform(SelectedTransform);
-  }
-  SelectedActor = nullptr;
-  if (SelectedActorTextComp) {
-    SelectedActorTextComp->SetActorOwner(nullptr);
-  }
+    if (SelectedActor)
+    {
+        if (SelectedComponent)
+        {
+            USceneComponent* CastComponent = SelectedComponent->Cast<USceneComponent>();
+            if (CastComponent)
+            {
+                CastComponent->SetRelativeTransformFromGlobal(SelectedTransform);
+            }
+
+        }
+        else
+        {
+            USceneComponent* RootComponent = SelectedActor->GetRootComponent();
+            if (RootComponent)
+            {
+                RootComponent->SetRelativeTransformFromGlobal(SelectedTransform);
+            }
+        }
+    }
+    SelectedActor = nullptr;
+    SelectedComponent = nullptr;
+    if (SelectedActorTextComp) {
+        SelectedActorTextComp->SetActorOwner(nullptr);
+    }
+}
+
+void FEditor::RefreshSelectedTransform()
+{
+    if (!SelectedActor) { return; }
+
+    USceneComponent* Target = SelectedComponent ? SelectedComponent->Cast<USceneComponent>() : nullptr;
+    if (!Target)
+    {
+        Target = SelectedActor->GetRootComponent();
+    }
+    if (!Target) { return; }
+
+    SelectedTransform = Target->GetGlobalTransform();
+    SelectedEulerDegDisplay = SelectedTransform.GetRotation().GetEulerXYZ();
 }
 
 const TArray<UPrimitiveComponent *> &FEditor::GetPrimitiveComponents() const {
     static const TArray<UPrimitiveComponent*> Empty;
-  if (!SceneManager || !SceneManager->CurrentScene) {
+  UWorld* World = GetViewWorld();
+  if (!World || !World->GetScene()) {
     return Empty;
   }
-  return SceneManager->CurrentScene->GetRenderComponents();
+  return World->GetScene()->GetPrimitives();
 }
 
 void FEditor::ClearSelectionForGC() {
   SelectedActor = nullptr;
+  SelectedComponent = nullptr;
   Gizmo.EndInteraction();
   Gizmo.HoveredHandle = EGizmoHandle::None;
 }
 
-void FEditor::SpawnActorToCurrentScene(UClass* Type, int Size) {
-    if (!SceneManager || !SceneManager->CurrentScene) {
+void FEditor::SpawnActorToCurrentScene(UClass* Type, int Size)
+{
+    UWorld* World = GetViewWorld();
+    FScene* Scene = World ? World->GetScene() : nullptr;
+    if (!Scene)
+    {
         return;
     }
 
@@ -230,7 +345,7 @@ void FEditor::SpawnActorToCurrentScene(UClass* Type, int Size) {
             Random::GetFloat(Min, Max, 2),
         };
 
-        AActor* NewActor = SceneManager->CurrentScene->SpawnActor(Type);
+        AActor* NewActor = World->SpawnActor(Type);
         if (!NewActor) { return; }
 
 
@@ -239,15 +354,13 @@ void FEditor::SpawnActorToCurrentScene(UClass* Type, int Size) {
         CurrentTransform.SetScale3D(FVector{ 0.5f, 0.5f, 0.5f });
         NewActor->SetTransform(CurrentTransform);
 
-        // 액터 시작 및 선택
-        NewActor->BeginPlay();
         SelectActor(NewActor);
     }
 
-    FSceneBVH& BVH = SceneManager->CurrentScene->GetSceneBVH();
+    FSceneBVH& BVH = Scene->GetSceneBVH();
     if (BVH.ShouldRebuild())
     {
-        BVH.Build(SceneManager->CurrentScene->GetRenderComponents());
+        BVH.Build(Scene->GetPrimitives());
     }
 }
 
@@ -258,7 +371,7 @@ void FEditor::ResizeView(FEditorState::SplitViewMode mode)
     //=== 초기화 ===//
     for (int32 i = 0; i < 4; ++i)
     {
-        Leaf[i].ViewportIndex = i;
+        Leaf[i].EntryIndex = i;
         Leaf[i].bisActive = false;
     }
 
@@ -314,16 +427,16 @@ void FEditor::ResizeView(FEditorState::SplitViewMode mode)
 void FEditor::SetViewLayout(FEditorState::SplitViewMode mode) {
     ResizeView(mode);
 
-    auto SetPerspectiveView = [this](int32 ViewportIndex)
+    auto SetPerspectiveView = [this](int32 EntryIndex)
     {
-        FEditorViewportClient& Viewport = EditorViewports[ViewportIndex];
-        Viewport.eOrthogonalType = FEditorViewportClient::EOrthogonalType::PERSPECTIVE;
-        Viewport.ViewportCamera.SetProjectionType(EProjectionType::Perspective);
+        FEditorViewportEntry& Entry = *Entries[EntryIndex];
+        Entry.Client.eOrthogonalType = FEditorViewportClient::EOrthogonalType::PERSPECTIVE;
+        Entry.Client.ViewportCamera.SetProjectionType(EProjectionType::Perspective);
     };
 
-    auto SetOrthographicView = [this](int32 ViewportIndex, FEditorViewportClient::EOrthogonalType Type)
+    auto SetOrthographicView = [this](int32 EntryIndex, FEditorViewportClient::EOrthogonalType Type)
     {
-        EditorViewports[ViewportIndex].SetOrthograpihcView(Type);
+         Entries[EntryIndex]->Client.SetOrthograpihcView(Type);
     };
 
     switch (mode)

@@ -1,12 +1,12 @@
 #include "Runtime/CoreUObject/ULightComponent.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/UWorld.h"
 
 IMPLEMENT_UCLASS(ULightComponent, USceneComponent)
 
-void ULightComponent::Register(UScene& InScene)
+void ULightComponent::Register(UWorld* InWorld)
 {
-	Super::Register(InScene);
-	InScene.AddLightComponent(this);
+	Super::Register(InWorld);
+	InWorld->GetScene()->AddLightComponent(this);
 }
 
 void ULightComponent::BuildConstants(FLightConstants& Constants)

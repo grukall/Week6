@@ -1,5 +1,6 @@
 #pragma once
 #include "Runtime/Core/intTypes.h"
+#include "FCamera.h"
 
 // FViewport.h와 서로 include하면 순환되므로 전방 선언만 사용한다.
 class FViewport;
@@ -20,8 +21,10 @@ public:
 	virtual ~FViewportClient() = default;
 	UWorld* GetWorld() const;
 	virtual bool IsOrtho() const { return false;}
-	virtual void AddAssociation(FViewport& Viewport) {}
-	virtual void RemoveAssociation(FViewport& Viewport) {}
+	virtual void AddAssociation(FViewport& _Viewport);
+	virtual void RemoveAssociation(FViewport& _Viewport);
+	virtual bool GetViewInfo(FCamera& OutCamera) = 0;
+	FViewport* GetViewport() const { return Viewport; }
 
 	void SetContextId(const uint32 NewContextId) { ContextId = NewContextId; }
 	uint32 GetContextId() const { return ContextId; }
@@ -31,4 +34,7 @@ protected:
 
 	//WorldContext 고유번호 저장, GetWorld에서 사용
 	uint32 ContextId = -1;
+
+	//연결된 Viewport
+	FViewport* Viewport = nullptr;
 };

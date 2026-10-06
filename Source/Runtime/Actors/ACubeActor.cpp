@@ -4,6 +4,8 @@
 #include "Runtime/CoreUObject/Mesh/UStaticMeshComponent.h"
 #include "Runtime/Asset/FAssetRegistry.h"
 
+#include "Runtime/CoreUObject/URotationMovementComponent.h"
+
 IMPLEMENT_UCLASS(ACubeActor, AActor)
 UCLASS_META(ACubeActor, DisplayName, "Cube Actor")
 
@@ -16,4 +18,16 @@ ACubeActor::ACubeActor()
 	FAssetRegistry& Registry = FAssetRegistry::GetInstance();
 	Object->SetMesh(Registry.Get<UStaticMesh>("#Cube"));
 	Object->SetMaterial(Registry.Get<UMaterial>("Material/Textured.json"));
+
+	URotationMovementComponent* Move = NewObject<URotationMovementComponent>();
+	Move->RotationRate = FVector(0.0f, 0.0f, -30.0f);
+
+	bTickEnabled = true;
+	AddComponent(Move);
+}
+
+void ACubeActor::Initialize()
+{
+	Super::Initialize();
+	bTickEnabled = true;
 }

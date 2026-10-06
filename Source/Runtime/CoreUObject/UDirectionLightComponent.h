@@ -1,10 +1,10 @@
 #pragma once
 #include "Runtime/CoreUObject/ULightComponent.h"
 
-class USpotLightComponent : public ULightComponent
+class UDirectionLightComponent : public ULightComponent
 {
 	GENERATED_BODY()
-	DECLARE_UCLASS(USpotLightComponent, ULightComponent)
+	DECLARE_UCLASS(UDirectionLightComponent, ULightComponent)
 
 public:
 

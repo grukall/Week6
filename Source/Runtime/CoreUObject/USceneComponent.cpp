@@ -7,7 +7,7 @@
 #include "Runtime/Engine/FScene.h"
 
 
-IMPLEMENT_UCLASS(USceneComponent, UObject)
+IMPLEMENT_UCLASS(USceneComponent, UActorComponent)
 
 void USceneComponent::Initialize()
 {

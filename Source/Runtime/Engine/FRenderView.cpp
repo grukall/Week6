@@ -225,6 +225,8 @@ void FRenderView::RenderView(const FSceneView& View, const FScene& Scene, const 
 {
     // 뷰포트 시작
     BeginView(View);
+    UpdateLight(Scene);
+
 
     //컬링 측정
     {
@@ -290,6 +292,17 @@ void FRenderView::RenderView(const FSceneView& View, const FScene& Scene, const 
 
     // 후처리 외곽선 패스
     RenderPostProcessPass(View.Camera, EditorCtx.SelectedActor, View.TopLeftUV, View.LengthUV);
+    
+
+    if (bIsFXAA)
+    {
+        FXAAPostProcessPass();
+        RenderScenePostProcess();
+    }
+    else
+    {
+        RenderEditorPostProcess();
+    }
 
     Renderer.ClearLastRenderState();
 }
@@ -300,11 +313,12 @@ void FRenderView::BeginView(const FSceneView& View)
     Renderer.BindEditorViewportRenderTargets();
     Renderer.SetViewportUV(View.TopLeftUV, View.LengthUV);
     Renderer.SetRenderMode(View.ViewMode);
-    Renderer.UpdateLightConstants(View.LightConstants, View.ViewMode);
+    // Renderer.UpdateLightConstants(View.LightConstants, View.ViewMode);
 
     // ViewConstants 갱신
     FViewConstants ViewConstants
     {
+        .Pos = View.Camera.GetPosition(),
         .View = View.Camera.GetViewMatrix(),
         .Projection = View.Camera.GetProjectionMatrix(),
         .ViewportSize = FVector2
@@ -347,6 +361,7 @@ void FRenderView::ScreenPass(const FCamera& Camera, const AActor* SelectedActor,
 }
 
 void FRenderView::DepthPass(const FVector2& TopLeftUV, const FVector2& LengthUV)
+
 {
     RenderDepthPass(TopLeftUV, LengthUV);
 }
@@ -355,6 +370,21 @@ void FRenderView::DepthPass(const FVector2& TopLeftUV, const FVector2& LengthUV)
 void FRenderView::RenderPostProcessPass(const FCamera& Camera, const AActor* SelectedActor, const FVector2& TopLeftUV, const FVector2& LengthUV)
 {
     RenderOutline(Camera, SelectedActor, TopLeftUV, LengthUV);
+}
+
+void FRenderView::FXAAPostProcessPass()
+{
+    Renderer.FXAA();
+}
+
+void FRenderView::RenderScenePostProcess()
+{
+    Renderer.RenderSceneColor();
+}
+
+void FRenderView::RenderEditorPostProcess()
+{
+    Renderer.RenderEditorViewPort();
 }
 
 void FRenderView::RenderOverlayPass(const FCamera& Camera, const FSceneView& SceneView, const FTransform& SelectedTransform, const FGizmo& Gizmo, UTextInstanceComponent* TextComp)
@@ -676,3 +706,19 @@ void FRenderView::RunOcclusionOracle()
     OracleDrawnCommands.clear();
     OracleOccludedCommands.clear();
 }
+
+
+// Lights Update
+void FRenderView::UpdateLight(const FScene& Scene)
+{
+    FLightConstants Constants;
+
+    for (ULightComponent* Light : Scene.GetLightComponents())
+    {
+        Light->BuildConstants(Constants);
+    }
+
+    Renderer.UpdateLightConstants(Constants, EViewModeIndex::VMI_Lit);
+}
+
+

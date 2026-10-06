@@ -6,6 +6,7 @@
 #include "Runtime/CoreUObject/UObjectGlobals.h"
 #include "Runtime/CoreUObject/UPrimitiveComponent.h"
 #include "Runtime/CoreUObject/USceneComponent.h"
+#include "Runtime/CoreUObject/ULightComponent.h"
 #include "Runtime/Rendering/FRenderResourceLibrary.h"
 #include "Runtime/Engine/FSceneBVH.h"
 #include "Runtime/Engine/FCulling.h"
@@ -29,6 +30,10 @@ public:
   //virtual void Serialize(FArchive& Archive) const override;
   //virtual void Deserialize(const FArchive& Archive) override;
 
+  void AddLightComponent(ULightComponent* Light);
+  void RemoveLightComponent(ULightComponent* Light);
+  TArray<ULightComponent*> GetLightComponents() const { return LightComponents; }
+
   void Addprimitive(UPrimitiveComponent *prim);
   void RemovePrimitive(UPrimitiveComponent *prim);
 
@@ -48,6 +53,7 @@ public:
 
 private:
   TArray<UPrimitiveComponent*> RenderComponents; // 렌더링큐 (Draw용)
+  TArray<ULightComponent*> LightComponents;
 
   FSceneBVH SceneBVH;
 

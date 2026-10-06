@@ -51,6 +51,10 @@ public:
 	void RenderPostProcessPass(const FCamera& Camera, const AActor* SelectedActor, const FVector2& TopLeftUV, const FVector2& LengthUV);
 	void RenderOverlayPass(const FCamera& Camera, const FSceneView& SceneView, const FTransform& SelectedTransform, const FGizmo& Gizmo, UTextInstanceComponent* TextComp);
 
+	void FXAAPostProcessPass();
+	void RenderScenePostProcess();
+	void RenderEditorPostProcess();
+
 	// 개별 렌더 및 디버그 라인
 	void RenderGizmo(const FTransform& Transform, const FCamera& Camera, FVector2 TopLeftUV, FVector2 LengthUV, const FGizmo& Gizmo);
 
@@ -91,6 +95,9 @@ public:
 	//측정 : 다음에 렌더되는 뷰 하나에서 오라클을 실행(한 프레임 멈춤)
 	void RequestOcclusionOracle() { bOracleRequested = true; }
 
+	// Lights
+	void UpdateLight(const FScene& Scene);
+
 private:
 	FCullingSettings CullingSettings;
 	//컬링 후 가시 여부 인덱스(실제 renderComponent 인덱스와 동일하게)
@@ -126,4 +133,7 @@ private:
 	TArray<FDrawCommand> OracleOccludedCommands;  // 오클루전으로 지운 것 (검증 대상)
 
 	void RunOcclusionOracle();
+
+public:
+	bool bIsFXAA = false;
 };

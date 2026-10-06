@@ -21,9 +21,22 @@ public:
 	void SetSamplerDesc(FTextureSamplerDesc InSamplerDesc) { SamplerDesc = InSamplerDesc; }
 	FTextureSamplerDesc GetSamplerDesc() const { return SamplerDesc; }
 
+	void SetDiffuse(FVector Dif) { Diffuse = Dif; }
+	FVector GetDiffuse() const { return Diffuse; }
+
+	void SetSpecular(FVector Spec) { Specular = Spec; }
+	FVector GetSpecular() const { return Specular; }
+
+	void SetShininess(float Shin) { Shininess = Shin; }
+	float GetShininess() const { return Shininess; }
+
 private:
 
 	FRenderPipeline* Pipeline = nullptr;
 	FTexture* Texture = nullptr;
 	FTextureSamplerDesc SamplerDesc;
+
+	FVector Diffuse{};
+	float Shininess = 0.0f;
+	FVector Specular{};
 };

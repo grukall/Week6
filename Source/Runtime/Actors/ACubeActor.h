@@ -10,4 +10,5 @@ class ACubeActor : public AActor
 
 public:
 	explicit ACubeActor();
+	void Initialize() override;
 };

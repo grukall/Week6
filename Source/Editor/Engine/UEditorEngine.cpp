@@ -170,7 +170,6 @@ void UEditorEngine::Render()
             .LengthUV = Viewport.LengthUV,
             .ViewMode = EditorViewport->ViewMode,
             .ShowFlags = EditorViewport->ShowFlags,
-            .LightConstants = Editor.GlobalLight
         };
 
         // 에디터 렌더링 컨텍스트 구성
@@ -232,7 +231,6 @@ void UEditorEngine::Render()
       .LengthUV = Viewport.LengthUV,
       .ViewMode = EditorViewport->ViewMode,
       .ShowFlags = EditorViewport->ShowFlags,
-      .LightConstants = Editor.GlobalLight
             };
 
             RenderView.RenderOverlayPass(Camera, SceneView, Editor.SelectedTransform, Editor.GetGizmo(), Editor.GetTextcomp());
@@ -292,6 +290,13 @@ void UEditorEngine::ExecuteCommand(const char* Command)
         //컬링 토글
         Globals::bEnableFrustumCulling = !Globals::bEnableFrustumCulling;
         UE_LOG("Culling : %s", Globals::bEnableFrustumCulling ? "ON" : "OFF");
+    }
+
+    else if (lowerCmd.compare("fxaa") == 0)
+    {
+        //컬링 토글
+        RenderView.bIsFXAA = !RenderView.bIsFXAA;
+        UE_LOG("FXAA : %s", RenderView.bIsFXAA ? "ON" : "OFF");
     }
 
     else {

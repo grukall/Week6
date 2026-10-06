@@ -1,15 +1,13 @@
 #pragma once
 #include "Runtime/CoreUObject/ULightComponent.h"
 
-class USpotLightComponent : public ULightComponent
+class UPointLightComponent : public ULightComponent
 {
 	GENERATED_BODY()
-	DECLARE_UCLASS(USpotLightComponent, ULightComponent)
+	DECLARE_UCLASS(UPointLightComponent, ULightComponent)
 
 public:
-
 	virtual void BuildConstants(FLightConstants& Constants) override;
-
 
 private:
 

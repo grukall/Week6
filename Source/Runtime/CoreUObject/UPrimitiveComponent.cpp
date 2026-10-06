@@ -142,6 +142,12 @@ void UPrimitiveComponent::UpdateMaterialCache()
 			Material.SetTexture(Item.Texture->Get());
 		}
 		Material.SetSamplerDesc(Item.SamplerDesc);
+
+        Material.SetDiffuse(Item.Diffuse);
+        Material.SetSpecular(Item.Specular);
+        Material.SetShininess(Item.Shininess);
+
+
 		CachedMaterials.push_back(Material);
 	}
 }

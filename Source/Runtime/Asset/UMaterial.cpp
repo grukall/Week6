@@ -9,4 +9,7 @@ void UMaterial::Load(UMaterialDesc& Desc)
 	Pipeline = Desc.Pipeline;
 	Texture = Desc.Texture;
 	SamplerDesc = Desc.TextureSamplerDesc;
+	Diffuse = Desc.Diffuse;
+	Specular = Desc.Specular;
+	Shininess = Desc.Shininess;
 }

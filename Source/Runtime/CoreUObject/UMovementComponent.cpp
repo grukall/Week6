@@ -10,7 +10,7 @@ void UMovementComponent::Initialize()
 	{
 		UpdatedComponent = Owner->GetRootComponent();
 		bTickEnabled = true;
-		bTickInEditor = true;
+		//bTickInEditor = true;
 	}
 
 }

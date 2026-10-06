@@ -281,10 +281,16 @@ void FRenderView::RenderView(const FSceneView& View, const FScene& Scene, const 
 
     Renderer.ClearLastRenderState();
 
-    RenderScreenPass();
+    RenderScreenPass(View.Camera, EditorCtx.SelectedActor, View.TopLeftUV, View.LengthUV);
+
+	if (View.ViewMode == EViewModeIndex::VMI_SceneDepth)
+	{
+		// 깊이 버퍼를 화면에 출력
+		Renderer.RenderDepthPass(View.TopLeftUV, View.LengthUV);
+	}
 
     // 후처리 외곽선 패스
-    RenderPostProcessPass(View.Camera, EditorCtx.SelectedActor);
+    RenderPostProcessPass(View.Camera, EditorCtx.SelectedActor, View.TopLeftUV, View.LengthUV);
 
     Renderer.ClearLastRenderState();
 }
@@ -307,6 +313,8 @@ void FRenderView::BeginView(const FSceneView& View)
             View.LengthUV.X * Renderer.GetWidth(),
             View.LengthUV.Y * Renderer.GetHeight(),
         },
+        .Near = View.Camera.GetNearPlane(),
+        .Far = View.Camera.GetFarPlane(),
     };
 
     Renderer.UpdateViewConstants(ViewConstants);
@@ -334,14 +342,20 @@ void FRenderView::FlushLinePass(const FCamera& Camera)
     FlushLineBatch(Camera.GetViewProjectionMatrix());
 }
 
-void FRenderView::ScreenPass()
+void FRenderView::ScreenPass(const FCamera& Camera, const AActor* SelectedActor, const FVector2& TopLeftUV, const FVector2& LengthUV)
 {
-    RenderScreenPass();
+    RenderScreenPass(Camera, SelectedActor, TopLeftUV, LengthUV);
 }
 
-void FRenderView::RenderPostProcessPass(const FCamera& Camera, const AActor* SelectedActor)
+void FRenderView::DepthPass(const FVector2& TopLeftUV, const FVector2& LengthUV)
 {
-    RenderOutline(Camera, SelectedActor);
+    RenderDepthPass(TopLeftUV, LengthUV);
+}
+
+
+void FRenderView::RenderPostProcessPass(const FCamera& Camera, const AActor* SelectedActor, const FVector2& TopLeftUV, const FVector2& LengthUV)
+{
+    RenderOutline(Camera, SelectedActor, TopLeftUV, LengthUV);
 }
 
 void FRenderView::RenderOverlayPass(const FCamera& Camera, const FSceneView& SceneView, const FTransform& SelectedTransform, const FGizmo& Gizmo, UTextInstanceComponent* TextComp)
@@ -412,15 +426,20 @@ void FRenderView::RenderSphere(const FVector &Center, float Radius,
   LineBatcher.DrawSphere(Center, Radius, Color, Segments);
 }
 
-void FRenderView::RenderScreenPass()
+void FRenderView::RenderScreenPass(const FCamera& Camera, const AActor* SelectedActor, 
+                                    const FVector2& TopLeftUV, const FVector2& LengthUV)
 {
-    Renderer.RenderScreenPass();
+    DrawStencilMask(Camera, SelectedActor);
+    Renderer.RenderScreenPass(TopLeftUV, LengthUV);
+}
+
+void FRenderView::RenderDepthPass(const FVector2& TopLeftUV, const FVector2& LengthUV) {
+	Renderer.RenderDepthPass(TopLeftUV, LengthUV);
 }
 
 void FRenderView::RenderOutline(const FCamera &Camera,
-                                const AActor *SelectedActor) {
-  DrawStencilMask(Camera, SelectedActor);
-  Renderer.RenderOutline();
+                                const AActor *SelectedActor, const FVector2& TopLeftUV, const FVector2& LengthUV) {
+  Renderer.RenderOutline(TopLeftUV, LengthUV);
 }
 
 void FRenderView::DrawStencilMask(const FCamera& Camera,

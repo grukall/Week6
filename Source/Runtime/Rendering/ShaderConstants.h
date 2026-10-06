@@ -18,7 +18,8 @@ struct FViewConstants {
 	FMatrix View;
 	FMatrix Projection;
 	FVector2 ViewportSize;
-	FVector2 Padding;
+	float Near;
+	float Far;
 };
 static_assert(sizeof(FViewConstants) % 16 == 0);
 

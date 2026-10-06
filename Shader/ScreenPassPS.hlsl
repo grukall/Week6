@@ -1,3 +1,4 @@
+#include "Constants.hlsli"
 Texture2D SceneTexture : register(t6);
 Texture2D DepthTexture : register(t7);
 SamplerState SceneSampler : register(s0);

@@ -1104,11 +1104,14 @@ void FRenderer::UpdateViewConstants(const FViewConstants &Constants) {
     FViewConstants ShaderConstants = Constants;
     ShaderConstants.View = ShaderConstants.View;
     ShaderConstants.Projection = ShaderConstants.Projection.ToD3DMatrix();
+	ShaderConstants.Near = Constants.Near;
+	ShaderConstants.Far = Constants.Far;
 
     Context->UpdateSubresource(GetCurrentFrameResource()->ViewConstantBuffer.Get(), 0, nullptr,
         &ShaderConstants, 0, 0);
     Context->VSSetConstantBuffers(1, 1, GetCurrentFrameResource()->ViewConstantBuffer.GetAddressOf());
     Context->PSSetConstantBuffers(1, 1, GetCurrentFrameResource()->ViewConstantBuffer.GetAddressOf());
+
 }
 
 void FRenderer::Draw(const FDrawCommand &Command, uint32 Slot,

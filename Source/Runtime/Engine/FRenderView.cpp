@@ -295,7 +295,19 @@ void FRenderView::BeginView(const FSceneView& View)
     Renderer.SetRenderMode(View.ViewMode);
     Renderer.UpdateLightConstants(View.LightConstants, View.ViewMode);
 
-    UpdateViewConstants(View);
+    // ViewConstants 갱신
+    FViewConstants ViewConstants
+    {
+        .View = View.Camera.GetViewMatrix(),
+        .Projection = View.Camera.GetProjectionMatrix(),
+        .ViewportSize = FVector2
+        {
+            View.LengthUV.X * Renderer.GetWidth(),
+            View.LengthUV.Y * Renderer.GetHeight(),
+        },
+    };
+
+    Renderer.UpdateViewConstants(ViewConstants);
 }
 
 void FRenderView::DrawGrid(const FCamera& Camera, FGrid& Grid)
@@ -329,7 +341,6 @@ void FRenderView::RenderOverlayPass(const FCamera& Camera, const FSceneView& Sce
 {
     // 뷰포트 영역 재설정
     Renderer.SetViewportUV(SceneView.TopLeftUV, SceneView.LengthUV);
-    UpdateViewConstants(Camera, SceneView.LengthUV);
 
     //// 기즈모 렌더링
     //Renderer.ClearDepth();
@@ -353,7 +364,6 @@ void FRenderView::RenderGizmo(const FTransform &Transform,
                               const FCamera &Camera, FVector2 TopLeftUV,
                               FVector2 LengthUV, const FGizmo &Gizmo) {
   Renderer.SetViewportUV(TopLeftUV, LengthUV);
-  UpdateViewConstants(Camera, LengthUV);
   Renderer.ClearDepth();
   Gizmo.Draw(Renderer, Transform, Camera);
 }
@@ -434,28 +444,6 @@ void FRenderView::SetRenderMode(EViewModeIndex InMode)
 void FRenderView::UpdateLightConstants(const FLightConstants& Constants, const EViewModeIndex InMode)
 {
     Renderer.UpdateLightConstants(Constants, InMode);
-}
-
-void FRenderView::UpdateViewConstants(const FSceneView& View)
-{
-    UpdateViewConstants(View.Camera, View.LengthUV);
-}
-
-void FRenderView::UpdateViewConstants(const FCamera& Camera, FVector2 LengthUV)
-{
-    // ViewConstants 갱신
-    FViewConstants ViewConstants
-    {
-        .View = Camera.GetViewMatrix(),
-        .Projection = Camera.GetProjectionMatrix(),
-        .ViewportSize = FVector2
-        {
-            LengthUV.X * Renderer.GetWidth(),
-            LengthUV.Y * Renderer.GetHeight(),
-        },
-    };
-
-    Renderer.UpdateViewConstants(ViewConstants);
 }
 
 void FRenderView::DrawInstances(const FCamera& Camera)

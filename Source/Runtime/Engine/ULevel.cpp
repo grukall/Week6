@@ -83,13 +83,13 @@ void ULevel::Serialize(FArchive& Archive) const
     TArray<FArchive> ActorArchives;
 
     for (const auto &Item : Actors) {
-    if (!Item) {
-        continue;
+        if (!Item) {
+            continue;
     }
 
-    FArchive ItemArchive;
-    Item->Serialize(ItemArchive);
-    ActorArchives.push_back(ItemArchive);
+        FArchive ItemArchive;
+        Item->Serialize(ItemArchive);
+        ActorArchives.push_back(ItemArchive);
     }
 
     Archive.SetArchiveArray("Actors", ActorArchives);

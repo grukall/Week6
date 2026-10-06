@@ -223,6 +223,7 @@ void AActor::DeserializeOwnedComponents(const TArray<FArchive>& ComponentArchive
 
 			UObject* Object = NewObject(SavedClass);
 			Component = Object ? Object->Cast<UActorComponent>() : nullptr;
+
 			Component->SetName(SavedName);
 			AddComponent(Component);
 		}
@@ -253,9 +254,9 @@ void AActor::DeserializeOwnedComponents(const TArray<FArchive>& ComponentArchive
 	}
 }
 
-void AActor::RestoreExternalAttachments(const FArchive& Archive, const TMap<FString, AActor*>& LoadedActorsByGuid)
+namespace 
 {
-	auto Restore = [&](USceneComponent* Child, const FArchive& ComponentArchive)
+	void Restore(USceneComponent* Child, const FArchive& ComponentArchive, const TMap<FString, AActor*>& LoadedActorsByGuid)
 	{
 		if (Child == nullptr || ComponentArchive.IsNull("Parent") || ComponentArchive.IsNull("ParentActor"))
 		{
@@ -269,17 +270,18 @@ void AActor::RestoreExternalAttachments(const FArchive& Archive, const TMap<FStr
 
 		if (ParentSceneComponent == nullptr)
 		{
-			UE_LOG_WARN("[%s::Deserialize] 다른 액터의 부모 %s을(를) 찾을 수 없습니다.",
-				GetClass()->GetUClassName(), ComponentArchive.GetString("Parent"));
 			return;
 		}
 
 		Child->RestoreAttachment(ParentSceneComponent);
-	};
+	}
+}
 
+void AActor::RestoreExternalAttachments(const FArchive& Archive, const TMap<FString, AActor*>& LoadedActorsByGuid)
+{
 	if (!Archive.IsNull("RootComponent"))
 	{
-		Restore(RootComponent, Archive.GetArchive("RootComponent"));
+		Restore(RootComponent, Archive.GetArchive("RootComponent"), LoadedActorsByGuid);
 	}
 
 	if (Archive.IsNull("OwnedComponents"))
@@ -295,7 +297,7 @@ void AActor::RestoreExternalAttachments(const FArchive& Archive, const TMap<FStr
 		}
 
 		UActorComponent* Component = FindComponentByName(FName(ComponentArchive.GetString("Name")));
-		Restore(Component ? Component->Cast<USceneComponent>() : nullptr, ComponentArchive);
+		Restore(Component ? Component->Cast<USceneComponent>() : nullptr, ComponentArchive, LoadedActorsByGuid);
 	}
 }
 

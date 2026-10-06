@@ -109,48 +109,48 @@ void FImguiWorldOutliner::Process(FEditor& Editor)
 		bCacheDirty = true;
 	}
 
-	if (bUseOptimized)
+	//if (bUseOptimized)
+	//{
+	if (bCacheDirty || CurrentWorld != LastWorld || Actors->size() != LastActorCount)
 	{
-		if (bCacheDirty || CurrentWorld != LastWorld || Actors->size() != LastActorCount)
+		RefreshCache(CurrentWorld);
+		UpdateFilter(CurrentFilterStr.c_str());
+		RebuildDisplayList();
+		LastWorld = CurrentWorld;
+		bDisplayListDirty = false;
+	}
+	else if (bFilterChanged || bDisplayListDirty)
+	{
+		if (bFilterChanged)
 		{
-			RefreshCache(CurrentWorld);
 			UpdateFilter(CurrentFilterStr.c_str());
-			RebuildDisplayList();
-			LastWorld = CurrentWorld;
-			bDisplayListDirty = false;
 		}
-		else if (bFilterChanged || bDisplayListDirty)
-		{
-			if (bFilterChanged)
-			{
-				UpdateFilter(CurrentFilterStr.c_str());
-			}
-			RebuildDisplayList();
-			bDisplayListDirty = false;
-		}
-
-		ImGuiListClipper Clipper;
-		Clipper.Begin(static_cast<int>(DisplayList.size()));
-
-		while (Clipper.Step())
-		{
-			for (int i = Clipper.DisplayStart; i < Clipper.DisplayEnd; ++i)
-			{
-				ShowActorNode_Cached(Editor, DisplayList[i], SelectedActor);
-			}
-		}
+		RebuildDisplayList();
+		bDisplayListDirty = false;
 	}
-	else
+
+	ImGuiListClipper Clipper;
+	Clipper.Begin(static_cast<int>(DisplayList.size()));
+
+	while (Clipper.Step())
 	{
-		CurrentWorld->ForEachActors([&](AActor* Actor)
+		for (int i = Clipper.DisplayStart; i < Clipper.DisplayEnd; ++i)
 		{
-			if (!Actor || IsAttachedActor(*Actor))
-			{
-				return;
-			}
-			ShowActorNode(Editor, Actor, CurrentFilterStr.c_str(), SelectedActor);
-		});
+			ShowActorNode_Cached(Editor, DisplayList[i], SelectedActor);
+		}
 	}
+	//}
+	//else
+	//{
+	//	CurrentWorld->ForEachActors([&](AActor* Actor)
+	//	{
+	//		if (!Actor || IsAttachedActor(*Actor))
+	//		{
+	//			return;
+	//		}
+	//		ShowActorNode(Editor, Actor, CurrentFilterStr.c_str(), SelectedActor);
+	//	});
+	//}
 
 	ImGui::EndChild();
 
@@ -202,9 +202,17 @@ void FImguiWorldOutliner::Process(FEditor& Editor)
 				const char* ItemDisplayName = Item->GetUClassName().c_str();
 				if (ImGui::Selectable(ItemDisplayName, bIsSelected))
 				{
-					USceneComponent* NewSceneComponent = NewObject(Item)->Cast<USceneComponent>();
-					SelectedActor->AddComponent(NewSceneComponent);
-					bCacheDirty = true;
+					UObject* Object = NewObject(Item);
+					UActorComponent* NewComponent = Object ? Object->Cast<UActorComponent>() : nullptr;
+					if (NewComponent)
+					{
+						SelectedActor->AddComponent(NewComponent);
+						bCacheDirty = true;
+					}
+					else if (Object)
+					{
+						DestroyObject(Object);
+					}
 				}
 
 				if (bIsSelected)
@@ -258,55 +266,55 @@ void FImguiWorldOutliner::UpdateFilter(const FString& FilterStr)
 	LastFilterStr = FilterStr;
 }
 
-void FImguiWorldOutliner::ShowActorNode(FEditor& Editor, AActor* Actor, const std::string& FilterStr, AActor* SelectedActor)
-{
-	if (!Actor->GetClass()) { return; }
-
-	// 검색어 필터링
-	if (!FilterStr.empty())
-	{
-		// 액터 이름 생성
-		const FString& ActorName = Actor->GetClass()->GetDisplayName();
-		if (ActorName.find(FilterStr) == FString::npos)
-		{
-			return;
-		}
-	}
-
-	const bool bIsSelected = (Actor == SelectedActor);
-	ImGuiTreeNodeFlags NodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-	if (bIsSelected)
-	{
-		NodeFlags |= ImGuiTreeNodeFlags_Selected;
-	}
-
-	const TArray<AActor*> ChildActors = GetChildActors(*Actor);
-	if (ChildActors.empty())
-	{
-		NodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-	}
-
-	// 트리 노드 렌더링
-	const bool bNodeOpen = ImGui::TreeNodeEx(Actor, NodeFlags, "%s (%s)", Actor->GetName().ToString().c_str(), Actor->GetClass()->GetDisplayName().c_str());
-	HandleRowDragDrop(Actor, Actor->GetClass()->GetDisplayName().c_str());
-
-	// 클릭 시 액터 선택
-	if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
-	{
-		Editor.SelectActor(Actor);
-	}
-
-	// 붙어 있는 자식 액터 전개
-	if (bNodeOpen && !ChildActors.empty())
-	{
-		for (AActor* ChildActor : ChildActors)
-		{
-			ShowActorNode(Editor, ChildActor, std::string(), SelectedActor);
-		}
-
-		ImGui::TreePop();
-	}
-}
+//void FImguiWorldOutliner::ShowActorNode(FEditor& Editor, AActor* Actor, const std::string& FilterStr, AActor* SelectedActor)
+//{
+//	if (!Actor->GetClass()) { return; }
+//
+//	// 검색어 필터링
+//	if (!FilterStr.empty())
+//	{
+//		// 액터 이름 생성
+//		const FString& ActorName = Actor->GetClass()->GetDisplayName();
+//		if (ActorName.find(FilterStr) == FString::npos)
+//		{
+//			return;
+//		}
+//	}
+//
+//	const bool bIsSelected = (Actor == SelectedActor);
+//	ImGuiTreeNodeFlags NodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+//	if (bIsSelected)
+//	{
+//		NodeFlags |= ImGuiTreeNodeFlags_Selected;
+//	}
+//
+//	const TArray<AActor*> ChildActors = GetChildActors(*Actor);
+//	if (ChildActors.empty())
+//	{
+//		NodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+//	}
+//
+//	// 트리 노드 렌더링
+//	const bool bNodeOpen = ImGui::TreeNodeEx(Actor, NodeFlags, "%s (%s)", Actor->GetName().ToString().c_str(), Actor->GetClass()->GetDisplayName().c_str());
+//	HandleRowDragDrop(Actor, Actor->GetClass()->GetDisplayName().c_str());
+//
+//	// 클릭 시 액터 선택
+//	if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+//	{
+//		Editor.SelectActor(Actor);
+//	}
+//
+//	// 붙어 있는 자식 액터 전개
+//	if (bNodeOpen && !ChildActors.empty())
+//	{
+//		for (AActor* ChildActor : ChildActors)
+//		{
+//			ShowActorNode(Editor, ChildActor, std::string(), SelectedActor);
+//		}
+//
+//		ImGui::TreePop();
+//	}
+//}
 
 void FImguiWorldOutliner::ShowActorNode_Cached(FEditor& Editor, const FOutlinerItem& Item, AActor* SelectedActor)
 {

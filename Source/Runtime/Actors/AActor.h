@@ -45,7 +45,6 @@ public:
 	const TArray<USceneComponent*>& GetAttachedComponents() const { return AttachedComp; }
 	const TArray<UActorComponent*>& GetOwnedComponents() const { return OwnedComponents; }
 
-	const TArray<UActorComponent*>& GetOwnedComponents() const { return OwnedComponents; }
 
 
 	FTransform GetTransform() const { return RootComponent ? RootComponent->GetRelativeTransform() : FTransform{}; }

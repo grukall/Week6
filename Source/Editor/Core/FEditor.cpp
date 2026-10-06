@@ -79,24 +79,17 @@ void FEditor::Process()
     {
         UWorld* World = SelectedActor->GetWorld();
 
-        if (SelectedComponent)
+        // 씬 컴포넌트가 아닌 컴포넌트가 선택되면 액터의 루트를 움직인다.
+        USceneComponent* Target = SelectedComponent ? SelectedComponent->Cast<USceneComponent>() : nullptr;
+        if (!Target)
         {
-            USceneComponent* CastSceneComponent = SelectedComponent->Cast<USceneComponent>();
-            bChanged = CastSceneComponent && !(CastSceneComponent->GetGlobalTransform() == SelectedTransform);
-
-            if (CastSceneComponent)
-            {
-                CastSceneComponent->SetRelativeTransformFromGlobal(SelectedTransform);
-            }
+            Target = SelectedActor->GetRootComponent();
         }
-        else
+
+        bChanged = Target && !(Target->GetGlobalTransform() == SelectedTransform);
+        if (Target)
         {
-            USceneComponent* RootComponent = SelectedActor->GetRootComponent();
-            bChanged = RootComponent && !(RootComponent->GetGlobalTransform() == SelectedTransform);
-            if (RootComponent)
-            {
-                RootComponent->SetRelativeTransformFromGlobal(SelectedTransform);
-            }
+            Target->SetRelativeTransformFromGlobal(SelectedTransform);
         }
         // Transform이 변경되었을 때만 Refit
         if (bChanged && World && World->GetScene())
@@ -290,15 +283,9 @@ bool FEditor::SelectComponent(UActorComponent* InActorComponent)
 
     SelectedComponent = InActorComponent;
 
-    USceneComponent* CastSceneComponent = SelectedComponent->Cast<USceneComponent>();
-
-    if (CastSceneComponent)
-    {
-        SelectedTransform = CastSceneComponent->GetGlobalTransform();
-        SelectedEulerDegDisplay = SelectedTransform.GetRotation().GetEulerXYZ();
-        if (Gizmo.Mode == EGizmoMode::None) {
-            Gizmo.Mode = EGizmoMode::Translate;
-        }
+    RefreshSelectedTransform();
+    if (Gizmo.Mode == EGizmoMode::None) {
+        Gizmo.Mode = EGizmoMode::Translate;
     }
 
     return true;
@@ -307,22 +294,14 @@ bool FEditor::SelectComponent(UActorComponent* InActorComponent)
 void FEditor::UnSelectActor() {
     if (SelectedActor)
     {
-        if (SelectedComponent)
+        USceneComponent* Target = SelectedComponent ? SelectedComponent->Cast<USceneComponent>() : nullptr;
+        if (!Target)
         {
-            USceneComponent* CastComponent = SelectedComponent->Cast<USceneComponent>();
-            if (CastComponent)
-            {
-                CastComponent->SetRelativeTransformFromGlobal(SelectedTransform);
-            }
-
+            Target = SelectedActor->GetRootComponent();
         }
-        else
+        if (Target)
         {
-            USceneComponent* RootComponent = SelectedActor->GetRootComponent();
-            if (RootComponent)
-            {
-                RootComponent->SetRelativeTransformFromGlobal(SelectedTransform);
-            }
+            Target->SetRelativeTransformFromGlobal(SelectedTransform);
         }
     }
     SelectedActor = nullptr;

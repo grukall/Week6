@@ -141,8 +141,9 @@ void FRenderer::OnWindowSize(UINT Width, UINT Height) {
   DepthStencilSRV.Reset();
   DepthStencilBuffer.Reset();
   EditorViewPortRTV.Reset();
-   EntriesRV.Reset();
+  EditorViewPortSRV.Reset();
   renderTexture.Reset();
+  SceneColorTexture.Reset();
 
   SwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, 0);
   Viewport.Width = static_cast<float>(Width);
@@ -813,17 +814,38 @@ bool FRenderer::InitializeEditorViewportRenderTarget() {
     return false;
   }
 
-  Result = Device->CreateRenderTargetView(renderTexture.Get(), nullptr,
-                                          &EditorViewPortRTV);
+  Result =
+      Device->CreateTexture2D(&ColorTexDesc, nullptr, &SceneColorTexture);
+  if (FAILED(Result)) {
+      return false;
+  }
+
+  Result = Device->CreateShaderResourceView(renderTexture.Get(), nullptr,
+                                            &EditorViewPortSRV);
   if (FAILED(Result)) {
     return false;
   }
 
-  Result = Device->CreateShaderResourceView(renderTexture.Get(), nullptr,
-                                            & EntriesRV);
+  Result = Device->CreateRenderTargetView(renderTexture.Get(), nullptr,
+      &EditorViewPortRTV);
   if (FAILED(Result)) {
-    return false;
+      return false;
   }
+
+
+  Result = Device->CreateShaderResourceView(SceneColorTexture.Get(), nullptr,
+      &SceneColorSRV);
+  if (FAILED(Result)) {
+      return false;
+  }
+
+  Result = Device->CreateRenderTargetView(SceneColorTexture.Get(), nullptr,
+      &SceneColorRTV);
+
+  if (FAILED(Result)) {
+      return false;
+  }
+
 
   return true;
 }
@@ -1508,6 +1530,34 @@ void FRenderer::ClearTextInstances() {
   FRenderResourceLibrary::Get().DestroyAllInstancingArray();
 }
 
+void FRenderer::RenderScreenPass()
+{
+    Context->RSSetViewports(1, &Viewport);
+    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    Context->IASetInputLayout(nullptr);
+
+    ID3D11Buffer* NullVB = nullptr;
+    UINT Zero = 0;
+    Context->IASetVertexBuffers(0, 1, &NullVB, &Zero, &Zero);
+
+    Context->OMSetRenderTargets(1, SceneColorRTV.GetAddressOf(), nullptr);
+
+    // 씬 텍스처 바인딩
+    ID3D11ShaderResourceView* SRV = EditorViewPortSRV.Get();
+    Context->PSSetShaderResources(6, 1, &SRV);
+
+    FRenderResourceLibrary::Get()
+        .GetPipeline(FName("#ScreenPass"))
+        ->Bind(*Context.Get());
+    Context->Draw(3, 0);
+    INC_DWORD_STAT("Draws");
+    INC_DWORD_STAT_BY("Prims", 1);
+
+    // 슬롯 해제
+    ID3D11ShaderResourceView* NullSRV = { nullptr };
+    Context->PSSetShaderResources(6, 1, &NullSRV);
+}
+
 void FRenderer::RenderOutline() {
   // 백버퍼 뷰포트 및 토폴로지 복구
 
@@ -1521,7 +1571,7 @@ void FRenderer::RenderOutline() {
 
   Context->OMSetRenderTargets(1, BackBufferRTV.GetAddressOf(), nullptr);
   // 씬 텍스처와 스텐실 텍스처 바인딩
-  ID3D11ShaderResourceView *SRVs[] = { EntriesRV.Get(),
+  ID3D11ShaderResourceView *SRVs[] = { SceneColorSRV.Get(),
                                       DepthStencilSRV.Get()};
   Context->PSSetShaderResources(0, 2, SRVs);
 

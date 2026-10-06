@@ -46,8 +46,8 @@ public:
 	FWorldContext* FindWorldContext(uint32 ContextId);
 	UWorld* GetWorld(uint32 ContextId);
 
-	bool LoadMap(UWorld* World, const FString& Path, FCamera* OutLegacyCamera = nullptr);
-	bool LoadMap(FWorldContext& WorldContext, const FString& Path, FCamera* OutLegacyCamera = nullptr);
+	bool LoadMap(UWorld* World, const FString& Path);
+	bool LoadMap(FWorldContext& WorldContext, const FString& Path);
 	bool SaveMap(const UWorld& World, const FString& Path) const;
 
 	void NewMap(UWorld* World, EWorldType WorldType);

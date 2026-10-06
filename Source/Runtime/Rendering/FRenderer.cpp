@@ -140,8 +140,8 @@ void FRenderer::OnWindowSize(UINT Width, UINT Height) {
   DepthStencilView.Reset();
   DepthStencilSRV.Reset();
   DepthStencilBuffer.Reset();
-  EditorViewPortRTV.Reset();
-   EntriesRV.Reset();
+  SceneColorRTV.Reset();
+  SceneColorSRV.Reset();
   renderTexture.Reset();
   SceneColorTexture.Reset();
 

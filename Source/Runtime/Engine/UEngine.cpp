@@ -6,11 +6,14 @@
 #include "Runtime/Rendering/FRenderer.h"
 #include "Runtime/Resource/FResourceLoader.h"
 #include "Runtime/CoreUObject/UClass.h"
+#include "Runtime/Engine/FGameViewportClient.h"
 #include "Runtime/Utility/EngineUtil.h"
 #include "FArchive.h"
 #include "Source/Converter.h"
 
 #include <Windows.h>
+#include "FViewportClient.h"
+#include "Runtime/Slate/FViewport.h"
 
 IMPLEMENT_ABSTRACT_UCLASS(UEngine, UObject)
 
@@ -212,6 +215,18 @@ void UEngine::DestroyWorld(uint32 ContextId)
 			CurrentWorld = nullptr;
 		}
 
+		FGameViewportClient* ViewportClient = WorldContexts[i].GameViewportClient;
+		if (ViewportClient)
+		{
+			// 호출하는 쪽이 뷰포트에서 먼저 떼어 두는 것이 원칙이다. (SIE 상태면 연결돼 있지 않아 null이다)
+			// 아직 연결돼 있다면 뷰포트가 해제된 Client를 가리키지 않도록 안전장치로 양쪽을 끊는다.
+			if (FViewport* Viewport = ViewportClient->GetViewport())
+			{
+				Viewport->SetViewportClient(nullptr);
+			}
+			delete(ViewportClient);
+		}
+
 		WorldContexts.erase(WorldContexts.begin() + i);
 		ShutdownWorld(World);
 		return;
@@ -237,7 +252,7 @@ UWorld* UEngine::GetWorld(uint32 ContextId)
 	return Context ? Context->World : nullptr;
 }
 
-bool UEngine::LoadMap(UWorld* World, const FString& Path, FCamera* OutLegacyCamera)
+bool UEngine::LoadMap(UWorld* World, const FString& Path)
 {
 	if (!World)
 	{
@@ -260,10 +275,10 @@ bool UEngine::LoadMap(UWorld* World, const FString& Path, FCamera* OutLegacyCame
 		return false;
 	}
 
-	return LoadMap(*FoundContext, Path, OutLegacyCamera);
+	return LoadMap(*FoundContext, Path);
 }
 
-bool UEngine::LoadMap(FWorldContext& WorldContext, const FString& Path, FCamera* OutLegacyCamera)
+bool UEngine::LoadMap(FWorldContext& WorldContext, const FString& Path)
 {
 	std::ifstream file(Path);
 	if (!file)
@@ -279,10 +294,10 @@ bool UEngine::LoadMap(FWorldContext& WorldContext, const FString& Path, FCamera*
 	FArchive Archive{ JSON };
 
 	// TODO: TEMP: 경연 대회용 임시 컨버터 로직
-	if (Archive.IsNull("Version") || Archive.GetInt32("Version") == 1)
-	{
-		Archive = Converter::GetStandardArchive(Archive, std::filesystem::path(Path), OutLegacyCamera);
-	}
+	//if (Archive.IsNull("Version") || Archive.GetInt32("Version") == 1)
+	//{
+	//	Archive = Converter::GetStandardArchive(Archive, std::filesystem::path(Path), OutLegacyCamera);
+	//}
 
 	int32 Version = Archive.GetInt32("Version");
 	if (Version != 3)

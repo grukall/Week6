@@ -80,15 +80,17 @@ void FEditor::Process()
 }
 
 void FEditor::SaveState() {
-  const FEditorViewportEntry* Entry = GetActiveViewport();
-  if (!Entry) { return; }
+  // 저장하는 것은 에디터 카메라다. 뷰포트에 게임 Client가 연결돼 있어도 에디터 상태를 저장한다.
+  const FEditorViewportClient* EditorClient = GetActiveEditorClient();
+  if (!EditorClient) { return; }
 
-  const FCamera& Camera = Entry->Client.ViewportCamera;
+  const FCamera& Camera = EditorClient->GetCamera();
   State.SetCameraLocation(Camera.GetPosition());
   State.SetCameraPitch(Camera.GetPitch());
   State.SetCameraYaw(Camera.GetYaw());
   State.SetCameraFOV(Camera.GetProjection().GetFOV());
-  State.SetGridCellSize(Entry->Client.GetGrid().GetCellSize());
+
+  State.SetGridCellSize(EditorClient->GetGrid().GetCellSize());
   State.SetGizmoMode(static_cast<uint8>(Gizmo.Mode));
   State.SetGizmoSpace(static_cast<uint8>(Gizmo.GetSpace()));
   // 선택된 액터는 저장하지 않는다. 런타임 식별자는 실행마다 달라지므로 파일 사이에서 의미가 없다.
@@ -96,15 +98,15 @@ void FEditor::SaveState() {
 
 void FEditor::LoadState()
 {
-    FEditorViewportEntry *Entry = GetActiveViewport();
-    if (!Entry) { return; }
+    FEditorViewportClient* EditorClient = GetActiveEditorClient();
+    if (!EditorClient) { return; }
 
-    FCamera& Camera = Entry->Client.ViewportCamera;
-
+    FCamera& Camera = EditorClient->GetCamera();
     Camera.SetPosition(State.GetCameraLocation());
     Camera.SetRotation(State.GetCameraPitch(), State.GetCameraYaw());
     Camera.SetFOV(State.GetCameraFOV());
-    Entry->Client.GetGrid().SetCellSize(State.GetGridCellSize());
+
+    EditorClient->GetGrid().SetCellSize(State.GetGridCellSize());
     Gizmo.Mode = static_cast<EGizmoMode>(State.GetGizmoMode());
     Gizmo.SetGizmoSpace(static_cast<EGizmoSpace>(State.GetGizmoSpace()));
 
@@ -120,10 +122,11 @@ UWorld* FEditor::GetEditorWorld() const {
 }
 
 UWorld* FEditor::GetViewWorld() const {
-  if (Entries.empty() || ActiveViewportIndex < 0 || ActiveViewportIndex >= static_cast<int32>(Entries.size())) {
+  if (Viewports.empty() || ActiveViewportIndex < 0 || ActiveViewportIndex >= static_cast<int32>(Viewports.size())) {
     return nullptr;
   }
-  return Entries[ActiveViewportIndex]->Client.GetWorld();
+  FViewportClient* Client = Viewports[ActiveViewportIndex]->GetClient();
+  return Client ? Client->GetWorld() : nullptr;
 }
 
 void FEditor::NewMap() {
@@ -161,12 +164,16 @@ void FEditor::LoadMap(const FString &Path)
   // 이전 월드가 파괴되기 전에 선택을 해제한다.
   UnSelectActor();
 
-  FEditorViewportEntry* Entry = GetActiveViewport();
-  EditorEngine->LoadMap(GetEditorWorld(), Path, Entry ? &Entry->Client.ViewportCamera : nullptr);
+  EditorEngine->LoadMap(GetEditorWorld(), Path);
 }
 
-void FEditor::AddViewport(UEngine* Engine, FWorldContext& Context) {
-    Entries.push_back(MakeUnique<FEditorViewportEntry>(Engine, Context));
+void FEditor::AddViewport(UEngine* Engine, FWorldContext& Context)
+{
+   // 두 배열은 항상 함께 추가한다. (같은 인덱스가 같은 뷰포트)
+   EditorViewportClients.push_back(MakeUnique<FEditorViewportClient>(Engine, Context.ContextId));
+   Viewports.push_back(MakeUnique<FViewport>());
+
+   Viewports.back()->SetViewportClient(EditorViewportClients.back().get());
 }
 void FEditor::InitMultiViewport(UEngine* Engine, FWorldContext& Context) {
     for (int32 i = 0; i < 4; ++i) {
@@ -174,19 +181,41 @@ void FEditor::InitMultiViewport(UEngine* Engine, FWorldContext& Context) {
     }
 }
 void FEditor::DeleteViewport(int32 IndexOfViewport) {
-   Entries.erase( Entries.begin() + IndexOfViewport);
+   // 뷰포트를 먼저 지워 연결을 끊은 뒤 Client를 지운다.
+   Viewports.erase(Viewports.begin() + IndexOfViewport);
+   EditorViewportClients.erase(EditorViewportClients.begin() + IndexOfViewport);
 }
 
-FEditorViewportEntry* FEditor::GetActiveViewport() {
-  if ( Entries.empty()) {
+FViewport* FEditor::GetActiveViewport() {
+  if (Viewports.empty() || ActiveViewportIndex < 0 || ActiveViewportIndex >= static_cast<int32>(Viewports.size())) {
     return nullptr;
   }
-  return Entries[ActiveViewportIndex].get();
+  return Viewports[ActiveViewportIndex].get();
 }
 
-FEditorViewportClient* FEditor::GetActiveViewportClient() {
-  FEditorViewportEntry* Entry = GetActiveViewport();
-  return Entry ? &Entry->Client : nullptr;
+FViewportClient* FEditor::GetActiveViewportClient() {
+  FViewport* Viewport = GetActiveViewport();
+  return Viewport ? Viewport->GetClient() : nullptr;
+}
+
+FEditorViewportClient* FEditor::GetEditorClient(int32 Index) {
+  if (Index < 0 || Index >= static_cast<int32>(EditorViewportClients.size())) {
+    return nullptr;
+  }
+  return EditorViewportClients[Index].get();
+}
+
+FEditorViewportClient* FEditor::GetActiveEditorClient()
+{
+  return GetEditorClient(ActiveViewportIndex);
+}
+
+bool FEditor::IsEditorClientAttached(int32 Index) const 
+{
+  if (Index < 0 || Index >= static_cast<int32>(Viewports.size()) || Index >= static_cast<int32>(EditorViewportClients.size())) {
+    return false;
+  }
+  return Viewports[Index]->GetClient() == EditorViewportClients[Index].get();
 }
 
 bool FEditor::SelectActor(AActor *Actor) {
@@ -348,14 +377,15 @@ void FEditor::SetViewLayout(FEditorState::SplitViewMode mode) {
 
     auto SetPerspectiveView = [this](int32 EntryIndex)
     {
-        FEditorViewportEntry& Entry = *Entries[EntryIndex];
-        Entry.Client.eOrthogonalType = FEditorViewportClient::EOrthogonalType::PERSPECTIVE;
-        Entry.Client.ViewportCamera.SetProjectionType(EProjectionType::Perspective);
+        FEditorViewportClient* Client = GetEditorClient(EntryIndex);
+        Client->eOrthogonalType = FEditorViewportClient::EOrthogonalType::PERSPECTIVE;
+        Client->GetCamera().SetProjectionType(EProjectionType::Perspective);
     };
 
     auto SetOrthographicView = [this](int32 EntryIndex, FEditorViewportClient::EOrthogonalType Type)
     {
-         Entries[EntryIndex]->Client.SetOrthograpihcView(Type);
+        FEditorViewportClient* Client = GetEditorClient(EntryIndex);
+        Client->SetOrthograpihcView(Type);
     };
 
     switch (mode)

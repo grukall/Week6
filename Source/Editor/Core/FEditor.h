@@ -15,6 +15,7 @@
 
 class UEditorEngine;
 class UEngine;
+class FViewportClient;
 
 enum class EEditorPrimitiveType : uint8 {
   Cube,
@@ -22,24 +23,6 @@ enum class EEditorPrimitiveType : uint8 {
   Sphere,
   Billboard,
   Spotlight,
-};
-
-// Viewport와 Client는 서로의 주소를 가리키므로 엔트리의 주소가 바뀌면 안 된다.
-// 복사/이동을 막고 FEditor는 TUniquePtr로만 들고 있는다.
-struct FEditorViewportEntry {
-
-    // Viewport보다 먼저 선언해야 소멸 순서(역순)상 Viewport가 먼저 정리되어
-    // Viewport의 소멸자가 살아있는 Client를 상대로 연결을 해제할 수 있다.
-    FEditorViewportClient Client;
-    FViewport Viewport;
-
-    explicit FEditorViewportEntry(UEngine* Engine, FWorldContext &Context) : Client(Engine, Context.ContextId)
-    {
-        Viewport.SetViewportClient(&Client);
-    }
-
-    FEditorViewportEntry(const FEditorViewportEntry&) = delete;
-    FEditorViewportEntry& operator=(const FEditorViewportEntry&) = delete;
 };
 
 class FEditor {
@@ -90,9 +73,19 @@ public:
   void InitMultiViewport(UEngine* Engine, FWorldContext& Context);
   void ResizeView(FEditorState::SplitViewMode mode);
   void DeleteViewport(int32 IndexOfViewport);
-  FEditorViewportEntry* GetActiveViewport();
-  // 활성 뷰포트의 Client만 필요한 곳(카메라, 뷰모드 등)에서 쓴다.
-  FEditorViewportClient* GetActiveViewportClient();
+  FViewport* GetActiveViewport();
+
+  // 활성 뷰포트에 "지금 연결된" Client. 에디터 Client일 수도, 게임 Client일 수도 있다. (렌더, 월드 조회 등 범용)
+  FViewportClient* GetActiveViewportClient();
+
+  // 에디터 Client는 뷰포트에 무엇이 연결되어 있든 항상 이 경로로 얻는다. (카메라 조작, 뷰모드, 그리드 등 에디터 도구)
+  // GetClient()를 FEditorViewportClient로 static_cast하면 안 된다. 게임 Client가 연결돼 있을 수 있다.
+  FEditorViewportClient* GetEditorClient(int32 Index);
+  FEditorViewportClient* GetActiveEditorClient();
+
+  // 이 뷰포트에 에디터 Client가 연결돼 있는지. 연결돼 있을 때만(편집, SIE) 선택, 기즈모, 하이라이트 같은 에디터 도구를 쓴다.
+  // Play처럼 게임 Client가 연결된 뷰포트에서는 false이다.
+  [[nodiscard]] bool IsEditorClientAttached(int32 Index) const;
 
   void UpdateCamera();
 
@@ -102,7 +95,7 @@ public:
   [[nodiscard]] bool ActorSelected() const { return SelectedActor.IsValid(); }
   [[nodiscard]] bool ObjectSelected() const { return SelectedActor.IsValid(); }
 
-  [[nodiscard]] TArray<TUniquePtr<FEditorViewportEntry>> &GetViewports() {return  Entries;}
+  [[nodiscard]] TArray<TUniquePtr<FViewport>> &GetViewports() {return  Viewports;}
   void SpawnActorToCurrentScene(UClass* Type, int Count = 1);
   // 피킹 등에서 현재 씬의 렌더링 대상 컴포넌트가 필요할 때 사용
   [[nodiscard]] const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
@@ -127,7 +120,8 @@ public:
 
 private:
   UEditorEngine* EditorEngine = nullptr;
-  TArray<TUniquePtr<FEditorViewportEntry>> Entries;
+  TArray<TUniquePtr<FEditorViewportClient>> EditorViewportClients;
+  TArray<TUniquePtr<FViewport>> Viewports;
   FGizmo Gizmo;
   TWeakObjectPtr<AActor> SelectedActor;
   TWeakObjectPtr<UTextInstanceComponent> SelectedActorTextComp;

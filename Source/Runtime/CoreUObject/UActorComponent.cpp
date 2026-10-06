@@ -24,6 +24,18 @@ void UActorComponent::Release()
     Super::Release();
 }
 
+void UActorComponent::Serialize(FArchive& Archive) const
+{
+    Super::Serialize(Archive);
+
+    Archive.SetString("Name", Name.ToString());
+}
+
+void UActorComponent::Deserialize(const FArchive& Archive)
+{
+    Super::Deserialize(Archive);
+}
+
 void UActorComponent::BeginPlay()
 {
     if (!World || bHasBegunPlay) { return; }

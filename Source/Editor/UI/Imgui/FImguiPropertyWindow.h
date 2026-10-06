@@ -26,8 +26,16 @@ private:
 	// 액터 클래스명과 UUID.
 	void ShowActorHeader(const AActor& Actor) const;
 
-	// 루트/서브 컴포넌트를 불릿으로 나열하는 요약 트리.
-	void ShowComponentHierarchy(const AActor& Actor) const;
+	// 컴포넌트 계층 트리. 노드를 클릭하면 선택하고, 드래그해서 같은 액터 안의 다른 컴포넌트 밑으로 옮긴다.
+	void ShowComponentHierarchy(FEditor& Editor, AActor& Actor);
+	void ShowComponentTreeNode(FEditor& Editor, AActor& Actor, USceneComponent& Comp);
+	// 씬 컴포넌트가 아닌 컴포넌트. 계층이 없어서 트리 아래에 나열만 하고 드래그는 받지 않는다.
+	void ShowActorComponentList(FEditor& Editor, AActor& Actor);
+	void ShowActorComponentSections(AActor& Actor);
+	void ShowComponentButtons(FEditor& Editor, AActor& Actor);
+	// 드롭은 트리 순회 중에 일어나므로 기억만 해두고 순회가 끝난 뒤 처리한다.
+	USceneComponent* PendingDragged = nullptr;
+	USceneComponent* PendingTarget = nullptr;
 
 	// 컴포넌트마다 접이식 헤더를 만들고 그 안에 상세 속성을 그린다.
 	void ShowComponentSections(FEditor& Editor, AActor& Actor);

@@ -64,6 +64,9 @@ void AActor::Release()
 		DestroyObject(RemainingRoot);
 	}
 
+	ComponentsByName.clear();
+	NextComponentNameNumber.clear();
+
 	Super::Release();
 }
 
@@ -79,26 +82,24 @@ void AActor::Serialize(FArchive& Archive) const
 		FArchive RootArchive{};
 		RootComponent->Serialize(RootArchive);
 		Archive.SetArchive("RootComponent", RootArchive);
-
-		//TODO: USceneComponent 계층 구조와 계층과 상관없느 UActorComponent 모두 직렬화 하도록 변경
-		TArray<FArchive> CompArchives;
-		CompArchives.reserve(AttachedComp.size() - 1);
-		for (USceneComponent* ActorComponent : AttachedComp)
-		{
-			if (ActorComponent == RootComponent) continue;
-
-			FArchive CompAcrchive;
-			ActorComponent->Serialize(CompAcrchive);
-			CompArchives.push_back(CompAcrchive);
-		}
-
-		Archive.SetArchiveArray("AttachedComponent", CompArchives);
 	}
 	else
 	{
 		Archive.SetNull("RootComponent");
-		Archive.SetNull("AttachedComponent");
 	}
+
+	TArray<FArchive> OwnedArchives;
+	OwnedArchives.reserve(OwnedComponents.size());
+
+	for (UActorComponent* ActorComponent : OwnedComponents)
+	{
+		if (!ActorComponent || ActorComponent == RootComponent) continue;
+
+		FArchive OwnedArchive;
+		ActorComponent->Serialize(OwnedArchive);
+		OwnedArchives.push_back(OwnedArchive);
+	}
+	Archive.SetArchiveArray("OwnedComponents", OwnedArchives);
 }
 
 void AActor::Deserialize(const FArchive& Archive)
@@ -128,6 +129,16 @@ void AActor::Deserialize(const FArchive& Archive)
 		}
 	}
 
+	DeserializeRootComponent(Archive);
+
+	if (!Archive.IsNull("OwnedComponents"))
+	{
+		DeserializeOwnedComponents(Archive.GetArchiveArray("OwnedComponents"));
+	}
+}
+
+void AActor::DeserializeRootComponent(const FArchive& Archive)
+{
 	if (Archive.IsNull("RootComponent"))
 	{
 		if (RootComponent)
@@ -141,7 +152,7 @@ void AActor::Deserialize(const FArchive& Archive)
 	}
 
 	FArchive RootComponentArchive = Archive.GetArchive("RootComponent");
-	const FString& SavedTypeName = RootComponentArchive.GetString("Type");
+	const FString SavedTypeName = RootComponentArchive.GetString("Type");
 	UClass* SavedClass = UClass::FindByName(SavedTypeName);
 
 	if (SavedClass == nullptr)
@@ -172,26 +183,121 @@ void AActor::Deserialize(const FArchive& Archive)
 		return;
 	}
 
-	RootComponent->Deserialize(RootComponentArchive);
-
-	TArray<FArchive> AttachedCompArchive = Archive.GetArchiveArray("AttachedComponent");
-	if (!AttachedCompArchive.empty())
+	if (!RootComponentArchive.IsNull("Name"))
 	{
-		for (const FArchive& Archive : AttachedCompArchive)
-		{
-			const FString& CompSavedTypeName = RootComponentArchive.GetString("Type");
-			SavedClass = UClass::FindByName(SavedTypeName);
+		SetComponentName(RootComponent, FName(RootComponentArchive.GetString("Name")));
+	}
 
-			USceneComponent* SceneComponent = NewObject(SavedClass)->Cast<USceneComponent>();
-			if (!SceneComponent)
+	RootComponent->Deserialize(RootComponentArchive);
+}
+
+void AActor::DeserializeOwnedComponents(const TArray<FArchive>& ComponentArchives)
+{
+	for (const FArchive& ComponentArchive : ComponentArchives)
+	{
+		const FString SavedTypeName = ComponentArchive.GetString("Type");
+		UClass* SavedClass = UClass::FindByName(SavedTypeName);
+		if (SavedClass == nullptr)
+		{
+			UE_LOG_WARN("[%s::Deserialize] 알 수 없는 타입 %s",
+				GetClass()->GetUClassName(), SavedTypeName);
+			continue;
+		}
+
+		const FName SavedName = ComponentArchive.IsNull("Name") ? FName() : FName(ComponentArchive.GetString("Name"));
+
+		UActorComponent* Component = SavedName.IsNone() ? nullptr : FindComponentByName(SavedName);
+		if (Component && (Component == RootComponent || Component->GetClass() != SavedClass))
+		{
+			Component = nullptr;
+		}
+
+		if (Component == nullptr)
+		{
+			if (!SavedClass->IsChildOrSelfOf(UActorComponent::StaticClass()))
 			{
-				UE_LOG_WARN("[%s::Deserialize] AttachedComponent %s를 생성할 수 없습니다.",
-					GetClass()->GetUClassName(), CompSavedTypeName);
-				return;
+				UE_LOG_WARN("[%s::Deserialize] OwnedComponents %s를 생성할 수 없습니다.",
+					GetClass()->GetUClassName(), SavedTypeName);
+				continue;
 			}
 
-			AddComponent(SceneComponent);
+			UObject* Object = NewObject(SavedClass);
+			Component = Object ? Object->Cast<UActorComponent>() : nullptr;
+
+			Component->SetName(SavedName);
+			AddComponent(Component);
 		}
+
+		Component->Deserialize(ComponentArchive);
+	}
+
+	for (const FArchive& ComponentArchive : ComponentArchives)
+	{
+		if (ComponentArchive.IsNull("Name") || ComponentArchive.IsNull("Parent") || !ComponentArchive.IsNull("ParentActor")) // ParentActor가 있으면 Level에서 설정
+		{
+			continue;
+		}
+
+		UActorComponent* Component = FindComponentByName(FName(ComponentArchive.GetString("Name")));
+		UActorComponent* ParentComponent = FindComponentByName(FName(ComponentArchive.GetString("Parent")));
+		USceneComponent* Child = Component ? Component->Cast<USceneComponent>() : nullptr;
+		USceneComponent* Parent = ParentComponent ? ParentComponent->Cast<USceneComponent>() : nullptr;
+
+		if (Child == nullptr || Parent == nullptr)
+		{
+			UE_LOG_WARN("[%s::Deserialize] %s의 부모 %s을(를) 찾을 수 없습니다.",
+				GetClass()->GetUClassName(), ComponentArchive.GetString("Name"), ComponentArchive.GetString("Parent"));
+			continue;
+		}
+
+		Child->RestoreAttachment(Parent);
+	}
+}
+
+namespace 
+{
+	void Restore(USceneComponent* Child, const FArchive& ComponentArchive, const TMap<FString, AActor*>& LoadedActorsByGuid)
+	{
+		if (Child == nullptr || ComponentArchive.IsNull("Parent") || ComponentArchive.IsNull("ParentActor"))
+		{
+			return;
+		}
+
+		const auto ParentActorIt = LoadedActorsByGuid.find(ComponentArchive.GetString("ParentActor"));
+		AActor* ParentActor = ParentActorIt != LoadedActorsByGuid.end() ? ParentActorIt->second : nullptr;
+		UActorComponent* ParentComponent = ParentActor ? ParentActor->FindComponentByName(FName(ComponentArchive.GetString("Parent"))) : nullptr;
+		USceneComponent* ParentSceneComponent = ParentComponent ? ParentComponent->Cast<USceneComponent>() : nullptr;
+
+		if (ParentSceneComponent == nullptr)
+		{
+			return;
+		}
+
+		Child->RestoreAttachment(ParentSceneComponent);
+	}
+}
+
+void AActor::RestoreExternalAttachments(const FArchive& Archive, const TMap<FString, AActor*>& LoadedActorsByGuid)
+{
+	if (!Archive.IsNull("RootComponent"))
+	{
+		Restore(RootComponent, Archive.GetArchive("RootComponent"), LoadedActorsByGuid);
+	}
+
+	if (Archive.IsNull("OwnedComponents"))
+	{
+		return;
+	}
+
+	for (const FArchive& ComponentArchive : Archive.GetArchiveArray("OwnedComponents"))
+	{
+		if (ComponentArchive.IsNull("Name"))
+		{
+			continue;
+		}
+
+		UActorComponent* Component = FindComponentByName(FName(ComponentArchive.GetString("Name")));
+		Restore(Component ? Component->Cast<USceneComponent>() : nullptr, ComponentArchive, LoadedActorsByGuid);
 	}
 }
 
@@ -221,6 +327,7 @@ void AActor::SetRootComponent(UActorComponent* Component)
 
 	OwnedComponents.push_back(Component);
 	Component->SetActorOwner(this);
+	RegisterComponentName(Component);
 	Component->Initialize();
 	USceneComponent* SceneComponent = Component->Cast<USceneComponent>();
 
@@ -254,6 +361,10 @@ void AActor::MarkComponentsTransformDirty()
 		if (Component)
 		{
 			Component->OnTransformChanged();
+			for (USceneComponent* Child : Component->GetChildren())
+			{
+				Child->OnTransformChanged();
+			}
 		}
 	}
 }
@@ -276,11 +387,53 @@ void AActor::DeleteComponent(UActorComponent* Addcomp)
 				std::erase(AttachedComp, CastSceneComponent);
 			}
 			UActorComponent* TempComponet = *It;
+			if (auto NameIt = ComponentsByName.find(TempComponet->GetName()); NameIt != ComponentsByName.end() && NameIt->second == TempComponet)
+			{
+				ComponentsByName.erase(NameIt);
+			}
 			OwnedComponents.erase(It);
 			DestroyObject(TempComponet);
 			return;
 		}
 	}
+}
+
+UActorComponent* AActor::FindComponentByName(const FName& Name) const
+{
+	const auto It = ComponentsByName.find(Name);
+	return It != ComponentsByName.end() ? It->second : nullptr;
+}
+
+bool AActor::SetComponentName(UActorComponent* Component, const FName& NewName)
+{
+	if (!Component || NewName.IsNone())
+	{
+		return false;
+	}
+
+	const auto Existing = ComponentsByName.find(NewName);
+	if (Existing != ComponentsByName.end() && Existing->second != Component)
+	{
+		return false;
+	}
+
+	if (auto It = ComponentsByName.find(Component->GetName()); It != ComponentsByName.end() && It->second == Component)
+	{
+		ComponentsByName.erase(It);
+	}
+	Component->SetName(NewName);
+	ComponentsByName[NewName] = Component;
+	return true;
+}
+
+void AActor::RegisterComponentName(UActorComponent* Component)
+{
+	const auto Existing = ComponentsByName.find(Component->GetName());
+	if (Component->GetName().IsNone() || (Existing != ComponentsByName.end() && Existing->second != Component))
+	{
+		Component->SetName(MakeUniqueComponentName(Component));
+	}
+	ComponentsByName[Component->GetName()] = Component;
 }
 
 
@@ -318,6 +471,7 @@ void AActor::AddComponent(UActorComponent* Addcomp)
 
 	//Addcomp->ActorOwner = this;
 	OwnedComponents.push_back(Addcomp);
+	RegisterComponentName(Addcomp);
 	Addcomp->Initialize();
 
 	if (RegisteredWorld)
@@ -433,4 +587,23 @@ void AActor::Destroy() {
 		return;
 	}
 	DestroyObject(this);
+}
+
+
+// "클래스이름_번호" 형식의 아직 쓰이지 않은 이름을 만든다.
+FName AActor::MakeUniqueComponentName(const UActorComponent* Component)
+{
+	// "UActorComponent" -> "ActorComponent"
+	FString Base = Component->GetClass()->GetUClassName();
+	if (Base.size() > 1 && Base[0] == 'U' && Base[1] >= 'A' && Base[1] <= 'Z') {
+		Base.erase(0, 1);
+	}
+
+	int32& Number = NextComponentNameNumber[Base];
+	while (true) {
+		const FName Candidate(Base + "_" + std::to_string(Number++));
+		if (!ComponentsByName.contains(Candidate)) {
+			return Candidate;
+		}
+	}
 }

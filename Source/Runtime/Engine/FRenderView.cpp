@@ -281,6 +281,8 @@ void FRenderView::RenderView(const FSceneView& View, const FScene& Scene, const 
 
     Renderer.ClearLastRenderState();
 
+    RenderScreenPass();
+
     // 후처리 외곽선 패스
     RenderPostProcessPass(View.Camera, EditorCtx.SelectedActor);
 
@@ -330,6 +332,11 @@ void FRenderView::FlushBasePass(const FCamera& Camera)
 void FRenderView::FlushLinePass(const FCamera& Camera)
 {
     FlushLineBatch(Camera.GetViewProjectionMatrix());
+}
+
+void FRenderView::ScreenPass()
+{
+    RenderScreenPass();
 }
 
 void FRenderView::RenderPostProcessPass(const FCamera& Camera, const AActor* SelectedActor)
@@ -403,6 +410,11 @@ void FRenderView::RenderSphere(const FVector &Center, float Radius,
                                const FVector4 &Color, uint32 Segments) {
   FLineBatcher &LineBatcher = Renderer.GetLineBatcher();
   LineBatcher.DrawSphere(Center, Radius, Color, Segments);
+}
+
+void FRenderView::RenderScreenPass()
+{
+    Renderer.RenderScreenPass();
 }
 
 void FRenderView::RenderOutline(const FCamera &Camera,

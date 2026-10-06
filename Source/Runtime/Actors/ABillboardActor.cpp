@@ -55,7 +55,6 @@ ABillboardActor::ABillboardActor()
 		}
 	}
 
-
 	bTickEnabled = true;
 	AddComponent(Move);
 }

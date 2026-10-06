@@ -6,11 +6,10 @@ void URotationMovementComponent::Update(float DeltaTime)
 {
 	Super::Update(DeltaTime);
 	FVector CurrentLocation = UpdatedComponent->GetGlobalTransform().GetLocation();
-	FQuaternion CurrentQuat = UpdatedComponent->GetGlobalTransform().GetRotation();
+	FVector DeltaDgree = RotationRate* DeltaTime;
+	FQuaternion Quat = FQuaternion::FromEulerXYZDeg(DeltaDgree);
 
-	
-
-	MoveUpdatedComponent(FVector::ZeroVector, CurrentQuat, false);
+	MoveUpdatedComponent(FVector::ZeroVector, Quat, false);
 }
 
 bool URotationMovementComponent::MoveUpdatedComponentImpl(const FVector& Delta, const FQuaternion& newRotation, bool bSweep)
@@ -20,8 +19,8 @@ bool URotationMovementComponent::MoveUpdatedComponentImpl(const FVector& Delta, 
 		return false;
 	}
 
-	const FVector NewLocation = UpdatedComponent->GetGlobalTransform().GetLocation() + Delta;
-	UpdatedComponent->SetRelativeLocation(NewLocation);
+	FQuaternion CurrentQuat = UpdatedComponent->GetGlobalTransform().GetRotation();
+	UpdatedComponent->SetRelativeRotation(CurrentQuat * newRotation);
 
 	return true;
 }

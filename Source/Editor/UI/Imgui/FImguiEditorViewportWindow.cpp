@@ -26,8 +26,9 @@ void FImguiEditorViewportWindow::Process(FEditor& Editor, float DeltaTime)
     if (!ImGui::IsMouseDown(ImGuiMouseButton_Left)) Gizmo.EndInteraction();
     if (!Gizmo.IsInteracting()) Gizmo.HoveredHandle = EGizmoHandle::None;
 
-    TArray<TUniquePtr<FEditorViewportEntry>>& Viewports = Editor.GetViewports();
-    FEditorViewportClient* Client = Editor.GetActiveViewportClient();
+    TArray<TUniquePtr<FViewport>>& Viewports = Editor.GetViewports();
+    // 에디터 도구(선택, 기즈모, 카메라 조작)는 항상 에디터 Client를 대상으로 한다.
+    FEditorViewportClient* Client = Editor.GetActiveEditorClient();
 
     const ImGuiViewport* MainViewport = ImGui::GetMainViewport();
     const FVector2 ClientSize{MainViewport->Size.x,MainViewport->Size.y};             
@@ -92,7 +93,9 @@ void FImguiEditorViewportWindow::Process(FEditor& Editor, float DeltaTime)
 
         if (Width <= 0.0f || Height <= 0.0f) continue;
 
-        FEditorViewportEntry& CurrentEntry = *Viewports[leaf.EntryIndex];
+        FViewport& CurrentViewport = *Viewports[leaf.EntryIndex];
+        FEditorViewportClient* CurrentClient = Editor.GetEditorClient(leaf.EntryIndex);
+        if (!CurrentClient) continue;
 
         // 스플리터 여백을 제외한 자식 창 위치를 ImGui 화면 좌표로 변환
         ImGui::SetCursorScreenPos(ImVec2(Origin.x + ChildRect.Left, Origin.y + ChildRect.Top));
@@ -118,28 +121,37 @@ void FImguiEditorViewportWindow::Process(FEditor& Editor, float DeltaTime)
             if (GetViewportSceneRect(Origin, SceneRect))
             {
                 // 상단바를 제외한 영역으로 렌더링·종횡비 설정
-                SyncViewportRect(CurrentEntry, SceneRect, ClientSize);
-                const FVector2 TopLeftPixels = CurrentEntry.Viewport.TopLeftUV * ClientSize;
-                const FVector2 SizePixels = CurrentEntry.Viewport.LengthUV * ClientSize;
+                SyncViewportRect(CurrentViewport, *CurrentClient, SceneRect, ClientSize);
+                const FVector2 TopLeftPixels = CurrentViewport.TopLeftUV * ClientSize;
+                const FVector2 SizePixels = CurrentViewport.LengthUV * ClientSize;
                 FViewportInput Input = GatherInput(TopLeftPixels, SizePixels);
 
-                // 3D 입력 아이템을 누른 경우에만 활성 뷰포트를 변경한다.
-                if (Input.bPickRequested || ImGui::IsItemClicked(ImGuiMouseButton_Right))
+                // 게임 Client가 연결된 뷰포트(Play)에서는 에디터 도구(선택, 기즈모)를 쓰지 않는다.
+                // 클릭으로 뷰포트를 활성화하는 것은 그대로 두고, 피킹만 막는다.
+                const bool bEditorTools = Editor.IsEditorClientAttached(leaf.EntryIndex);
+                const bool bActivate = Input.bPickRequested || ImGui::IsItemClicked(ImGuiMouseButton_Right);
+                if (!bEditorTools)
                 {
-                    Client = &CurrentEntry.Client;
+                    Input.bPickRequested = false;
+                }
+
+                // 3D 입력 아이템을 누른 경우에만 활성 뷰포트를 변경한다.
+                if (bActivate)
+                {
+                    Client = CurrentClient;
                     Editor.ActiveViewportIndex = leaf.EntryIndex;
                     ImGui::SetWindowFocus();
                     Input.bFocused = true;
                 }
 
                 // 클릭 전에도 마우스가 올라간 뷰포트에서 매 프레임 검사한다.
-                if (Editor.ObjectSelected() && Input.bHovered && !Gizmo.IsInteracting())
+                if (bEditorTools && Editor.ObjectSelected() && Input.bHovered && !Gizmo.IsInteracting())
                 {
                     UpdateGizmoHover(Editor, *Client, Input.LocalMouse, Input.SizePixels);
                 }
 
                 // 조작은 활성 뷰포트에서 한 번만 처리한다.
-                if (&CurrentEntry.Client == Client)
+                if (CurrentClient == Client)
                 {
                     ActiveInput = Input;
                     bHasActiveInput = true;
@@ -157,12 +169,18 @@ void FImguiEditorViewportWindow::Process(FEditor& Editor, float DeltaTime)
     }
   
     // 활성 뷰포트의 입력을 한 번만 처리
-    if (Client && Client == Editor.GetActiveViewportClient() && bHasActiveInput)
+    if (Client && Client == Editor.GetActiveEditorClient() && bHasActiveInput)
     {
-        Editor.GetActiveViewport()->Viewport.UpdateFocusedAndHovered(ActiveInput.bFocused,ActiveInput.bHovered);
-        UpdateSelection(Editor, *Client, ActiveInput);
-        UpdateGizmo(Editor, *Client, ActiveInput);
-        UpdateCamera(Editor, *Client, ActiveInput, DeltaTime);
+        // 포커스 상태는 PIE 시작 때 대상 뷰포트를 고르는 데 쓰이므로 항상 갱신한다.
+        Editor.GetActiveViewport()->UpdateFocusedAndHovered(ActiveInput.bFocused,ActiveInput.bHovered);
+
+        // 에디터 Client가 연결된 뷰포트에서만 에디터 도구를 쓴다. (Play 뷰포트에서는 선택, 기즈모, 에디터 카메라 조작을 막는다)
+        if (Editor.IsEditorClientAttached(Editor.ActiveViewportIndex))
+        {
+            UpdateSelection(Editor, *Client, ActiveInput);
+            UpdateGizmo(Editor, *Client, ActiveInput);
+            UpdateCamera(Editor, *Client, ActiveInput, DeltaTime);
+        }
     }
     // 현재 ImGui 창은 다시 부모 창
     ClampWindowToWorkArea();
@@ -202,7 +220,7 @@ void FImguiEditorViewportWindow::EndWindow() const
     ImGui::End();
 }
 
-void FImguiEditorViewportWindow::SyncViewportRect(FEditorViewportEntry &Entry, const FRect& Rect,
+void FImguiEditorViewportWindow::SyncViewportRect(FViewport& Viewport, FEditorViewportClient& Client, const FRect& Rect,
                                                   const FVector2 &ClientSize) const
 {
     const FVector2 WindowPos{ImGui::GetWindowPos().x, ImGui::GetWindowPos().y};
@@ -214,8 +232,8 @@ void FImguiEditorViewportWindow::SyncViewportRect(FEditorViewportEntry &Entry, c
         return;
     }
 
-    Entry.Viewport.SetRegion(Rect, ClientSize);
-    Entry.Client.ViewportCamera.SetAspectRatio(Rect.GetWidth() / Rect.GetHeight());
+    Viewport.SetRegion(Rect, ClientSize);
+    Client.GetCamera().SetAspectRatio(Rect.GetWidth() / Rect.GetHeight());
 }
 
 FImguiEditorViewportWindow::FViewportInput FImguiEditorViewportWindow::GatherInput(const FVector2& ViewportTopLeftPixels, const FVector2& ViewportSizePixels) const
@@ -279,7 +297,7 @@ void FImguiEditorViewportWindow::UpdateCamera(FEditor &Editor, FEditorViewportCl
     CameraController.CameraRotateSpeed = Editor.State.GetCameraSensitivity();
     CameraController.CameraMoveSpeed = Editor.State.GetCameraSpeed();
 
-    FCamera &Camera = Viewport.ViewportCamera;
+    FCamera &Camera = Viewport.GetCamera();
     
 
     // ORTHOGRAPHIC 화면모드와의 분기
@@ -368,7 +386,7 @@ void FImguiEditorViewportWindow::HandlePicking(FEditor &Editor,
                 Editor.SelectedTransform,
                 Gizmo.HoveredHandle,
                 LocalMousePixels,
-                Viewport.ViewportCamera,
+                Viewport.GetCamera(),
                 ViewportSizePixels);
 
             return;
@@ -392,7 +410,7 @@ void FImguiEditorViewportWindow::HandlePicking(FEditor &Editor,
     // 1) 마우스 화면 좌표 획득
     // 2) 화면 좌표 -> 월드 좌표로의 픽 레이(Pick Ray) 계산
     const FRay PickRay = FRayCastingManager::CreateRayFromScreenPosition(
-        Viewport.ViewportCamera, LocalMousePixels, ViewportSizePixels);
+        Viewport.GetCamera(), LocalMousePixels, ViewportSizePixels);
 
     // 벤치마크용 광선 저장 (측정 구간 밖)
     FRayCastingManager::LastPickRay = PickRay;
@@ -413,7 +431,7 @@ void FImguiEditorViewportWindow::HandlePicking(FEditor &Editor,
     {
         const TArray<UPrimitiveComponent *> &Components = Editor.GetPrimitiveComponents();
         bHit = FRayCastingManager::RayIntersectsMeshes(
-            PickRay, Viewport.ViewportCamera, Components, HitComponent, ImpactPoint);
+            PickRay, Viewport.GetCamera(), Components, HitComponent, ImpactPoint);
     }
 
     // 6) 퍼포먼스 측정 종료 및 시간 누적
@@ -446,10 +464,10 @@ void FImguiEditorViewportWindow::UpdateGizmoHover(FEditor &Editor,
                                                   const FVector2 &ViewportSizePixels)
 {
     FRay Ray = FRayCastingManager::CreateRayFromScreenPosition(
-        Viewport.ViewportCamera, LocalMousePixels, ViewportSizePixels);
+        Viewport.GetCamera(), LocalMousePixels, ViewportSizePixels);
 
     FGizmo &Gizmo = Editor.GetGizmo();
-    Gizmo.HoveredHandle = Gizmo.HitTest(Editor.SelectedTransform, Ray, Viewport.ViewportCamera);
+    Gizmo.HoveredHandle = Gizmo.HitTest(Editor.SelectedTransform, Ray, Viewport.GetCamera());
 }
 
 void FImguiEditorViewportWindow::ShowViewportVerticalSplitter(SSplitter& Splitter)
@@ -578,8 +596,8 @@ void FImguiEditorViewportWindow::DrawViewportHeader(int32 EntryIndex,FEditor& Ed
 
         if (bCameraOpen)
         {
-            FEditorViewportEntry& Entry = *Editor.GetViewports()[EntryIndex];
-            FCamera& Camera = Entry.Client.ViewportCamera;
+            FEditorViewportClient& EditorClient = *Editor.GetEditorClient(EntryIndex);
+            FCamera& Camera = EditorClient.GetCamera();
 
             ImGui::TextUnformatted("PERSPECTIVE");
             ImGui::Separator();
@@ -587,7 +605,7 @@ void FImguiEditorViewportWindow::DrawViewportHeader(int32 EntryIndex,FEditor& Ed
             {
                 if (Camera.GetProjection().GetProjectionType() != EProjectionType::Perspective)
                     Camera.SetProjectionType(EProjectionType::Perspective);
-                Entry.Client.eOrthogonalType = FEditorViewportClient::EOrthogonalType::PERSPECTIVE;
+                EditorClient.eOrthogonalType = FEditorViewportClient::EOrthogonalType::PERSPECTIVE;
             }
             ImGui::TextUnformatted("ORTHOGRAPHIC");
             ImGui::Separator();
@@ -595,41 +613,41 @@ void FImguiEditorViewportWindow::DrawViewportHeader(int32 EntryIndex,FEditor& Ed
             {
                 if(Camera.GetProjection().GetProjectionType() != EProjectionType::Orthographic)
                     Camera.SetProjectionType(EProjectionType::Orthographic);
-                Entry.Client.eOrthogonalType = FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC;
+                EditorClient.eOrthogonalType = FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC;
             }
             
             if (ImGui::MenuItem("Top"))
             {
-                if (Entry.Client.eOrthogonalType != FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_TOP)
-                    Entry.Client.SetOrthograpihcView(FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_TOP);
+                if (EditorClient.eOrthogonalType != FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_TOP)
+                    EditorClient.SetOrthograpihcView(FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_TOP);
             }
             if(ImGui::MenuItem("Bottom"))
             {
-                if (Entry.Client.eOrthogonalType != FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_BOTTOM)
-                    Entry.Client.SetOrthograpihcView(FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_BOTTOM);
+                if (EditorClient.eOrthogonalType != FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_BOTTOM)
+                    EditorClient.SetOrthograpihcView(FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_BOTTOM);
             }
             if(ImGui::MenuItem("Left"))
             {
-                if (Entry.Client.eOrthogonalType != FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_LEFT)
-                    Entry.Client.SetOrthograpihcView(FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_LEFT);
+                if (EditorClient.eOrthogonalType != FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_LEFT)
+                    EditorClient.SetOrthograpihcView(FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_LEFT);
 
             }
             if(ImGui::MenuItem("Right"))
             {
-                if (Entry.Client.eOrthogonalType != FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_RIGHT)
-                    Entry.Client.SetOrthograpihcView(FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_RIGHT);
+                if (EditorClient.eOrthogonalType != FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_RIGHT)
+                    EditorClient.SetOrthograpihcView(FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_RIGHT);
 
             }
             if(ImGui::MenuItem("Front"))
             {
-                if (Entry.Client.eOrthogonalType != FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_FRONT)
-                    Entry.Client.SetOrthograpihcView(FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_FRONT);
+                if (EditorClient.eOrthogonalType != FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_FRONT)
+                    EditorClient.SetOrthograpihcView(FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_FRONT);
 
             }
             if (ImGui::MenuItem("Back")) 
             {
-                if (Entry.Client.eOrthogonalType != FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_BACK)
-                    Entry.Client.SetOrthograpihcView(FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_BACK);
+                if (EditorClient.eOrthogonalType != FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_BACK)
+                    EditorClient.SetOrthograpihcView(FEditorViewportClient::EOrthogonalType::ORTHOGRAPHIC_BACK);
             }
 
             ImGui::EndMenu();

@@ -77,6 +77,7 @@ public:
   void UpdateLightConstants(const FLightConstants &Constants, const EViewModeIndex InMode);
   void UpdateFrameConstants(const FFrameConstants &Constants);
   void UpdateViewConstants(const FViewConstants &Constants);
+  void UpdateMaterialConstants(const FMaterialConstants& Constants);
 
   // 텍스트 인스턴싱
   void AddTextInstanceArray(const FDrawCommand& Command);
@@ -105,6 +106,12 @@ public:
   void RenderOutline(const FVector2& TopLeftUV, const FVector2& LengthUV);
   ID3D11RenderTargetView* GetBackBuffer() { return BackBufferRTV.Get(); }
   ID3D11DepthStencilView* GetDepthStencilView() { return DepthStencilView.Get(); }
+
+  // FXAA 
+  void FXAA();
+
+  void RenderSceneColor();
+  void RenderEditorViewPort();
 
   float GetWidth() const { return Viewport.Width; }
   float GetHeight() const { return Viewport.Height; }
@@ -153,6 +160,7 @@ private:
   Microsoft::WRL::ComPtr<ID3D11Buffer> ViewConstantBuffer;
   Microsoft::WRL::ComPtr<ID3D11Buffer> ObjectConstantBuffer;*/
   Microsoft::WRL::ComPtr<ID3D11Buffer> LightConstantBuffer;
+  Microsoft::WRL::ComPtr<ID3D11Buffer> MaterialConstantBuffer;
 
   // 임시 상수버퍼
   Microsoft::WRL::ComPtr<ID3D11Buffer> ObjectConstantUploadBuffer;
@@ -161,6 +169,7 @@ private:
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> EditorViewPortSRV;
   Microsoft::WRL::ComPtr<ID3D11RenderTargetView> SceneColorRTV;
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SceneColorSRV;
+
   Microsoft::WRL::ComPtr<ID3D11Texture2D> renderTexture;
   Microsoft::WRL::ComPtr<ID3D11Texture2D> SceneColorTexture;
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> DepthStencilSRV;

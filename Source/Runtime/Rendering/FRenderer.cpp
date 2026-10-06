@@ -1040,6 +1040,19 @@ bool FRenderer::InitializeConstantBuffers() {
     return false;
   }
 
+  D3D11_BUFFER_DESC MaterialConstantBufferDesc = {
+      .ByteWidth = sizeof(FMaterialConstants),
+      .Usage = D3D11_USAGE_DEFAULT,
+      .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+  };
+
+  Result =
+      Device->CreateBuffer(&MaterialConstantBufferDesc, nullptr, &MaterialConstantBuffer);
+
+  if (FAILED(Result)) {
+      return false;
+  }
+
   for (int32 i = 0; i < NumFrameResourceCount; i++)
   {
 	  D3D11_BUFFER_DESC FrameResourceConstantBufferDesc = {
@@ -1113,6 +1126,11 @@ void FRenderer::UpdateViewConstants(const FViewConstants &Constants) {
     Context->VSSetConstantBuffers(1, 1, GetCurrentFrameResource()->ViewConstantBuffer.GetAddressOf());
     Context->PSSetConstantBuffers(1, 1, GetCurrentFrameResource()->ViewConstantBuffer.GetAddressOf());
 
+}
+
+void FRenderer::UpdateMaterialConstants(const FMaterialConstants& Constants) {
+    Context->UpdateSubresource(MaterialConstantBuffer.Get(), 0, nullptr, &Constants, 0, 0);
+    Context->PSSetConstantBuffers(5, 1, MaterialConstantBuffer.GetAddressOf());
 }
 
 void FRenderer::Draw(const FDrawCommand &Command, uint32 Slot,
@@ -1297,6 +1315,8 @@ void FRenderer::BindDrawResources(const FMesh& Mesh, const FMaterial& Material, 
     }
 }
 
+
+
 void FRenderer::DrawUploadedCommand(const FDrawCommand& Command, bool bApplyViewMode)
 {
     if (!Command.Mesh || Command.Materials.empty())
@@ -1324,6 +1344,12 @@ void FRenderer::DrawUploadedCommand(const FDrawCommand& Command, bool bApplyView
                 bApplyViewMode
             );
 
+            FMaterialConstants Constants{};
+            Constants.DiffAlbedo = Material.GetDiffuse();
+            Constants.Shininess = Material.GetShininess();
+            Constants.SpecAlbedo = Material.GetSpecular();
+            UpdateMaterialConstants(Constants);
+
             Context->DrawIndexed(
                 Section.IndexCount,
                 Section.StartIndex,
@@ -1346,6 +1372,12 @@ void FRenderer::DrawUploadedCommand(const FDrawCommand& Command, bool bApplyView
             Material,
             bApplyViewMode
         );
+
+        FMaterialConstants Constants{};
+        Constants.DiffAlbedo = Material.GetDiffuse();
+        Constants.Shininess = Material.GetShininess();
+        Constants.SpecAlbedo = Material.GetSpecular();
+        UpdateMaterialConstants(Constants);
 
         if (Mesh.HasIndices())
         {            
@@ -1614,14 +1646,14 @@ void FRenderer::RenderOutline(const FVector2& TopLeftUV, const FVector2& LengthU
   UINT Zero = 0;
   Context->IASetVertexBuffers(0, 1, &NullVB, &Zero, &Zero);
 
-  Context->OMSetRenderTargets(1, BackBufferRTV.GetAddressOf(), nullptr);
+  Context->OMSetRenderTargets(1, EditorViewPortRTV.GetAddressOf(), nullptr);
   // 씬 텍스처와 스텐실 텍스처 바인딩
   ID3D11ShaderResourceView *SRVs[] = { SceneColorSRV.Get(),
                                       DepthStencilSRV.Get()};
   Context->PSSetShaderResources(0, 2, SRVs);
 
   FRenderResourceLibrary::Get()
-      .GetPipeline(FName("#PostProcess"))
+      .GetPipeline(FName("#OutlinePostProcess"))
       ->Bind(*Context.Get());
   Context->Draw(3, 0);
   INC_DWORD_STAT("Draws");
@@ -1630,6 +1662,76 @@ void FRenderer::RenderOutline(const FVector2& TopLeftUV, const FVector2& LengthU
   // 슬롯 해제
   ID3D11ShaderResourceView *NullSRVs[] = {nullptr, nullptr};
   Context->PSSetShaderResources(0, 2, NullSRVs);
+}
+
+void FRenderer::FXAA() {
+    Context->RSSetViewports(1, &Viewport);
+    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    Context->IASetInputLayout(nullptr);
+
+    ID3D11Buffer* NullVB = nullptr;
+    UINT Zero = 0;
+    Context->IASetVertexBuffers(0, 1, &NullVB, &Zero, &Zero);
+
+    Context->OMSetRenderTargets(1, SceneColorRTV.GetAddressOf(), nullptr);
+    // 씬 텍스처와 스텐실 텍스처 바인딩
+    ID3D11ShaderResourceView* SRVs[] = { EditorViewPortSRV.Get() };
+    Context->PSSetShaderResources(0, 1, SRVs);
+
+    FRenderResourceLibrary::Get().GetPipeline(FName("#FXAAPostProcess"))->Bind(*Context.Get());
+    Context->Draw(3, 0);
+    INC_DWORD_STAT("Draws");
+    INC_DWORD_STAT_BY("Prims", 1);
+
+    // 슬롯 해제
+    ID3D11ShaderResourceView* NullSRVs[] = { nullptr, nullptr };
+    Context->PSSetShaderResources(0, 2, NullSRVs);
+}
+
+void FRenderer::RenderSceneColor() {
+    Context->RSSetViewports(1, &Viewport);
+    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    Context->IASetInputLayout(nullptr);
+
+    ID3D11Buffer* NullVB = nullptr;
+    UINT Zero = 0;
+    Context->IASetVertexBuffers(0, 1, &NullVB, &Zero, &Zero);
+
+    Context->OMSetRenderTargets(1, BackBufferRTV.GetAddressOf(), nullptr);
+    // 씬 텍스처와 스텐실 텍스처 바인딩   
+    ID3D11ShaderResourceView* SRVs[] = { SceneColorSRV.Get() };
+    Context->PSSetShaderResources(0, 1, SRVs);
+
+    Context->Draw(3, 0);
+    INC_DWORD_STAT("Draws");
+    INC_DWORD_STAT_BY("Prims", 1);
+
+    // 슬롯 해제
+    ID3D11ShaderResourceView* NullSRVs[] = { nullptr, nullptr };
+    Context->PSSetShaderResources(0, 2, NullSRVs);
+}
+
+void FRenderer::RenderEditorViewPort() {
+    Context->RSSetViewports(1, &Viewport);
+    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    Context->IASetInputLayout(nullptr);
+
+    ID3D11Buffer* NullVB = nullptr;
+    UINT Zero = 0;
+    Context->IASetVertexBuffers(0, 1, &NullVB, &Zero, &Zero);
+
+    Context->OMSetRenderTargets(1, BackBufferRTV.GetAddressOf(), nullptr);
+    // 씬 텍스처와 스텐실 텍스처 바인딩   
+    ID3D11ShaderResourceView* SRVs[] = { EditorViewPortSRV.Get() };
+    Context->PSSetShaderResources(0, 1, SRVs);
+
+    Context->Draw(3, 0);
+    INC_DWORD_STAT("Draws");
+    INC_DWORD_STAT_BY("Prims", 1);
+
+    // 슬롯 해제
+    ID3D11ShaderResourceView* NullSRVs[] = { nullptr, nullptr };
+    Context->PSSetShaderResources(0, 2, NullSRVs);
 }
 
 bool FRenderer::InitializeGPUTimerQueries() {

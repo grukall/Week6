@@ -43,6 +43,8 @@ public:
 	USceneComponent* GetRootComponent() const { return RootComponent; }
 	const TArray<USceneComponent*>& GetAttachedComponents() const { return AttachedComp; }
 
+	const TArray<UActorComponent*>& GetOwnedComponents() const { return OwnedComponents; }
+
 
 	FTransform GetTransform() const { return RootComponent ? RootComponent->GetRelativeTransform() : FTransform{}; }
 	void SetTransform(const FTransform& NewTransform) { if (RootComponent) RootComponent->SetRelativeTransform(NewTransform); }

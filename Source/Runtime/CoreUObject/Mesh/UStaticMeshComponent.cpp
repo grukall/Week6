@@ -197,9 +197,9 @@ void UStaticMeshComponent::Serialize(FArchive& Archive) const
 	for (const auto& Item : *GetAllMaterialInstance())
 	{
 		FArchive ItemArchive{};
-		ItemArchive.SetFloat("Albedo", Item.Albedo);
-		ItemArchive.SetFloat("Diffuse", Item.Diffuse);
-		ItemArchive.SetFloat("Specular", Item.Specular);
+		ItemArchive.SetFloat("Shininess", Item.Shininess);
+		ItemArchive.SetVector("Diffuse", Item.Diffuse);
+		ItemArchive.SetVector("Specular", Item.Specular);
 
 		FString MaterialID = "";
 		if (Item.Material)

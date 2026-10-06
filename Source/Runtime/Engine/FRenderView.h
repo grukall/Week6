@@ -64,6 +64,8 @@ public:
 
 	void SetRenderMode(EViewModeIndex InMode);
 	void UpdateLightConstants(const FLightConstants& Constants, const EViewModeIndex InMode);
+	void UpdateViewConstants(const FSceneView& View);
+	void UpdateViewConstants(const FCamera& Camera, FVector2 LengthUV);
 	void DrawInstances(const FCamera& Camera);
 	void ClearTextInstances();
 	void FlushLineBatch(const FMatrix& ViewProjection, const FName& PipelineId = FName("Simple_Line"));

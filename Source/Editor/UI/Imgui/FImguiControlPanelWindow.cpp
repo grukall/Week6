@@ -8,7 +8,7 @@
 #include "Runtime/Core/FString.h"
 #include "Runtime/Engine/ShowFlags.h"
 #include "Runtime/Engine/FRayCastingManager.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/FScene.h"
 #include "Runtime/CoreUObject/FStatsManager.h"
 #include "Runtime/CoreUObject/UPrimitiveComponent.h"
 #include <algorithm>
@@ -35,7 +35,7 @@ void FImguiControlPanelWindow::Process(FEditor& Editor)
 
     if (ImGui::Button("대회 씬 바로 불러오기"))
     {
-        Editor.LoadScene("DefaultScene/Default.scene");
+        Editor.LoadMap("DefaultScene/Default.scene");
     }
 
     //액터 스폰
@@ -188,8 +188,11 @@ void FImguiControlPanelWindow::RunPickBenchmark(FEditor& Editor, int Iterations)
 {
     if (!FRayCastingManager::bHasLastPickRay || Iterations <= 0) { return; }
 
-    UScene* Scene = Editor.GetCurrentScene();
-    FEditorViewportClient* Viewport = Editor.GetActiveViewport();
+	UWorld* World = Editor.GetViewWorld();
+	if (!World) { return; }
+
+	FScene* Scene =World->GetScene();
+    FEditorViewportClient* Viewport = Editor.GetActiveViewportClient();
     const bool bUseBVH = Editor.bUseBVHPicking && Scene;
     if (!bUseBVH && !Viewport) { return; }
 
@@ -220,10 +223,10 @@ void FImguiControlPanelWindow::RunPickBenchmark(FEditor& Editor, int Iterations)
     double Sum = 0.0;
     for (double T : Times) { Sum += T; }
 
-    UE_LOG("[PickBench] %s x%d | Median %.4f ms | Min %.4f ms | Avg %.4f ms | Hit UUID %u",
+    UE_LOG("[PickBench] %s x%d | Median %.4f ms | Min %.4f ms | Avg %.4f ms | Hit Index %u",
         bUseBVH ? "BVH" : "Linear", Iterations,
         Times[Times.size() / 2], Times.front(), Sum / Times.size(),
-        HitComponent ? HitComponent->GetUUID() : 0u);
+        HitComponent ? HitComponent->GetInternalIndex() : 0u);
 }
 
 void FImguiControlPanelWindow::RenderStateSort(FEditor& Editor)
@@ -367,7 +370,7 @@ void FImguiControlPanelWindow::ActorSpawnSetting(FEditor& Editor)
     // 그리드 설정
 void FImguiControlPanelWindow::GridSetting(FEditor& Editor)
 {
-    FEditorViewportClient* Viewport = Editor.GetActiveViewport();
+    FEditorViewportClient* Viewport = Editor.GetActiveViewportClient();
     if (!Viewport) { return; }
 
     float CellSize = Viewport->GetGrid().GetCellSize();
@@ -383,7 +386,7 @@ void FImguiControlPanelWindow::GridSetting(FEditor& Editor)
 void FImguiControlPanelWindow::RenderModeAndShowFlagSetting(FEditor& Editor)
 {
     
-    FEditorViewportClient* ActiveViewport = Editor.GetActiveViewport();
+    FEditorViewportClient* ActiveViewport = Editor.GetActiveViewportClient();
     if (ActiveViewport)
     {
         // 뷰 모드 드롭박스
@@ -426,7 +429,7 @@ void FImguiControlPanelWindow::RenderModeAndShowFlagSetting(FEditor& Editor)
 
 void FImguiControlPanelWindow::CameraSetting(FEditor& Editor)
 {
-    if (FEditorViewportClient* Viewport = Editor.GetActiveViewport())
+    if (FEditorViewportClient* Viewport = Editor.GetActiveViewportClient())
     {
         FCamera& Camera = Viewport->ViewportCamera;
 

@@ -17,13 +17,11 @@ void UObject::Release()
 
 void UObject::Serialize(FArchive& Archive) const
 {
-	Archive.SetInt32("UUID", UUID);
 	Archive.SetString("Type", GetClass()->GetUClassName());
 }
 
 void UObject::Deserialize(const FArchive& Archive)
 {
-	UUID = Archive.GetInt32("UUID");
 }
 
 void* UObject::operator new(std::size_t Size)

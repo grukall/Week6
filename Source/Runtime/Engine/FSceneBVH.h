@@ -7,19 +7,6 @@
 #include "Runtime/Geometry/FFrustum.h"
 #include <cstdint>
 
-//임시 FPlane, FFrustum, 조훈님이 만들면 그 자료구조로 교체
-//struct FPlane { FVector Normal; float D; };
-
-//struct FFrustum
-//{
-//    FPlane Planes[6];
-//    static FFrustum FromViewProj(const FMatrix& ViewProj);
-//};
-
-// ★ bool이 아니라 3-상태여야 함
-enum class EIntersection : uint8 { Outside, Intersect, Inside };
-
-//EIntersection TestAABB(const FFrustum& Frustum, const FAxisAlignedBoundingBox& Box);
 
 class FSceneBVH
 {

@@ -17,7 +17,7 @@ AAppleBittenActor::AAppleBittenActor()
 	AppleStaticMeshComp->SetMesh(Registry.Get<UStaticMesh>("StaticMesh/JungleApple/Apple_Bitten.json"));
 }
 
-void AAppleBittenActor::Update(float DeltaTime)
+void AAppleBittenActor::Tick(float DeltaTime, ELevelTick eTickType)
 {
-	Super::Update(DeltaTime);
+	Super::Tick(DeltaTime, eTickType);
 }

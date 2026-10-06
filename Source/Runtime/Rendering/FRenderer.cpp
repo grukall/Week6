@@ -853,6 +853,7 @@ bool FRenderer::InitializeEditorViewportRenderTarget() {
 
   Result = Device->CreateRenderTargetView(SceneColorTexture.Get(), nullptr,
       &SceneColorRTV);
+
   if (FAILED(Result)) {
       return false;
   }

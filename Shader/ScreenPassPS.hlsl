@@ -19,9 +19,17 @@ PS_OUTPUT MainPS(PS_INPUT Input)
     PS_OUTPUT output;
     
     // float4 Sampled = SceneTexture.Sample(SceneSampler, Input.UV); // 기존 색상 출력
-    float4 Depth = DepthTexture.Sample(SceneSampler, Input.UV).r;
+    float Depth = DepthTexture.Sample(SceneSampler, Input.UV).r;
     
-    output.Color = Depth.rgba;
+    float fn = Far - Near;
+    float A = Far / fn;
+    float B = -Far * Near / fn;
+    float z_view = B / (Depth - A);
+    
+    // 거리 정규화 (나중에 DepthScale 값 받아 조정 필요)
+    z_view = (z_view - Near) / 20;
+    
+    output.Color = z_view ;
     
     return output;
 }

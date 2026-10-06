@@ -307,6 +307,8 @@ void FRenderView::BeginView(const FSceneView& View)
             View.LengthUV.X * Renderer.GetWidth(),
             View.LengthUV.Y * Renderer.GetHeight(),
         },
+        .Near = View.Camera.GetNearPlane(),
+        .Far = View.Camera.GetFarPlane(),
     };
 
     Renderer.UpdateViewConstants(ViewConstants);

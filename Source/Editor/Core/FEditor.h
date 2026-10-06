@@ -110,11 +110,12 @@ public:
   void SetViewLayout(FEditorState::SplitViewMode mode);
   UTextInstanceComponent* GetTextcomp() { return SelectedActorTextComp; }
   UEditorEngine* GetEditorEngine() const { return EditorEngine; }
+  UActorComponent* GetSelectedComponent() { return SelectedComponent.Get(); }
   
  //Viewport관련
   int32 ActiveViewportIndex = 0;
   SWindow* Root=nullptr;
-  SWindow Leaf[4];
+  SWindow Leaf[4]; 
   SSplitterH HorizonSplitter; //세로선
   SSplitterH HorizonSplitter2; //세로선
   SSplitterV VerticalSplitter; // 가로선

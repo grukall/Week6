@@ -107,18 +107,32 @@ void ULevel::Deserialize(const FArchive& Archive)
     
     TArray<FArchive> ActorArchives = Archive.GetArchiveArray("Actors");
     
-    for (const auto &Item : ActorArchives) {
-    UClass *ClassType = UClass::FindByName(Item.GetString("Type"));
-    if (ClassType == nullptr) {
-        continue;
+    TArray<AActor*> LoadedActors(ActorArchives.size(), nullptr);
+    TMap<FString, AActor*> LoadedActorsByGuid;
+
+    for (size_t i = 0; i < ActorArchives.size(); ++i) {
+        const FArchive& Item = ActorArchives[i];
+        UClass *ClassType = UClass::FindByName(Item.GetString("Type"));
+        if (ClassType == nullptr) {
+            continue;
+        }
+
+        AActor *Actor = OwningWorld->SpawnActor(ClassType);
+        if (!Actor) {
+            continue;
+        }
+        Actor->Deserialize(Item);
+
+        LoadedActors[i] = Actor;
+        if (!Item.IsNull("Guid")) {
+            LoadedActorsByGuid[Item.GetString("Guid")] = Actor;
+        }
     }
-    
-    AActor *Actor = OwningWorld->SpawnActor(ClassType);
-    if (!Actor) {
-        continue;
-    }
-    Actor->Deserialize(Item);
-    
+
+    for (size_t i = 0; i < ActorArchives.size(); ++i) {
+        if (LoadedActors[i]) {
+            LoadedActors[i]->RestoreExternalAttachments(ActorArchives[i], LoadedActorsByGuid);
+        }
     }
 }
 
@@ -241,3 +255,4 @@ FName ULevel::MakeUniqueActorName(const AActor* Actor)
         }
     }
 }
+

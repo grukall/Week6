@@ -47,9 +47,23 @@ void FEditor::Process()
     // 씬의 액터 업데이트
     if (FInputManager::Get().IsKeyPressed(VK_DELETE) && SelectedActor)
     {
-        AActor* Target = SelectedActor;
-        UnSelectActor();
-        Target->Destroy();
+
+        if (SelectedComponent)
+        {
+            // 선택을 먼저 풀어야 삭제된 컴포넌트의 트랜스폼이 액터 루트에 적용되지 않는다.
+            AActor* OwnerActor = SelectedComponent->GetActorOwner();
+            UnSelectActor();
+            if (OwnerActor)
+            {
+                OwnerActor->DeleteComponent(SelectedComponent);
+            }
+        }
+        else
+        {
+            AActor* Target = SelectedActor;
+            UnSelectActor();
+            Target->Destroy();
+        }
     }
 
     // 활성 뷰포트가 다른 월드를 보게 되면(PIE 시작/종료, 뷰포트 전환) 선택이 그 월드의 액터가 아니므로 해제한다.
@@ -214,7 +228,6 @@ bool FEditor::SelectActor(AActor *Actor) {
     if (SelectedActor) {
         USceneComponent* RootComponent = SelectedActor->GetRootComponent();
         SelectedTransform = RootComponent ? RootComponent->GetGlobalTransform() : FTransform{};
-        SelectedTransform = SelectedActor->GetTransform();
         SelectedEulerDegDisplay = SelectedTransform.GetRotation().GetEulerXYZ();
     if (Gizmo.Mode == EGizmoMode::None) {
         Gizmo.Mode = EGizmoMode::Translate;

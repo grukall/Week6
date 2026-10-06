@@ -21,7 +21,14 @@ public:
     virtual void Release() override;
     
     USceneComponent* GetSceneOwner() const { return SceneOwner; }
-    void SetupAttachment(USceneComponent* InParent);
+
+    void SetupAttachment(USceneComponent* InParent, bool bKeepWorldTransform = false);
+    void DetachFromParent();
+    TArray<USceneComponent*>& GetChildren();
+    void AddChildren(USceneComponent* InChildren);
+    void DeleteChildren(USceneComponent* InChildren);
+    bool IsRootComponent() const;
+
 
 	virtual void Serialize(FArchive& Archive) const override;
 	virtual void Deserialize(const FArchive& Archive) override;
@@ -42,7 +49,7 @@ public:
 	const FMatrix& GetGlobalTransformMatrix() const { return GetGlobalTransform().GetMatrix(); }
 	// 월드 행렬의 역행렬. 스케일이 0에 가까워 역행렬이 없으면 nullptr.
 	const FMatrix* GetGlobalInverseMatrix() const;
-	//void SetRelativeTransformFromGlobal(const FTransform& GlobalTransform);
+    void  SetRelativeTransformFromGlobal(const FTransform& GlobalTransform);
 
     //Transform이 바뀔 때 알림. 액터 전체 컴포넌트에 전파
     void MarkActorTransformDirty();
@@ -57,6 +64,7 @@ public:
     virtual const FVector& GetRelativeScale() const;
 
 protected:
+    TArray<USceneComponent*> Children;
     USceneComponent* SceneOwner = nullptr;
     bool bInheritRotation = true;
 

@@ -418,22 +418,27 @@ void FRenderView::DrawStencilMask(const FCamera& Camera,
     USceneComponent* RootComp = SelectedActor->GetRootComponent();
     if (!RootComp) return;
 
-    UPrimitiveComponent* PrimComp = RootComp->Cast<UPrimitiveComponent>();
-    if (!PrimComp) return;
-
-    const FMatrix ModelMatrix = PrimComp->GetRenderMatrix(Camera);
-    FDrawCommand DrawCommand = GetDrawCommand(*PrimComp, Camera, PrimComp->GetWorldBounds(), UStaticMeshComponent::MakeLODView(Camera));
-
-    DrawCommand.Constants.DisableShading = true;
-    DrawCommand.Constants.World = ModelMatrix;
-
     auto OutlineMaterial = FRenderResourceLibrary::Get().GetMaterial("#Outline");
-    if (OutlineMaterial)
+    if (!OutlineMaterial)
     {
-        OutlineMaterial->GetPipeline()->SetStencilRef(1);
+        return;
+    }
+    OutlineMaterial->GetPipeline()->SetStencilRef(1);
+
+    for (USceneComponent* SceneComp : SelectedActor->GetAttachedComponents())
+    {
+        UPrimitiveComponent* PrimComp = SceneComp->Cast<UPrimitiveComponent>();
+        if (!PrimComp) continue;
+
+        const FMatrix ModelMatrix = PrimComp->GetRenderMatrix(Camera);
+        FDrawCommand DrawCommand = GetDrawCommand(*PrimComp, Camera, PrimComp->GetWorldBounds(), UStaticMeshComponent::MakeLODView(Camera));
+
+        DrawCommand.Constants.DisableShading = true;
+        DrawCommand.Constants.World = ModelMatrix;
         DrawCommand.Materials = std::span<const FMaterial>(OutlineMaterial.get(), 1);
         Renderer.Draw(DrawCommand, 2, false);
     }
+
 }
 
 void FRenderView::SetRenderMode(EViewModeIndex InMode)

@@ -4,6 +4,7 @@
 #include "Runtime/Engine/EngineBaseTypes.h"
 
 class UWorld;
+class ULevel;
 class AActor;
 
 class UActorComponent : public UObject
@@ -18,6 +19,7 @@ public:
 	AActor* GetActorOwner() const { return ActorOwner; }
 	void SetActorOwner(AActor* Owner) { ActorOwner = Owner; }
 	UWorld* GetWorld() const { return World; }
+	ULevel* GetLevel() const;
 
 	[[nodiscard]] bool IsRegistered() const { return World != nullptr; }
 	[[nodiscard]] bool HasBegunPlay() const { return bHasBegunPlay; }

@@ -95,12 +95,16 @@ public:
   FEditorViewportClient* GetActiveViewportClient();
 
   void UpdateCamera();
-
+  void RefreshSelectedTransform();
+  bool SelectComponent(UActorComponent* InActorComponent);
   bool SelectActor(AActor *Actor);
   void UnSelectActor();
   AActor *GetSelectedActor() const { return SelectedActor.Get(); }
   [[nodiscard]] bool ActorSelected() const { return SelectedActor.IsValid(); }
   [[nodiscard]] bool ObjectSelected() const { return SelectedActor.IsValid(); }
+
+  UActorComponent* GetSelectedComponent() const { return SelectedComponent.Get(); }
+  [[nodiscard]] bool ComponentSelected() const { return SelectedComponent.IsValid(); }
 
   [[nodiscard]] TArray<TUniquePtr<FEditorViewportEntry>> &GetViewports() {return  Entries;}
   void SpawnActorToCurrentScene(UClass* Type, int Count = 1);
@@ -130,5 +134,6 @@ private:
   TArray<TUniquePtr<FEditorViewportEntry>> Entries;
   FGizmo Gizmo;
   TWeakObjectPtr<AActor> SelectedActor;
+  TWeakObjectPtr<UActorComponent> SelectedComponent;
   TWeakObjectPtr<UTextInstanceComponent> SelectedActorTextComp;
 };

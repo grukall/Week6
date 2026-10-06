@@ -163,55 +163,41 @@ void FImguiPropertyWindow::ShowTransform(FEditor& Editor, USceneComponent& Comp,
 {
 	ImGui::TextDisabled("Transform");
 
-	if (bIsRoot)
-	{
-		// 루트 컴포넌트 트랜스폼은 에디터 기즈모와 동기화
-		FVector Location = Editor.SelectedTransform.GetLocation();
-		if (ImGui::DragFloat3("Translation", &Location.X, 0.01f))
-		{
-			Editor.SelectedTransform.SetLocation(Location);
-		}
-		if (ImGui::DragFloat3("Rotation (deg)", &Editor.SelectedEulerDegDisplay.X, 0.5f))
-		{
-			Editor.SelectedTransform.SetRotation(FQuaternion::FromEulerXYZDeg(Editor.SelectedEulerDegDisplay));
-		}
-		FVector Scale = Editor.SelectedTransform.GetScale3D();
-		if (ImGui::DragFloat3("Scale", &Scale.X, 0.01f))
-		{
-			Editor.SelectedTransform.SetScale3D(Scale);
-		}
-		return;
-	}
+	const bool bHasParent = !bIsRoot || Comp.GetSceneOwner();
+	const char* LocationLabel = bHasParent ? "Rel Location###Location" : "Location###Location";
+	const char* RotationLabel = bHasParent ? "Rel Rotation (deg)###Rotation" : "Rotation (deg)###Rotation";
+	const char* ScaleLabel = bHasParent ? "Rel Scale###Scale" : "Scale###Scale";
 
 	// 서브 컴포넌트 상대 트랜스폼 편집
 	FTransform RelTransform = Comp.GetRelativeTransform();
 	FVector RelLocation = RelTransform.GetLocation();
 	bool bTransformChanged = false;
-	if (ImGui::DragFloat3("Rel Location", &RelLocation.X, 0.01f))
+	if (ImGui::DragFloat3(LocationLabel, &RelLocation.X, 0.01f))
 	{
 		bTransformChanged = true;
 		RelTransform.SetLocation(RelLocation);
 	}
 
 	FVector RelEuler = RelTransform.GetRotation().ToEulerXYZDeg();
-	if (ImGui::DragFloat3("Rel Rotation (deg)", &RelEuler.X, 0.5f))
+	if (ImGui::DragFloat3(RotationLabel, &RelEuler.X, 0.5f))
 	{
 		bTransformChanged = true;
 		RelTransform.SetRotation(FQuaternion::FromEulerXYZDeg(RelEuler));
 	}
 	FVector RelScale = RelTransform.GetScale3D();
-	if (ImGui::DragFloat3("Rel Scale", &RelScale.X, 0.01f))
+	if (ImGui::DragFloat3(ScaleLabel, &RelScale.X, 0.01f))
 	{
 		bTransformChanged = true;
 		RelTransform.SetScale3D(RelScale);
 	}
 
-	if (bTransformChanged)
+	if (!bTransformChanged)
 	{
-		Comp.MarkActorTransformDirty();
+		return;
 	}
 
 	Comp.SetRelativeTransform(RelTransform);
+	Editor.RefreshSelectedTransform();
 }
 
 void FImguiPropertyWindow::ShowTextSettings(UTextInstanceComponent& TextComp) const
@@ -580,7 +566,9 @@ void FImguiPropertyWindow::ShowStaticMeshSlot(UStaticMeshComponent& MeshComp) co
 
 	// 슬롯 만들기
 	float FullWidth = ImGui::GetContentRegionAvail().x;
-	ImGui::Button(StaticMesh->GetID().ToString().c_str(), ImVec2(FullWidth, SlotSize));
+	
+	const FString Label = StaticMesh ? StaticMesh->GetID().ToString() : "No StaticMesh";
+	ImGui::Button(Label.c_str(), ImVec2(FullWidth, SlotSize));
 
 	// 드롭 타깃은 아이템을 그린 직후여야 한다.
 	if (!ImGui::BeginDragDropTarget()) { return; }

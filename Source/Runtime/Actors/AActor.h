@@ -39,7 +39,7 @@ public:
 
 	void CreateRootComponent(UClass* ClassType);
 
-	void SetRootComponent(USceneComponent* Component);
+	void SetRootComponent(UActorComponent* Component);
 	USceneComponent* GetRootComponent() const { return RootComponent; }
 	const TArray<USceneComponent*>& GetAttachedComponents() const { return AttachedComp; }
 
@@ -50,7 +50,11 @@ public:
 	//하위 컴포넌트 월드 Tranform도 바뀐다.
 	void MarkComponentsTransformDirty();
 
-	void AddComponent(USceneComponent* Addcomp);
+	const TMap<UActorComponent*, UActorComponent*>& GetDuplicateRemap() const;
+	void RemapExternalAttachments(const TMap<UActorComponent*, UActorComponent*>& WorldRemap);
+
+	void AddComponent(UActorComponent* Addcomp);
+	void DeleteComponent(UActorComponent* Addcomp);
 	virtual void Register(UWorld *World);
 	virtual void BeginPlay();
 	virtual void Tick(float DeltaTime, ELevelTick eTickType);
@@ -68,6 +72,8 @@ public:
 protected:
 	USceneComponent* RootComponent = nullptr;
 	TArray<USceneComponent*> AttachedComp;
+	TArray<UActorComponent*> OwnedComponents;
+	TMap<UActorComponent*, UActorComponent*> DuplicateRemap;
 	bool bTickEnabled = false;
 	bool bRegistered = false;
 

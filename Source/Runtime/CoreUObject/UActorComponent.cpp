@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "UActorComponent.h"
 #include "Runtime/Engine/UWorld.h"
+#include "Runtime/Engine/ULevel.h"
 
 IMPLEMENT_UCLASS(UActorComponent, UObject)
 
@@ -33,6 +34,11 @@ void UActorComponent::EndPlay()
 {
     if (!bHasBegunPlay) { return; }
     bHasBegunPlay = false;
+}
+
+ULevel* UActorComponent::GetLevel() const
+{ 
+    return World ? World->GetPersistentLevel() : nullptr;
 }
 
 void UActorComponent::Register(UWorld* InWorld)

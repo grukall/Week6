@@ -16,19 +16,110 @@ void USceneComponent::Initialize()
 
 void USceneComponent::Release()
 {
-    SceneOwner = nullptr;
+    const TArray<USceneComponent*> Detaching = Children;
+    for (USceneComponent* Child : Detaching)
+    {
+        if (Child && Child->SceneOwner == this)
+        {
+            Child->DetachFromParent();
+        }
+    }
+    Children.clear();
+
+    // 부모가 있는지를 본다. 다른 액터에 붙은 루트도 부모의 목록에서 빠져야 한다.
+    if (SceneOwner)
+    {
+        SceneOwner->DeleteChildren(this);
+        SceneOwner = nullptr;
+    }
     Super::Release();
 }
 
-void USceneComponent::SetupAttachment(USceneComponent* InParent)
+void USceneComponent::DeleteChildren(USceneComponent* InChildren)
 {
-    if (InParent == this) { return; }
+    for (auto It = Children.begin(); It != Children.end(); It++)
+    {
+        if (*It == InChildren)
+        {
+            Children.erase(It);
+            return;
+        }
+    }
+}
+
+bool USceneComponent::IsRootComponent() const
+{
+    return (ActorOwner && ActorOwner->GetRootComponent() == this);
+}
+
+void USceneComponent::AddChildren(USceneComponent* InChildren)
+{
+    Children.push_back(InChildren);
+}
+
+void USceneComponent::SetupAttachment(USceneComponent* InParent, bool bKeepWorldTransform)
+{
+    if (!InParent) { return; }
+
+    // 자기 자신이나 자기 자손 밑으로는 못 붙인다. 순환이 생기면 GetGlobalTransform이 무한 재귀한다.
+    for (const USceneComponent* It = InParent; It; It = It->SceneOwner)
+    {
+        if (It == this) { return; }
+    }
+
+    // 부모를 바꾸기 전의 월드 트랜스폼
+    const FTransform WorldTransform = bKeepWorldTransform ? GetGlobalTransform() : FTransform{};
+
+    if (SceneOwner)
+    {
+        SceneOwner->DeleteChildren(this);
+    }
 
     SceneOwner = InParent;
+    InParent->AddChildren(this);
     bGlobalDirty = true;
-    if (InParent)
+
+    if (bKeepWorldTransform)
     {
-        ActorOwner = InParent->GetActorOwner();
+        SetRelativeTransformFromGlobal(WorldTransform);
+    }
+    else
+    {
+        FTransform ParentScale;
+        ParentScale.SetScale3D(InParent->GetGlobalTransform().GetScale3D());
+        SetRelativeTransform(FTransform{}.GetRelativeTo(ParentScale));
+    }
+}
+
+void USceneComponent::DetachFromParent()
+{
+    if (!SceneOwner) { return; }
+
+    // 부모를 비우기 전의 월드 트랜스폼을 구해 두고, 떼어 낸 뒤 그 자리에 다시 놓는다.
+    const FTransform WorldTransform = GetGlobalTransform();
+
+    SceneOwner->DeleteChildren(this);
+    SceneOwner = nullptr;
+    bGlobalDirty = true;
+
+    SetRelativeTransformFromGlobal(WorldTransform);
+}
+
+TArray<USceneComponent*>& USceneComponent::GetChildren()
+{
+    return (Children);
+}
+
+void USceneComponent::SetRelativeTransformFromGlobal(const FTransform& GlobalTransform)
+{
+    USceneComponent* Parent = GetTransformParent();
+    if (Parent)
+    {
+        SetRelativeTransform(GlobalTransform.GetRelativeTo(Parent->GetGlobalTransform()));
+    }
+    else
+    {
+        SetRelativeTransform(GlobalTransform);
     }
 }
 

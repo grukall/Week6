@@ -58,16 +58,32 @@ void FEditor::Process()
         UnSelectActor();
     }
 
+    bool bChanged = false;
+
     // 선택된 액터가 속한 월드의 BVH만 갱신한다.
     if (SelectedActor)
     {
         UWorld* World = SelectedActor->GetWorld();
 
-        USceneComponent* Root = SelectedActor->GetRootComponent();
-        const bool bChanged = Root && !(Root->GetRelativeTransform() == SelectedTransform);
+        if (SelectedComponent)
+        {
+            USceneComponent* CastSceneComponent = SelectedComponent->Cast<USceneComponent>();
+            bChanged = CastSceneComponent && !(CastSceneComponent->GetGlobalTransform() == SelectedTransform);
 
-        SelectedActor->SetTransform(SelectedTransform);
-
+            if (CastSceneComponent)
+            {
+                CastSceneComponent->SetRelativeTransformFromGlobal(SelectedTransform);
+            }
+        }
+        else
+        {
+            USceneComponent* RootComponent = SelectedActor->GetRootComponent();
+            bChanged = RootComponent && !(RootComponent->GetGlobalTransform() == SelectedTransform);
+            if (RootComponent)
+            {
+                RootComponent->SetRelativeTransformFromGlobal(SelectedTransform);
+            }
+        }
         // Transform이 변경되었을 때만 Refit
         if (bChanged && World && World->GetScene())
         {
@@ -190,39 +206,103 @@ FEditorViewportClient* FEditor::GetActiveViewportClient() {
 }
 
 bool FEditor::SelectActor(AActor *Actor) {
-  if (SelectedActor) {
-    UnSelectActor();
-  }
+    if (SelectedActor) {
+        UnSelectActor();
+    }
 
-  SelectedActor = Actor;
-  if (SelectedActor) {
-    SelectedTransform = SelectedActor->GetTransform();
-    SelectedEulerDegDisplay = SelectedTransform.GetRotation().GetEulerXYZ();
+    SelectedActor = Actor;
+    if (SelectedActor) {
+        USceneComponent* RootComponent = SelectedActor->GetRootComponent();
+        SelectedTransform = RootComponent ? RootComponent->GetGlobalTransform() : FTransform{};
+        SelectedTransform = SelectedActor->GetTransform();
+        SelectedEulerDegDisplay = SelectedTransform.GetRotation().GetEulerXYZ();
     if (Gizmo.Mode == EGizmoMode::None) {
-      Gizmo.Mode = EGizmoMode::Translate;
+        Gizmo.Mode = EGizmoMode::Translate;
     }
 
     if (SelectedActorTextComp) {
-      SelectedActorTextComp->SetActorOwner(SelectedActor.Get());
-      FTransform RelativeTrans;
-      RelativeTrans.SetLocation(FVector{ 0.0f, 0.0f, 1.5f });
-      SelectedActorTextComp->SetRelativeTransform(RelativeTrans);
-      const FString ActorName = SelectedActor->GetName().ToString();
-      SelectedActorTextComp->SetText(L"Name : " + FWString(ActorName.begin(), ActorName.end()));
+        SelectedActorTextComp->SetActorOwner(SelectedActor.Get());
+        FTransform RelativeTrans;
+        RelativeTrans.SetLocation(FVector{ 0.0f, 0.0f, 1.5f });
+        SelectedActorTextComp->SetRelativeTransform(RelativeTrans);
+        const FString ActorName = SelectedActor->GetName().ToString();
+        SelectedActorTextComp->SetText(L"Name : " + FWString(ActorName.begin(), ActorName.end()));
     }
-  }
+    }
 
-  return true;
+    return true;
+}
+
+bool FEditor::SelectComponent(UActorComponent* InActorComponent)
+{
+    if (!InActorComponent)
+    {
+        SelectedComponent = nullptr;
+        return false;
+    }
+
+    if (InActorComponent->GetActorOwner() != SelectedActor.Get())
+    {
+        SelectActor(InActorComponent->GetActorOwner());
+    }
+
+    SelectedComponent = InActorComponent;
+
+    USceneComponent* CastSceneComponent = SelectedComponent->Cast<USceneComponent>();
+
+    if (CastSceneComponent)
+    {
+        SelectedTransform = CastSceneComponent->GetGlobalTransform();
+        SelectedEulerDegDisplay = SelectedTransform.GetRotation().GetEulerXYZ();
+        if (Gizmo.Mode == EGizmoMode::None) {
+            Gizmo.Mode = EGizmoMode::Translate;
+        }
+    }
+
+    return true;
 }
 
 void FEditor::UnSelectActor() {
-  if (SelectedActor) {
-    SelectedActor->SetTransform(SelectedTransform);
-  }
-  SelectedActor = nullptr;
-  if (SelectedActorTextComp) {
-    SelectedActorTextComp->SetActorOwner(nullptr);
-  }
+    if (SelectedActor)
+    {
+        if (SelectedComponent)
+        {
+            USceneComponent* CastComponent = SelectedComponent->Cast<USceneComponent>();
+            if (CastComponent)
+            {
+                CastComponent->SetRelativeTransformFromGlobal(SelectedTransform);
+            }
+
+        }
+        else
+        {
+            USceneComponent* RootComponent = SelectedActor->GetRootComponent();
+            if (RootComponent)
+            {
+                RootComponent->SetRelativeTransformFromGlobal(SelectedTransform);
+            }
+        }
+    }
+    SelectedActor = nullptr;
+    SelectedComponent = nullptr;
+    if (SelectedActorTextComp) {
+        SelectedActorTextComp->SetActorOwner(nullptr);
+    }
+}
+
+void FEditor::RefreshSelectedTransform()
+{
+    if (!SelectedActor) { return; }
+
+    USceneComponent* Target = SelectedComponent ? SelectedComponent->Cast<USceneComponent>() : nullptr;
+    if (!Target)
+    {
+        Target = SelectedActor->GetRootComponent();
+    }
+    if (!Target) { return; }
+
+    SelectedTransform = Target->GetGlobalTransform();
+    SelectedEulerDegDisplay = SelectedTransform.GetRotation().GetEulerXYZ();
 }
 
 const TArray<UPrimitiveComponent *> &FEditor::GetPrimitiveComponents() const {
@@ -236,6 +316,7 @@ const TArray<UPrimitiveComponent *> &FEditor::GetPrimitiveComponents() const {
 
 void FEditor::ClearSelectionForGC() {
   SelectedActor = nullptr;
+  SelectedComponent = nullptr;
   Gizmo.EndInteraction();
   Gizmo.HoveredHandle = EGizmoHandle::None;
 }

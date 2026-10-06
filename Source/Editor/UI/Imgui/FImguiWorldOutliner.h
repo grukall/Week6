@@ -2,6 +2,8 @@
 #include "Editor/Core/FEditor.h"
 #include "Runtime/Core/TArray.h"
 #include "Runtime/Core/TSet.h"
+#include "FImguiDragDrop.h"
+#include "Runtime/Core/TOptional.h"
 
 class UWorld;
 
@@ -19,8 +21,17 @@ struct FOutlinerItem
 	FString DisplayLabel;
 	FString LowerLabel;
 	int32 Depth = 0;
+	bool bHasChildren = false;
 	AActor* Actor = nullptr;
 	USceneComponent* Component = nullptr;
+};
+
+struct FOutlinerAttachRequest
+{
+	FOutlinerDragPayload Dragged;
+	// 놓은 행의 액터와 컴포넌트. 액터 행에 놓으면 TargetComp는 nullptr.
+	AActor* TargetActor = nullptr;
+	USceneComponent* TargetComp = nullptr;
 };
 
 // 월드 아웃라이너 창 클래스
@@ -36,7 +47,13 @@ private:
 	//액터 한 개의 트리노드, 펼쳐지면 컴포넌트까지
 	void ShowActorNode(FEditor& Editor, AActor* Actor, const std::string& FilterStr, AActor* SelectedActor);
 	void ShowActorNode_Cached(FEditor& Editor, const FOutlinerItem& Item, AActor* SelectedActor);
-	void ShowComponentNode(USceneComponent& Component) const;
+	void ShowComponentNode(FEditor& Editor, USceneComponent& Comp);
+
+	// TreeNodeEx 직후에 호출한다. 직전 아이템을 드래그 소스 겸 드롭 타깃으로 만든다.
+	void HandleRowDragDrop(AActor* RowActor, USceneComponent* RowComp, const char* Label);
+	void ApplyAttach(const FOutlinerAttachRequest& Request);
+	// 드롭은 목록 순회 중에 일어나므로 기억만 해두고 순회가 끝난 뒤 처리한다.
+	TOptional<FOutlinerAttachRequest> PendingAttach;
 
 
 	// 검색 입력 칸을 그리고, 입력된 문자열을 소문자로 정규화해 돌려준다.
@@ -45,6 +62,10 @@ private:
 
 	// 펼쳐진 상태를 연속해서 저장하고 삽입한다.
 	void RebuildDisplayList();
+	// 행 하나를 넣고, 펼쳐져 있으면 자식 행까지 깊이 우선으로 이어 넣는다.
+	void AppendActorRows(const FOutlinerItem& ActorItem, int32 Depth);
+	void AppendComponentRows(USceneComponent& Comp, int32 Depth);
+
 
 	UWorld* LastWorld = nullptr;
 	// 원본 액터 데이터 캐시
@@ -53,7 +74,7 @@ private:
 	// 화면에 1줄씩 순서대로 그릴 목록
 	TArray<FOutlinerItem> DisplayList;
 	// 펼쳐진 액터들의 키(이름 해시)를 저장하는 집합
-	TSet<uint64> ExpandedActorKeys;
+	TSet<uint64> ExpandedNodeKeys;
 
 	size_t LastActorCount = 0;
 	FString LastFilterStr = "";

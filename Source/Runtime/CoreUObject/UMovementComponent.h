@@ -22,6 +22,8 @@ public:
 
 	bool MoveUpdatedComponent(const FVector& Delta, const FQuaternion& newRotation, bool bSweep);
 
+	virtual float GetGravityZ() { return 0.0f; }
+
 protected:
 	virtual bool MoveUpdatedComponentImpl(const FVector& Delta, const FQuaternion& newRotation, bool bSweep);
 
@@ -29,4 +31,7 @@ public:
 	USceneComponent* UpdatedComponent = nullptr;
 	UPrimitiveComponent* UpdatedPrimitive = nullptr;
 	FVector Velocity{};
+
+	bool bSweep;
+
 };

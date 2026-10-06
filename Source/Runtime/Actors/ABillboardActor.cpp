@@ -8,6 +8,9 @@
 #include "Runtime/Asset/FAssetRegistry.h"
 #include "Runtime/Math/FVector.h"
 
+#include "Runtime/CoreUObject/TObjectIterator.h"
+#include "Runtime/Actors/AAppleNormalActor.h"
+
 IMPLEMENT_UCLASS(ABillboardActor, AActor)
 UCLASS_META(ABillboardActor, DisplayName, "Billboard Actor")
 
@@ -29,8 +32,30 @@ ABillboardActor::ABillboardActor()
 
 	AddComponent(Light);*/
 
-	UMovementComponent* Move = NewObject<UProjectileMovementComponent>();
-	Move->SetVelocity(FVector(1.0f, 0.0f, 0.0f));
+	UProjectileMovementComponent* Move = NewObject<UProjectileMovementComponent>();
+	//Move->SetVelocity(FVector(10.0f, 0.0f, 10.0f));
+	//Move->ProjectileGravityScale = 9.8f;
+
+	Move->SetVelocity(FVector(0.0f, 0.0f, 0.0f));
+	Move->ProjectileGravityScale = 0.0f;
+	Move->HomingAccelerationMagnitude = 10.0f;
+	
+
+	for (TObjectIterator<AAppleNormalActor> it; it; ++it)
+	{
+		AActor* Actor = *it;
+
+		if (Actor)
+		{
+			if (USceneComponent* Target = Actor->GetRootComponent())
+			{
+				Move->HomingTargetComponent = Target;
+				Move->bIsHomingProjectile = true;
+			}
+		}
+	}
+
+
 	bTickEnabled = true;
 	AddComponent(Move);
 }

@@ -140,6 +140,10 @@ private:
   bool CreateOutlinePostProcessPipeline(FRenderer& Renderer);
   bool CreateFXAAPostProcessPipeline(FRenderer& Renderer);
   bool CreateScreenPass(FRenderer& Renderer);
+
+  bool CreateDepthPass(FRenderer& Renderer);
+  bool CreatePostProcessPipeline(FRenderer &Renderer);
+
   bool CreateInstancingArrayMap();
   FRenderer *RendererRef = nullptr;
 };

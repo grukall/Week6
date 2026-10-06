@@ -2,9 +2,9 @@
 
 IMPLEMENT_UCLASS(URotationMovementComponent, UMovementComponent)
 
-void URotationMovementComponent::Update(float DeltaTime)
+void URotationMovementComponent::Tick(float DeltaTime)
 {
-	Super::Update(DeltaTime);
+	Super::Tick(DeltaTime);
 	FVector CurrentLocation = UpdatedComponent->GetGlobalTransform().GetLocation();
 	FVector DeltaDgree = RotationRate* DeltaTime;
 	FQuaternion Quat = FQuaternion::FromEulerXYZDeg(DeltaDgree);

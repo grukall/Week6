@@ -2,9 +2,9 @@
 
 IMPLEMENT_UCLASS(UProjectileMovementComponent, UMovementComponent)
 
-void UProjectileMovementComponent::Update(float DeltaTime)
+void UProjectileMovementComponent::Tick(float DeltaTime)
 {
-	Super::Update(DeltaTime);
+	Super::Tick(DeltaTime);
 	FQuaternion CurrentQuat = UpdatedComponent->GetGlobalTransform().GetRotation();
 
 	if (ShouldApplyGravity())
@@ -29,16 +29,18 @@ void UProjectileMovementComponent::Update(float DeltaTime)
 		Velocity *= MaxSpeed;
 	}
 
-	FVector Location = UpdatedComponent->GetGlobalTransform().GetLocation();
-	FVector TargetLocation = HomingTargetComponent->GetRelativeLocation();
-
-	FVector Direction = TargetLocation - Location;
-
-	if (Direction.Size() < 1.0f )
+	if (bIsHomingProjectile)
 	{
-		SetVelocity(FVector(0, 0, 0));
-	}
+		FVector Location = UpdatedComponent->GetGlobalTransform().GetLocation();
+		FVector TargetLocation = HomingTargetComponent->GetRelativeLocation();
 
+		FVector Direction = TargetLocation - Location;
+
+		if (Direction.Size() < 1.0f)
+		{
+			SetVelocity(FVector(0, 0, 0));
+		}
+	}
 
 	MoveUpdatedComponent(Velocity * DeltaTime, CurrentQuat, false);
 }

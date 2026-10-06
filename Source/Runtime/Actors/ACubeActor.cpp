@@ -20,7 +20,7 @@ ACubeActor::ACubeActor()
 	Object->SetMaterial(Registry.Get<UMaterial>("Material/Textured.json"));
 
 	URotationMovementComponent* Move = NewObject<URotationMovementComponent>();
-	Move->RotationRate = FVector(0.0f, 0.0f, -45.0f);
+	Move->RotationRate = FVector(0.0f, 0.0f, -30.0f);
 
 	bTickEnabled = true;
 	AddComponent(Move);

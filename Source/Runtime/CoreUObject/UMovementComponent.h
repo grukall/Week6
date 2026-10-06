@@ -13,7 +13,7 @@ class UMovementComponent : public UActorComponent
 
 public:
 	virtual void Initialize() override;
-	virtual void Update(float DeltaTime);
+	virtual void Tick(float DeltaTime) override;
 	virtual void SetUpdatedComponent(USceneComponent* InUpdatedComponent) { UpdatedComponent = InUpdatedComponent; }
 	USceneComponent* GetUpdatedComponet() { return UpdatedComponent; }
 

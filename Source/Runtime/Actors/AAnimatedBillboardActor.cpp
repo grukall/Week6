@@ -3,6 +3,7 @@
 #include "Runtime/CoreUObject/UObjectGlobals.h"
 #include "Runtime/CoreUObject/UAnimatedBillboardComp.h"
 #include "Runtime/CoreUObject/UPointLightComponent.h"
+#include "Runtime/CoreUObject/UProjectileMovementComponent.h"
 #include "Runtime/Asset/FAssetRegistry.h"
 
 IMPLEMENT_UCLASS(AAnimatedBillboardActor, AActor)
@@ -34,6 +35,12 @@ AAnimatedBillboardActor::AAnimatedBillboardActor()
 	Light->SetLightColor(FVector(1.0f, 0.0f, 0.0f));
 
 	AddComponent(Light);
+
+	UProjectileMovementComponent* Move = NewObject<UProjectileMovementComponent>();
+	Move->SetVelocity(FVector(10.0f, 0.0f, 0.0f));
+
+	bTickEnabled = true;
+	AddComponent(Move);
 }
 
 void AAnimatedBillboardActor::Initialize()

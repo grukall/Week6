@@ -139,6 +139,7 @@ void FRenderer::OnWindowSize(UINT Width, UINT Height) {
   BackBufferRTV.Reset();
   DepthStencilView.Reset();
   DepthStencilSRV.Reset();
+  DepthSRV.Reset();
   DepthStencilBuffer.Reset();
   EditorViewPortRTV.Reset();
   EditorViewPortSRV.Reset();
@@ -315,7 +316,7 @@ FRenderer::CreateRenderPipeline(const FRenderPipelineDesc &Desc, EViewModeIndex 
   if (RenderMode == EViewModeIndex::VMI_Wireframe) {
     ClonedDesc.Rasterizer.FillMode = ERasterizerFillMode::Wireframe;
   }
-
+  
   Microsoft::WRL::ComPtr<ID3DBlob> Blob;
   const fs::path VertexShaderPath{ ClonedDesc.VertexShaderFilePath };
   HRESULT Result = D3DReadFileToBlob(VertexShaderPath.wstring().c_str(), &Blob);
@@ -783,6 +784,17 @@ bool FRenderer::InitializeBackBufferAndDepthStencil() {
     return false;
   }
 
+  D3D11_SHADER_RESOURCE_VIEW_DESC DepthSrvDesc{
+      .Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
+      .ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
+      .Texture2D = { .MostDetailedMip = 0, .MipLevels = 1 },
+  };
+  Result = Device->CreateShaderResourceView(DepthStencilBuffer.Get(),
+      &DepthSrvDesc, &DepthSRV);
+  if (FAILED(Result)) {
+      return false;
+  }
+
   return true;
 }
 
@@ -1106,11 +1118,14 @@ void FRenderer::UpdateViewConstants(const FViewConstants &Constants) {
     FViewConstants ShaderConstants = Constants;
     ShaderConstants.View = ShaderConstants.View;
     ShaderConstants.Projection = ShaderConstants.Projection.ToD3DMatrix();
+	ShaderConstants.Near = Constants.Near;
+	ShaderConstants.Far = Constants.Far;
 
     Context->UpdateSubresource(GetCurrentFrameResource()->ViewConstantBuffer.Get(), 0, nullptr,
         &ShaderConstants, 0, 0);
     Context->VSSetConstantBuffers(1, 1, GetCurrentFrameResource()->ViewConstantBuffer.GetAddressOf());
     Context->PSSetConstantBuffers(1, 1, GetCurrentFrameResource()->ViewConstantBuffer.GetAddressOf());
+
 }
 
 void FRenderer::UpdateMaterialConstants(const FMaterialConstants& Constants) {
@@ -1562,9 +1577,9 @@ void FRenderer::ClearTextInstances() {
   FRenderResourceLibrary::Get().DestroyAllInstancingArray();
 }
 
-void FRenderer::RenderScreenPass()
+void FRenderer::RenderScreenPass(const FVector2& TopLeftUV, const FVector2& LengthUV)
 {
-    Context->RSSetViewports(1, &Viewport);
+    SetViewportUV(TopLeftUV, LengthUV);
     Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     Context->IASetInputLayout(nullptr);
 
@@ -1574,9 +1589,10 @@ void FRenderer::RenderScreenPass()
 
     Context->OMSetRenderTargets(1, SceneColorRTV.GetAddressOf(), nullptr);
 
-    // 씬 텍스처 바인딩
-    ID3D11ShaderResourceView* SRV = EditorViewPortSRV.Get();
-    Context->PSSetShaderResources(6, 1, &SRV);
+    // 텍스처 바인딩
+    ID3D11ShaderResourceView* SRVs[] = { EditorViewPortSRV.Get(),
+                                      DepthSRV.Get() };
+    Context->PSSetShaderResources(6, 2, SRVs);
 
     FRenderResourceLibrary::Get()
         .GetPipeline(FName("#ScreenPass"))
@@ -1586,14 +1602,43 @@ void FRenderer::RenderScreenPass()
     INC_DWORD_STAT_BY("Prims", 1);
 
     // 슬롯 해제
-    ID3D11ShaderResourceView* NullSRV = { nullptr };
-    Context->PSSetShaderResources(6, 1, &NullSRV);
+    ID3D11ShaderResourceView* NullSRV[2] = {nullptr, nullptr};
+    Context->PSSetShaderResources(6, 2, NullSRV);
 }
 
-void FRenderer::RenderOutline() {
+void FRenderer::RenderDepthPass(const FVector2& TopLeftUV, const FVector2& LengthUV)
+{
+    SetViewportUV(TopLeftUV, LengthUV);
+    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    Context->IASetInputLayout(nullptr);
+
+    ID3D11Buffer* NullVB = nullptr;
+    UINT Zero = 0;
+    Context->IASetVertexBuffers(0, 1, &NullVB, &Zero, &Zero);
+
+    Context->OMSetRenderTargets(1, SceneColorRTV.GetAddressOf(), nullptr);
+
+    // 텍스처 바인딩
+    ID3D11ShaderResourceView* SRVs[] = { EditorViewPortSRV.Get(),
+                                      DepthSRV.Get() };
+    Context->PSSetShaderResources(6, 2, SRVs);
+
+    FRenderResourceLibrary::Get()
+        .GetPipeline(FName("#DepthPass"))
+        ->Bind(*Context.Get());
+    Context->Draw(3, 0);
+    INC_DWORD_STAT("Draws");
+    INC_DWORD_STAT_BY("Prims", 1);
+
+    // 슬롯 해제
+    ID3D11ShaderResourceView* NullSRV[2] = { nullptr, nullptr };
+    Context->PSSetShaderResources(6, 2, NullSRV);
+}
+
+void FRenderer::RenderOutline(const FVector2& TopLeftUV, const FVector2& LengthUV) {
   // 백버퍼 뷰포트 및 토폴로지 복구
 
-  Context->RSSetViewports(1, &Viewport);
+    SetViewportUV(TopLeftUV, LengthUV);
   Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
   Context->IASetInputLayout(nullptr);
 

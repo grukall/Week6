@@ -78,6 +78,8 @@ void FObjViewerApplication::Render()
 				static_cast<float>(Renderer->GetWidth()),
 				static_cast<float>(Renderer->GetHeight()),
 			},
+			.Near = Camera.GetProjection().GetNearPlane(),
+			.Far = Camera.GetProjection().GetFarPlane(),
 		};
 		Renderer->UpdateViewConstants(ViewConstants);
 

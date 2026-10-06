@@ -7,7 +7,7 @@ class URotationMovementComponent : public UMovementComponent
 	DECLARE_UCLASS(URotationMovementComponent, UMovementComponent)
 
 protected:
-	virtual void Update(float DeltaTime) override;
+	virtual void Tick(float DeltaTime) override;
 	virtual bool MoveUpdatedComponentImpl(const FVector& Delta, const FQuaternion& newRotation, bool bSweep) override;
 	
 public:

@@ -7,7 +7,7 @@ class UProjectileMovementComponent : public UMovementComponent
 	DECLARE_UCLASS(UProjectileMovementComponent, UMovementComponent)
 
 protected:
-	virtual void Update(float DeltaTime) override;
+	virtual void Tick(float DeltaTime) override;
 	virtual bool MoveUpdatedComponentImpl(const FVector& Delta, const FQuaternion& newRotation, bool bSweep) override;
 	virtual float GetGravityZ() override { return ProjectileGravityScale; }
 public:

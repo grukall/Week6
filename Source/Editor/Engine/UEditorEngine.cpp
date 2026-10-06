@@ -259,6 +259,13 @@ void UEditorEngine::ExecuteCommand(const char* Command)
         UE_LOG("Culling : %s", Globals::bEnableFrustumCulling ? "ON" : "OFF");
     }
 
+    else if (lowerCmd.compare("fxaa") == 0)
+    {
+        //컬링 토글
+        RenderView.bIsFXAA = !RenderView.bIsFXAA;
+        UE_LOG("FXAA : %s", RenderView.bIsFXAA ? "ON" : "OFF");
+    }
+
     else {
         UE_LOG("Unknown command: '%s'\n", Command);
         return;

@@ -101,8 +101,9 @@ public:
 
   void DrawUploadedCommand(const FDrawCommand& Command, bool bApplyViewMode = true);
 
-  void RenderScreenPass();
-  void RenderOutline();
+  void RenderScreenPass(const FVector2& TopLeftUV, const FVector2& LengthUV);
+  void RenderDepthPass(const FVector2& TopLeftUV, const FVector2& LengthUV);
+  void RenderOutline(const FVector2& TopLeftUV, const FVector2& LengthUV);
   ID3D11RenderTargetView* GetBackBuffer() { return BackBufferRTV.Get(); }
   ID3D11DepthStencilView* GetDepthStencilView() { return DepthStencilView.Get(); }
 
@@ -172,6 +173,7 @@ private:
   Microsoft::WRL::ComPtr<ID3D11Texture2D> renderTexture;
   Microsoft::WRL::ComPtr<ID3D11Texture2D> SceneColorTexture;
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> DepthStencilSRV;
+  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> DepthSRV;
 
   TMap<FRasterizerDesc, Microsoft::WRL::ComPtr<ID3D11RasterizerState>> RasterizerStateMap;
   TMap<FDepthStencilDesc, Microsoft::WRL::ComPtr<ID3D11DepthStencilState>> DepthStencilStateMap;

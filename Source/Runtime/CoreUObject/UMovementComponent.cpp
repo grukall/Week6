@@ -5,14 +5,19 @@ IMPLEMENT_UCLASS(UMovementComponent, UActorComponent)
 void UMovementComponent::Initialize()
 {
 	Super::Initialize();
-	UpdatedComponent = GetActorOwner()->GetRootComponent();
-	bTickEnabled = true;
+
+	if (AActor* Owner = GetActorOwner())
+	{
+		UpdatedComponent = Owner->GetRootComponent();
+		bTickEnabled = true;
+		bTickInEditor = true;
+	}
 
 }
 
-void UMovementComponent::Update(float DeltaTime)
+void UMovementComponent::Tick(float DeltaTime)
 {
-	//Super::Update(DeltaTime);
+	Super::Tick(DeltaTime);
 }
 
 bool UMovementComponent::MoveUpdatedComponent(const FVector& Delta, const FQuaternion& newRotation, bool bSweep)

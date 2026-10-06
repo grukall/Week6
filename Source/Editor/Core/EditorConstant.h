@@ -14,6 +14,14 @@
 #include "Runtime/Actors/ATextRenderActor.h"
 #include "Runtime/Actors/ACatActor.h"
 
+#include "Runtime/CoreUObject/Mesh/UStaticMeshComponent.h"
+
+#include "Runtime/CoreUObject/USceneComponent.h"
+#include "Runtime/CoreUObject/USpotLightComponent.h"
+#include "Runtime/CoreUObject/UTextInstanceComponent.h"
+#include "Runtime/CoreUObject/UAnimatedBillboardComp.h"
+#include "Runtime/CoreUObject/UBillBoardComp.h"
+
 namespace EditorConstant
 {
 
@@ -33,4 +41,17 @@ namespace EditorConstant
 	   ATextRenderActor::StaticClass(),
 	};
 
+
+	/// <summary>
+	/// 에디터에서 부착 가능한 컴포넌트들을 정의합니다.
+	/// </summary>
+	inline UClass* const SpawnableComponents[]
+	{
+	   UStaticMeshComponent::StaticClass(),
+	   USceneComponent::StaticClass(),
+	   USpotLightComponent::StaticClass(),
+	   UTextInstanceComponent::StaticClass(),
+	   UAnimatedBillboardComp::StaticClass(),
+	   UBillBoardComp::StaticClass(),
+	};
 }

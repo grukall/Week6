@@ -13,21 +13,22 @@ class ULevel;
 class USceneComponent : public UActorComponent
 {
 	GENERATED_BODY()
-	DECLARE_UCLASS(USceneComponent, UObject)
+	DECLARE_UCLASS(USceneComponent, UActorComponent)
 	friend class AActor;
 
 public:
     virtual void Initialize() override;
     virtual void Release() override;
     virtual void DuplicateSubObjects() override;
-    
-    AActor* GetActorOwner() const { return ActorOwner; }
-    USceneComponent* GetSceneOwner() const { return SceneOwner; }
-    void SetActorOwner(AActor* Owner) { ActorOwner = Owner; } //selectedacotor 한테 textcomponent 바로 붙여야해서 만듦
-
     virtual void TickComponent(float DeltaTime) {}
 
-    void SetupAttachment(USceneComponent* InParent);
+    USceneComponent* GetSceneOwner() const { return SceneOwner; }
+    void SetupAttachment(USceneComponent* InParent, bool bKeepWorldTransform = false);
+    void DetachFromParent();
+    TArray<USceneComponent*>& GetChildren();
+    void AddChildren(USceneComponent* InChildren);
+    void DeleteChildren(USceneComponent* InChildren);
+    bool IsRootComponent() const;
 
 	virtual void Serialize(FArchive& Archive) const override;
 	virtual void Deserialize(const FArchive& Archive) override;
@@ -48,7 +49,7 @@ public:
 	const FMatrix& GetGlobalTransformMatrix() const { return GetGlobalTransform().GetMatrix(); }
 	// 월드 행렬의 역행렬. 스케일이 0에 가까워 역행렬이 없으면 nullptr.
 	const FMatrix* GetGlobalInverseMatrix() const;
-	//void SetRelativeTransformFromGlobal(const FTransform& GlobalTransform);
+	void SetRelativeTransformFromGlobal(const FTransform& GlobalTransform);
 
     //Transform이 바뀔 때 알림. 액터 전체 컴포넌트에 전파
     void MarkActorTransformDirty();
@@ -64,6 +65,8 @@ public:
 
 protected:
     USceneComponent* SceneOwner = nullptr;
+    TArray<USceneComponent*> Children;
+
     bool bInheritRotation = true;
 
 private:

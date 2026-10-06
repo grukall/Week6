@@ -12,7 +12,7 @@ IMPLEMENT_UCLASS(AActor, UObject)
 void AActor::Initialize()
 {
 	Super::Initialize();
-	Owner = nullptr;
+	World = nullptr;
 	bHasBegunPlay = false;
 	bTickEnabled = false;
 }
@@ -20,13 +20,13 @@ void AActor::Initialize()
 void AActor::Release()
 {
 	
-	ULevel* RegisteredLevel = Owner ? Owner->GetPersistentLevel() : nullptr;
+	ULevel* RegisteredLevel = World ? World->GetPersistentLevel() : nullptr;
 	if (bHasBegunPlay)
 	{
 		EndPlay();
 	}
 
-	if (Owner)
+	if (World)
 	{
 		Unregister();
 	}
@@ -36,9 +36,10 @@ void AActor::Release()
 		RegisteredLevel->RemoveActor(this);
 	}
 
-	while (!AttachedComp.empty())
+	while (!OwnedComponents.empty())
 	{
-		USceneComponent* Component = AttachedComp.back();
+		UActorComponent* Component = OwnedComponents.back();
+		std::erase(OwnedComponents, Component);
 		std::erase(AttachedComp, Component);
 
 		if (RootComponent == Component)
@@ -64,22 +65,74 @@ void AActor::DuplicateSubObjects()
 	DuplicateRemap.clear();
 	Super::DuplicateSubObjects();
 
+	for (UActorComponent*& ActorComponent : OwnedComponents)
+	{
+		UActorComponent* NewActorComponent = (DuplicateAs(ActorComponent));
+		NewActorComponent->ActorOwner = this;
+		DuplicateRemap[ActorComponent] = NewActorComponent;
+		ActorComponent = NewActorComponent;
+	}
+
+	RemapComponent(RootComponent);
+
 	for (USceneComponent*& SceneComponent : AttachedComp)
 	{
-		USceneComponent* NewSceneComponent = (DuplicateAs(SceneComponent));
-		NewSceneComponent->ActorOwner = this;
-		DuplicateRemap[SceneComponent] = NewSceneComponent;
-		SceneComponent = NewSceneComponent;
+		RemapComponent(SceneComponent);
 	}
-	RemapComponent(RootComponent);
 
 	for (USceneComponent* SceneComponent : AttachedComp)
 	{
-		RemapComponent(SceneComponent->SceneOwner);	
+		if (!SceneComponent || !SceneComponent->SceneOwner)
+		{
+			continue;
+		}
+
+		// 같은 액터 안의 부모만 여기서 연결한다.
+		auto It = DuplicateRemap.find(SceneComponent->SceneOwner);
+		if (It == DuplicateRemap.end())
+		{
+			continue;
+		}
+
+		USceneComponent* NewParent = It->second->Cast<USceneComponent>();
+		if (NewParent)
+		{
+			SceneComponent->SceneOwner = NewParent;
+			NewParent->Children.push_back(SceneComponent);
+		}
 	}
 
-	Owner = nullptr;
+	World = nullptr;
 	bHasBegunPlay = false;
+}
+
+const TMap<UActorComponent*, UActorComponent*>& AActor::GetDuplicateRemap() const
+{
+	return DuplicateRemap;
+}
+
+void AActor::RemapExternalAttachments(const TMap<UActorComponent*, UActorComponent*>& WorldRemap)
+{
+	for (USceneComponent* SceneComponent : AttachedComp)
+	{
+		if (!SceneComponent || !SceneComponent->SceneOwner)
+		{
+			continue;
+		}
+
+		auto It = WorldRemap.find(SceneComponent->SceneOwner);
+		if (It == WorldRemap.end())
+		{
+			continue;
+		}
+
+		USceneComponent* NewParent = It->second->Cast<USceneComponent>();
+		if (NewParent)
+		{
+			SceneComponent->SceneOwner = NewParent;
+			NewParent->Children.push_back(SceneComponent);
+		}
+	}
 }
 
 
@@ -155,41 +208,51 @@ void AActor::CreateRootComponent(UClass* ClassType)
 	if (RootComponent) { return; }
 
 	UObject* Object = NewObject(ClassType);
-	USceneComponent* Component = Object->Cast<USceneComponent>();
+	UActorComponent* ActorComponent = Object->Cast<UActorComponent>();
 
-	if (!Component)
+	if (!ActorComponent)
 	{
 		DestroyObject(Object);
 		return;
 	}
-
-	SetRootComponent(Component);
+	SetRootComponent(ActorComponent);
+	
+	return;
 }
 
-void AActor::SetRootComponent(USceneComponent* Component)
+void AActor::SetRootComponent(UActorComponent* Component)
 {
 	if (RootComponent)
 	{
 		throw EngineUtil::CreateError("이미 Root 컴포넌트가 있습니다.");
 	}
 
-	RootComponent = Component;
+	OwnedComponents.push_back(Component);
+	Component->ActorOwner = this;
+	Component->Initialize();
+	USceneComponent* SceneComponent = Component->Cast<USceneComponent>();
 
-	// TODO ActorOwner를 이렇게 지정하면 안됨
-	RootComponent->ActorOwner = this;
-	RootComponent->SetupAttachment(nullptr);
-	RootComponent->Initialize();
-	AttachedComp.push_back(RootComponent);
-
-	if (Owner)
+	if (World)
 	{
-		RootComponent->Register(*Owner);
+		Component->Register(*World);
 	}
 
 	if (bHasBegunPlay)
 	{
-		RootComponent->BeginPlay();
+		Component->BeginPlay();
 	}
+
+	if (!SceneComponent)
+	{
+		return;
+	}
+
+	RootComponent = SceneComponent;
+
+	RootComponent->SetupAttachment(nullptr);
+	AttachedComp.push_back(RootComponent);
+
+	
 }
 
 void AActor::MarkComponentsTransformDirty()
@@ -203,31 +266,66 @@ void AActor::MarkComponentsTransformDirty()
 	}
 }
 
-void AActor::AddComponent(USceneComponent* Addcomp)
+void AActor::DeleteComponent(UActorComponent* Addcomp)
+{
+	for (auto It = OwnedComponents.begin(); It != OwnedComponents.end(); It++)
+	{
+		if (*It == Addcomp)
+		{
+			USceneComponent* CastSceneComponent = (*It)->Cast<USceneComponent>();
+			if (CastSceneComponent)
+			{
+				// 루트 컴포넌트는 삭제못하게 막는다.
+				if (RootComponent == CastSceneComponent)
+				{
+					return;
+				}
+				// 부모의 자식 목록에서 빠지는 것은 USceneComponent::Release가 처리한다.
+				std::erase(AttachedComp, CastSceneComponent);
+			}
+			UActorComponent* TempComponet = *It;
+			OwnedComponents.erase(It);
+			DestroyObject(TempComponet);
+			return;
+		}
+	}
+}
+
+void AActor::AddComponent(UActorComponent* Addcomp)
 {
 	if (Addcomp == nullptr)
 	{
 		return;
 	}
 
-	if (RootComponent == nullptr)
+	USceneComponent* CastSceneComponent = Addcomp->Cast<USceneComponent>();
+	if (CastSceneComponent)
 	{
-		RootComponent = Addcomp;
-		Addcomp->SetupAttachment(nullptr);
+		if (RootComponent == nullptr)
+		{
+			RootComponent = CastSceneComponent;
+			CastSceneComponent->SetupAttachment(nullptr);
+		}
+
+		else if (CastSceneComponent->GetSceneOwner() == nullptr) // 들어온 컴포넌트가 부모가 없는 경우
+		{
+			CastSceneComponent->SetupAttachment(RootComponent);
+		}
+
+		if (CastSceneComponent->GetActorOwner() != this)
+		{
+			CastSceneComponent->SetActorOwner(this);
+		}
+
+		AttachedComp.push_back(CastSceneComponent);
 	}
 
-	else if (Addcomp->GetSceneOwner() == nullptr)
-	{
-		Addcomp->SetupAttachment(RootComponent);
-	}
-
-	Addcomp->ActorOwner = this;
-	AttachedComp.push_back(Addcomp);
+	OwnedComponents.push_back(Addcomp);
 	Addcomp->Initialize();
 
-	if (Owner)
+	if (World)
 	{
-		Addcomp->Register(*Owner);
+		Addcomp->Register(*World);
 	}
 
 	if (bHasBegunPlay)
@@ -238,18 +336,18 @@ void AActor::AddComponent(USceneComponent* Addcomp)
 
 void AActor::Register(UWorld& InWorld)
 {
-	if (Owner == &InWorld)
+	if (World == &InWorld)
 	{
 		return;
 	}
 
-	if (Owner)
+	if (World)
 	{
 		Unregister();
 	}
 
-	Owner = &InWorld;
-	for (USceneComponent* Component : AttachedComp)
+	World = &InWorld;
+	for (UActorComponent* Component : OwnedComponents)
 	{
 		if (Component)
 		{
@@ -259,13 +357,13 @@ void AActor::Register(UWorld& InWorld)
 }
 
 void AActor::BeginPlay() {
-	if (!Owner || bHasBegunPlay)
+	if (!World || bHasBegunPlay)
 	{
 		return;
 	}
 
 	bHasBegunPlay = true;
-	for (USceneComponent* Component : AttachedComp)
+	for (UActorComponent* Component : OwnedComponents)
 	{
 		if (Component)
 		{
@@ -280,7 +378,7 @@ void AActor::Tick(float DeltaTime) {
 		return;
 	}
 
-	for (USceneComponent* Component : AttachedComp)
+	for (UActorComponent* Component : OwnedComponents)
 	{
 		if (Component && Component->IsTickEnabled())
 		{
@@ -295,7 +393,7 @@ void AActor::EndPlay() {
 		return;
 	}
 
-	for (auto It = AttachedComp.rbegin(); It != AttachedComp.rend(); ++It)
+	for (auto It = OwnedComponents.rbegin(); It != OwnedComponents.rend(); ++It)
 	{
 		if (*It)
 		{
@@ -311,25 +409,25 @@ void AActor::Unregister() {
 		EndPlay();
 	}
 
-	if (!Owner)
+	if (!World)
 	{
 		return;
 	}
 
-	for (auto It = AttachedComp.rbegin(); It != AttachedComp.rend(); ++It)
+	for (auto It = OwnedComponents.rbegin(); It != OwnedComponents.rend(); ++It)
 	{
 		if (*It)
 		{
 			(*It)->Unregister();
 		}
 	}
-	Owner = nullptr;
+	World = nullptr;
 }
 
 void AActor::Destroy() {
-	if (Owner)
+	if (World)
 	{
-		Owner->DestroyActor(this);
+		World->DestroyActor(this);
 		return;
 	}
 	DestroyObject(this);
@@ -366,12 +464,22 @@ bool AActor::IsActorEditorTickEnabled()
 
 UWorld* AActor::GetWorld() const
 { 
-	return Owner; 
+	return World;
+}
+
+ULevel* AActor::GetLevel() const
+{
+	if (!World)
+	{
+		return nullptr;
+	}
+
+	return World->GetPersistentLevel();
 }
 
 bool AActor::IsRegistered() const
 {
-	return Owner != nullptr;
+	return World != nullptr;
 }
 
 bool AActor::HasBegunPlay() const

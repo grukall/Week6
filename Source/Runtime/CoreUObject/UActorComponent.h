@@ -24,6 +24,7 @@ public:
     void SetActorOwner(AActor* Owner) { ActorOwner = Owner; } //selectedacotor 한테 textcomponent 바로 붙여야해서 만듦
 
     UWorld* GetWorld() const;
+    ULevel* GetLevel() const;
 
     virtual void Register(UWorld& InWorld);
     virtual void BeginPlay();

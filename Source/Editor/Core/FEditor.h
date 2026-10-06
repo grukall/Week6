@@ -70,12 +70,20 @@ public:
   FEditorViewportClient* GetActiveViewport(); // 임시로 0번 반환
 
   void UpdateCamera();
+  // 선택 대상을 기즈모 밖에서 움직였을 때 SelectedTransform을 다시 읽어온다.
+  void RefreshSelectedTransform();
 
   bool SelectActor(AActor *Actor);
+  bool SelectComponent(UActorComponent* InActorComponent);
   void UnSelectActor();
   AActor *GetSelectedActor() const { return SelectedActor.Get(); }
   [[nodiscard]] bool ActorSelected() const { return SelectedActor.IsValid(); }
   [[nodiscard]] bool ObjectSelected() const { return SelectedActor.IsValid(); }
+
+  UActorComponent* GetSelectedComponent() const { return SelectedComponent.Get(); }
+  [[nodiscard]] bool ComponentSelected() const { return SelectedComponent.IsValid(); }
+
+  
 
   [[nodiscard]] TArray<FEditorViewportClient> &GetViewports() {
     return EditorViewports;
@@ -110,5 +118,6 @@ private:
   TArray<FEditorViewportClient> EditorViewports;
   FGizmo Gizmo;
   TWeakObjectPtr<AActor> SelectedActor;
+  TWeakObjectPtr<UActorComponent> SelectedComponent;
   TWeakObjectPtr<UTextInstanceComponent> SelectedActorTextComp;
 };

@@ -22,7 +22,8 @@ class AActor : public UObject
 protected:
 	USceneComponent* RootComponent = nullptr;
 	TArray<USceneComponent*> AttachedComp;
-	TMap<USceneComponent*, USceneComponent*> DuplicateRemap;
+	TArray<UActorComponent*> OwnedComponents;
+	TMap<UActorComponent*, UActorComponent*> DuplicateRemap;
 	bool bTickEnabled = false;
 	bool bTickInEditor = false;
 
@@ -34,13 +35,16 @@ protected:
 public:
 	
 	void DuplicateSubObjects() override;
+	const TMap<UActorComponent*, UActorComponent*>& GetDuplicateRemap() const;
+	void RemapExternalAttachments(const TMap<UActorComponent*, UActorComponent*>& WorldRemap);
 	void Initialize() override;
 	void Release() override;
 	UWorld* GetWorld() const;
+	ULevel* GetLevel() const;
 
 	void CreateRootComponent(UClass* ClassType);
 
-	void SetRootComponent(USceneComponent* Component);
+	void SetRootComponent(UActorComponent* Component);
 	USceneComponent* GetRootComponent() const;
 	const TArray<USceneComponent*>& GetAttachedComponents() const;
 
@@ -51,10 +55,10 @@ public:
 	bool IsActorTickEnabled();
 	bool IsActorEditorTickEnabled();
 
-	//하위 컴포넌트 월드 Tranform도 바뀐다.
 	void MarkComponentsTransformDirty();
 
-	void AddComponent(USceneComponent* Addcomp);
+	void AddComponent(UActorComponent* Addcomp);
+	void DeleteComponent(UActorComponent* Addcomp);
 	virtual void Register(UWorld& InWorld);
 	virtual void BeginPlay();
 	virtual void Tick(float DeltaTime);
@@ -67,7 +71,7 @@ public:
 	void Destroy();
 
 private:
-	UWorld* Owner = nullptr; // SpawnActor될 때 설정됨
+	UWorld* World = nullptr; // SpawnActor될 때 설정됨
 	bool bHasBegunPlay = false;
 
 protected:

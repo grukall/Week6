@@ -17,10 +17,23 @@ UWorld* UWorld::DuplicateWorldForPIE(UWorld* InWorld)
     UWorld* PIEWorld = NewObject<UWorld>();
     PIEWorld->Initialize();
     PIEWorld->SetWorldType(EWorldType::PIE);
-    for (AActor* Actor : InWorld->PersistentLevel->GetActors()) 
+    // 액터끼리 붙은 경우 부모가 다른 액터 소속이므로 한 번 더 연결한다.
+    TMap<UActorComponent*, UActorComponent*> WorldRemap;
+    for (AActor* Actor : InWorld->PersistentLevel->GetActors())
     {
-        AActor* DuplicateActor = DuplicateAs(Actor);   
+        AActor* DuplicateActor = DuplicateAs(Actor);
+        if (!DuplicateActor)
+        {
+            continue;
+        }
         PIEWorld->PersistentLevel->AddActor(DuplicateActor);
+
+        const auto& ActorRemap = DuplicateActor->GetDuplicateRemap();
+        WorldRemap.insert(ActorRemap.begin(), ActorRemap.end());
+    }
+    for (AActor* DuplicateActor : PIEWorld->PersistentLevel->GetActors())
+    {
+        DuplicateActor->RemapExternalAttachments(WorldRemap);
     }
     PIEWorld->Activate();
     PIEWorld->Scene->GetSceneBVH().Build(PIEWorld->Scene->GetRenderComponents());

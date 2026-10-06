@@ -312,6 +312,8 @@ void FImguiEditorViewportWindow::UpdateCamera(FEditor &Editor, FEditorViewportCl
     }
 }
 
+
+
 void FImguiEditorViewportWindow::UpdateShortcuts(FEditor &Editor) const
 {
     FInputManager &Input = FInputManager::Get();

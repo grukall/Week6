@@ -48,6 +48,15 @@ UWorld* UActorComponent::GetWorld() const
     return (World);
 }
 
+ULevel* UActorComponent::GetLevel() const
+{
+    if (!World)
+    {
+        return nullptr;
+    }
+    return World->GetPersistentLevel();
+}
+
 void UActorComponent::BeginPlay()
 {
     if (!World || bHasBegunPlay) { return; }

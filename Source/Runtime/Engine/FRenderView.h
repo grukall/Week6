@@ -66,7 +66,10 @@ public:
 	void RenderQuad(const FVector& A, const FVector& B, const FVector& C, const FVector& D, const FVector4& Color);
 	void RenderSphere(const FVector& Center, float Radius, const FVector4& Color, uint32 Segments = 16);
 
-	void RenderGBufferPass();
+	void RenderGBufferPass(const FCamera& Camera, const AActor* SelectedActor,
+		const FVector2& TopLeftUV, const FVector2& LengthUV);
+	void RenderDifferedLightingPass(const FCamera& Camera, const AActor* SelectedActor,
+		const FVector2& TopLeftUV, const FVector2& LengthUV);
 
 	void RenderScreenPass(const FCamera& Camera, const AActor* SelectedActor, const FVector2& TopLeftUV, const FVector2& LengthUV);
 	void RenderDepthPass(const FVector2& TopLeftUV, const FVector2& LengthUV);
@@ -100,7 +103,7 @@ public:
 	void RequestOcclusionOracle() { bOracleRequested = true; }
 
 	// Lights
-	void UpdateLight(const FScene& Scene);
+	void UpdateLight(const FScene& Scene, const FVector2& TopLeftUV, const FVector2& LengthUV);
 
 	void UpdateFog(const FScene& Scene, const FSceneView& View);
 

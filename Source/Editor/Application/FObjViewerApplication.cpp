@@ -58,6 +58,12 @@ void FObjViewerApplication::Render()
 	ID3D11RenderTargetView* BackBuffer = Renderer->GetBackBuffer();
 	ID3D11DepthStencilView* DepthStencil = Renderer->GetDepthStencilView();
 
+	FMatrix View = Camera.GetViewMatrix();
+	FMatrix Projection = Camera.GetProjectionMatrix();
+	FMatrix VP = View * Projection;
+	FMatrix InvVP;
+	VP.Inverse(InvVP);
+
 	if (BackBuffer && Context)
 	{
 		Context->OMSetRenderTargets(1, &BackBuffer, DepthStencil);
@@ -71,8 +77,9 @@ void FObjViewerApplication::Render()
 		FViewConstants ViewConstants
 		{
 			.Pos = Camera.GetPosition(),
-			.View = Camera.GetViewMatrix(),
-			.Projection = Camera.GetProjectionMatrix(),
+			.View = View,
+			.Projection = Projection,
+			.InvVP = InvVP,
 			.ViewportSize = FVector2
 			{
 				static_cast<float>(Renderer->GetWidth()),

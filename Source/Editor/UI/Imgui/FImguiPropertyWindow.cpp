@@ -45,8 +45,9 @@ namespace
 
 		if (&Comp == Actor.GetRootComponent())
 		{
-			for (USceneComponent* Other : Actor.GetAttachedComponents())
+			for (UActorComponent* ActorComponent : Actor.GetOwnedComponents())
 			{
+				USceneComponent* Other = ActorComponent->Cast<USceneComponent>();
 				if (Other && Other != &Comp && !Other->GetSceneOwner())
 				{
 					TreeChildren.push_back(Other);
@@ -585,7 +586,7 @@ void FImguiPropertyWindow::ShowDirectionLightSettings(UDirectionLightComponent& 
 	FVector Direction = LightComp.GetLightDirection();
 	if (ImGui::DragFloat3("Light Direction", &Direction.X, 1.0f, 89.0f))
 	{
-		Direction.Normalize();
+		//Direction.Normalize();
 		LightComp.SetLightDirection(Direction);
 	}
 }

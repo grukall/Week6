@@ -244,9 +244,9 @@ bool FRenderResourceLibrary::CreateScreenPass(FRenderer& Renderer)
 
     // 스텐실 마스크 기록 설정
     D3D11_DEPTH_STENCIL_DESC DepthStencilDesc{};
-    DepthStencilDesc.DepthEnable = FALSE;
+    DepthStencilDesc.DepthEnable = FALSE;       
     DepthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-    DepthStencilDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;
+    DepthStencilDesc.DepthFunc = D3D11_COMPARISON_ALWAYS;   
     DepthStencilDesc.StencilEnable = FALSE;
     DepthStencilDesc.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
     DepthStencilDesc.StencilWriteMask = 0xFF;

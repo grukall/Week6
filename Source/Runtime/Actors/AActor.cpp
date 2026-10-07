@@ -48,7 +48,6 @@ void AActor::Release()
 	{
 		UActorComponent* Component = OwnedComponents.back();
 		std::erase(OwnedComponents, Component);
-		std::erase(AttachedComp, Component);
 
 		if (RootComponent == Component)
 		{
@@ -353,8 +352,9 @@ void AActor::SetRootComponent(UActorComponent* Component)
 
 void AActor::MarkComponentsTransformDirty()
 {
-	for (USceneComponent* Component : AttachedComp)
+	for (UActorComponent* ActorComponent : OwnedComponents)
 	{
+		USceneComponent* Component = ActorComponent->Cast<USceneComponent>();
 		if (!Component)
 		{
 			continue;
@@ -398,7 +398,7 @@ void AActor::DeleteComponent(UActorComponent* Addcomp)
 					return;
 				}
 				// 부모의 자식 목록에서 빠지는 것은 USceneComponent::Release가 처리한다.
-				std::erase(AttachedComp, CastSceneComponent);
+				//std::erase(AttachedComp, CastSceneComponent);
 			}
 			UActorComponent* TempComponet = *It;
 			if (auto NameIt = ComponentsByName.find(TempComponet->GetName()); NameIt != ComponentsByName.end() && NameIt->second == TempComponet)
@@ -473,8 +473,6 @@ void AActor::AddComponent(UActorComponent* Addcomp)
 		{
 			CastSceneComponent->SetupAttachment(RootComponent);
 		}
-
-		AttachedComp.push_back(CastSceneComponent);
 	}
 
 	OwnedComponents.push_back(Addcomp);

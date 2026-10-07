@@ -12,6 +12,7 @@ cbuffer ViewConstants : register(b1)
     float3 CamPos;
     row_major float4x4 View;
     row_major float4x4 Projection;
+    row_major float4x4 InvVP;
     float2 ViewportSize;
     float Near;
     float Far;

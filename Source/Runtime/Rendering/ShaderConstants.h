@@ -20,6 +20,7 @@ struct FViewConstants {
 	FVector Pos;
 	FMatrix View;
 	FMatrix Projection;
+	FMatrix InvVP;
 	FVector2 ViewportSize;
 	float Near;
 	float Far;

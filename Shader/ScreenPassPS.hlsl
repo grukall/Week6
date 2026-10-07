@@ -23,5 +23,16 @@ PS_OUTPUT MainPS(PS_INPUT Input)
     
     output.Color = Sampled;
     
+    float Depth = DepthTexture.Load(int3(pixelCoord, 0)).r;
+
+    const float3 BackgroundColor = float3(0.5f, 0.5f, 0.5f);
+
+    // 아무 메시도 기록되지 않은 픽셀
+    if (Depth >= 0.999999f)
+    {
+        output.Color = float4(BackgroundColor, 1.0f);
+    }
+
     return output;
+    
 }

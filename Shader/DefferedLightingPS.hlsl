@@ -38,6 +38,11 @@ float4 MainPS(PS_INPUT Input) : SV_Target0
     float4 B = GBufferB.Load(Pixel);
     float4 C = GBufferC.Load(Pixel);
     float Depth = SceneDepth.Load(Pixel).r;
+    
+    if(Depth >= 1.0f)
+    {
+        return float4(0,0,0,0);
+    }
 
     // A.rgb: DiffAlbedo = diffAlbedo * BaseColor, A.a: Shininess
     // B.rgb: 인코딩된 NormalW, B.a: DisableShading

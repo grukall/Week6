@@ -1,0 +1,136 @@
+{
+    "Version": 3,
+    "map": {
+        "PersistentLevel": {
+            "Actors": [
+                {
+                    "Guid": "F7D149945463820295395BA26EA7A562",
+                    "Name": "ExponentialHeightFog_0",
+                    "OwnedComponents": [],
+                    "RootComponent": {
+                        "Location": [
+                            -0.8999999761581421,
+                            0.18000000715255737,
+                            0.3400000035762787
+                        ],
+                        "Name": "ExponentialHeightFogComponent_0",
+                        "Rotation": [
+                            -0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Scale": [
+                            0.5,
+                            0.5,
+                            0.5
+                        ],
+                        "Type": "UExponentialHeightFogComponent"
+                    },
+                    "Type": "AExponentialHeightFog"
+                },
+                {
+                    "Guid": "EC407361EF2341ED213B3150C0DF6A95",
+                    "Name": "ExponentialHeightFog_1",
+                    "OwnedComponents": [],
+                    "RootComponent": {
+                        "Location": [
+                            -2.509999990463257,
+                            1.8600000143051147,
+                            -2.5899999141693115
+                        ],
+                        "Name": "ExponentialHeightFogComponent_0",
+                        "Rotation": [
+                            -0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Scale": [
+                            0.5,
+                            0.5,
+                            0.5
+                        ],
+                        "Type": "UExponentialHeightFogComponent"
+                    },
+                    "Type": "AExponentialHeightFog"
+                },
+                {
+                    "Guid": "09DE37F31AEF6C9062CFC8B51A4A2C74",
+                    "Name": "ExponentialHeightFog_2",
+                    "OwnedComponents": [],
+                    "RootComponent": {
+                        "Location": [
+                            0.4000000059604645,
+                            -2.880000114440918,
+                            -2.7300000190734863
+                        ],
+                        "Name": "ExponentialHeightFogComponent_0",
+                        "Rotation": [
+                            -0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Scale": [
+                            0.5,
+                            0.5,
+                            0.5
+                        ],
+                        "Type": "UExponentialHeightFogComponent"
+                    },
+                    "Type": "AExponentialHeightFog"
+                },
+                {
+                    "Guid": "DBE51B83B5A237C5F818F32FBF771271",
+                    "Name": "ExponentialHeightFog_3",
+                    "OwnedComponents": [],
+                    "RootComponent": {
+                        "Location": [
+                            -0.25999999046325684,
+                            -0.5400000214576721,
+                            -1.1200000047683716
+                        ],
+                        "Name": "ExponentialHeightFogComponent_0",
+                        "Rotation": [
+                            -0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Scale": [
+                            0.5,
+                            0.5,
+                            0.5
+                        ],
+                        "Type": "UExponentialHeightFogComponent"
+                    },
+                    "Type": "AExponentialHeightFog"
+                },
+                {
+                    "Guid": "E7C5DA9B9866156F3F1285E46828A225",
+                    "Name": "ExponentialHeightFog_4",
+                    "OwnedComponents": [],
+                    "RootComponent": {
+                        "Location": [
+                            -2.2200000286102295,
+                            -0.9599999785423279,
+                            -0.9200000166893005
+                        ],
+                        "Name": "ExponentialHeightFogComponent_0",
+                        "Rotation": [
+                            -0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Scale": [
+                            0.5,
+                            0.5,
+                            0.5
+                        ],
+                        "Type": "UExponentialHeightFogComponent"
+                    },
+                    "Type": "AExponentialHeightFog"
+                }
+            ],
+            "Type": "ULevel"
+        },
+        "Type": "UWorld"
+    }
+}

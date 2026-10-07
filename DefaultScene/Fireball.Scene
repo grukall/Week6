@@ -360,7 +360,7 @@
                         "MeshAsset": "#Cube",
                         "Name": "StaticMeshComponent_0",
                         "Rotation": [
-                            4.44089183380283e-16,
+                            4.440891569105034e-16,
                             1.4901162970204496e-08,
                             0.0
                         ],

@@ -47,6 +47,14 @@ float4 MainPS(PS_INPUT Input) : SV_Target0
     // A.rgb: DiffAlbedo = diffAlbedo * BaseColor, A.a: Shininess
     // B.rgb: 인코딩된 NormalW, B.a: DisableShading
     // C.rgb: specAlbedo
+    // DisableShading(빌보드, Unlit 뷰모드): 조명 없이 알베도를 그대로 출력한다.
+    // 이 패스는 Additive로 앰비언트 1회 + 광원마다 1회 그려지므로, 광원이 없는 앰비언트 패스에서만 한 번 기록한다.
+    if (B.a > 0.5f)
+    {
+        bool bAmbientPass = (NumDirLights + NumPointLights + NumSpotLights) == 0;
+        return bAmbientPass ? float4(A.rgb, 1.0f) : float4(0, 0, 0, 0);
+    }
+
     float3 NormalW = normalize(B.rgb * 2.0f - 1.0f);
 
     // Input.UV와 Depth로 월드 위치 복원

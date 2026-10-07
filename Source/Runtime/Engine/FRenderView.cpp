@@ -455,6 +455,11 @@ void FRenderView::RenderSphere(const FVector &Center, float Radius,
   LineBatcher.DrawSphere(Center, Radius, Color, Segments);
 }
 
+void FRenderView::RenderGBufferPass()
+{
+    Renderer.RenderGBufferPass();
+}
+
 void FRenderView::RenderScreenPass(const FCamera& Camera, const AActor* SelectedActor, 
                                     const FVector2& TopLeftUV, const FVector2& LengthUV)
 {

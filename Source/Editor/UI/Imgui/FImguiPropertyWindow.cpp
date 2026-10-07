@@ -76,7 +76,7 @@ void FImguiPropertyWindow::Process(FEditor& Editor)
 		ImGui::Separator();
 
 		ShowComponentSections(Editor, *SelectedActor);
-		ShowActorComponentSections(*SelectedActor);
+		//ShowActorComponentSections(*SelectedActor);
 	}
 	else
 	{
@@ -263,7 +263,7 @@ void FImguiPropertyWindow::ShowComponentSections(FEditor& Editor, AActor& Actor)
 {
 	USceneComponent* RootComp = Actor.GetRootComponent();
 
-	for (USceneComponent* Comp : Actor.GetAttachedComponents())
+	for (UActorComponent* Comp : Actor.GetOwnedComponents())
 	{
 		if (!Comp)
 		{
@@ -295,7 +295,7 @@ void FImguiPropertyWindow::ShowActorComponentSections(AActor& Actor)
 {
 	for (UActorComponent* Comp : Actor.GetOwnedComponents())
 	{
-		if (!Comp || Comp->IsA<USceneComponent>())
+		if (!Comp || Comp->IsA<UActorComponent>())
 		{
 			continue;
 		}
@@ -316,10 +316,12 @@ void FImguiPropertyWindow::ShowActorComponentSections(AActor& Actor)
 }
 
 void FImguiPropertyWindow::ShowComponentDetails(FEditor& Editor, AActor& Actor,
-	USceneComponent& Comp, bool bIsRoot)
+	UActorComponent& Comp, bool bIsRoot)
 {
-	ShowTransform(Editor, Comp, bIsRoot);
-
+	if (Comp.IsA<USceneComponent>())
+	{
+		ShowTransform(Editor, static_cast<USceneComponent&>(Comp), bIsRoot);
+	}
 	if (Comp.IsA<UTextInstanceComponent>())
 	{
 		ShowTextSettings(static_cast<UTextInstanceComponent&>(Comp));
@@ -349,12 +351,12 @@ void FImguiPropertyWindow::ShowComponentDetails(FEditor& Editor, AActor& Actor,
 
 	else if (Comp.IsA<UProjectileMovementComponent>())
 	{
-		//ShowProjectileMovementSettings(static_cast<UProjectileMovementComponent&>(Comp));
+		ShowProjectileMovementSettings(static_cast<UProjectileMovementComponent&>(Comp));
 	}
 
 	else if (Comp.IsA<URotationMovementComponent>())
 	{
-		//ShowRotationMovementSettings(static_cast<URotationMovementComponent&>(Comp));
+		ShowRotationMovementSettings(static_cast<URotationMovementComponent&>(Comp));
 	}
 
 	else if (Comp.IsA<UStaticMeshComponent>())

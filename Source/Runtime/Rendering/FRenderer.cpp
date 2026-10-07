@@ -1577,6 +1577,11 @@ void FRenderer::ClearTextInstances() {
   FRenderResourceLibrary::Get().DestroyAllInstancingArray();
 }
 
+void FRenderer::RenderGBufferPass()
+{
+
+}
+
 void FRenderer::RenderScreenPass(const FVector2& TopLeftUV, const FVector2& LengthUV)
 {
     SetViewportUV(TopLeftUV, LengthUV);

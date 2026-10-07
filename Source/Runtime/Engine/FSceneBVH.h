@@ -99,8 +99,9 @@ inline static void RefitActorInBVH(FSceneBVH& BVH, AActor* Actor)
 
     // 루트도 AttachedComponents에 들어 있다. 같은 액터의 자식은 이 목록에서 처리되므로,
     // Children으로는 붙어 있는 다른 액터로만 내려간다.
-    for (USceneComponent* S : Actor->GetAttachedComponents())
+    for (UActorComponent* ActorComponent : Actor->GetOwnedComponents())
     {
+        USceneComponent* S = ActorComponent->Cast<USceneComponent>();
         if (!S) { continue; }
         if (UPrimitiveComponent* P = S->Cast<UPrimitiveComponent>()) { BVH.RefitObject(P); }
         for (USceneComponent* Child : S->GetChildren())

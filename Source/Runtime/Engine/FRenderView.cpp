@@ -503,9 +503,9 @@ void FRenderView::DrawStencilMask(const FCamera& Camera,
     }
     OutlineMaterial->GetPipeline()->SetStencilRef(1);
 
-    for (USceneComponent* SceneComp : SelectedActor->GetAttachedComponents())
+    for (UActorComponent* ActorComponent : SelectedActor->GetOwnedComponents())
     {
-        UPrimitiveComponent* PrimComp = SceneComp->Cast<UPrimitiveComponent>();
+        UPrimitiveComponent* PrimComp = ActorComponent->Cast<UPrimitiveComponent>();
         if (!PrimComp) continue;
 
         const FMatrix ModelMatrix = PrimComp->GetRenderMatrix(Camera);

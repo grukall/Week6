@@ -45,8 +45,9 @@ namespace
 
 		if (&Comp == Actor.GetRootComponent())
 		{
-			for (USceneComponent* Other : Actor.GetAttachedComponents())
+			for (UActorComponent* ActorComponent : Actor.GetOwnedComponents())
 			{
+				USceneComponent* Other = ActorComponent->Cast<USceneComponent>();
 				if (Other && Other != &Comp && !Other->GetSceneOwner())
 				{
 					TreeChildren.push_back(Other);

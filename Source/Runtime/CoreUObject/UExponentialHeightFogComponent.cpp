@@ -1,6 +1,9 @@
 #include "pch.h"
 #include "UExponentialHeightFogComponent.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
+#include <Runtime/Rendering/ShaderConstants.h>
+#include "Runtime/Engine/UWorld.h"
+#include "Runtime/Engine/FScene.h"
 
 IMPLEMENT_UCLASS(UExponentialHeightFogComponent, USceneComponent)
 
@@ -23,6 +26,35 @@ void UExponentialHeightFogComponent::Deserialize(const FArchive & Archive)
 	Super::Deserialize(Archive);
 
 	//역직렬화 해야 하는 정보를 여기에 작성
+}
+
+void UExponentialHeightFogComponent::Register(UWorld* InWorld)
+{
+	Super::Register(InWorld);
+	InWorld->GetScene()->AddFogComponent(this);
+}
+
+void UExponentialHeightFogComponent::Unregister()
+{
+	if (World)
+	{
+		if (FScene* Scene = World->GetScene())
+		{
+			Scene->RemoveFogComponent(this);
+		}
+	}
+
+	Super::Unregister();
+}
+
+void UExponentialHeightFogComponent::BuildConstants(FFogData& Constants) const
+{
+	Constants.Density = GetDensity();
+	Constants.HeightFalloff = GetHeightFalloff();
+	Constants.StartDistance = GetStartDistance();
+	Constants.CutoffDistance = GetCutoffDistance();
+	Constants.MaxOpacity = GetMaxOpacity();
+	Constants.InscatteringColor = GetInscatteringColor();
 }
 
 void UExponentialHeightFogComponent::BeginPlay()

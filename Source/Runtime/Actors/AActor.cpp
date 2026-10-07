@@ -322,36 +322,10 @@ void AActor::SetRootComponent(UActorComponent* Component)
 {
 	if (RootComponent)
 	{
-		throw EngineUtil::CreateError("이미 Root 컴포넌트가 있습니다.");
+		UE_LOG_WARN("이미 Root 컴포넌트가 있습니다.");
 	}
 
-	OwnedComponents.push_back(Component);
-	Component->SetActorOwner(this);
-	RegisterComponentName(Component);
-	Component->Initialize();
-	USceneComponent* SceneComponent = Component->Cast<USceneComponent>();
-
-	if (RegisteredWorld)
-	{
-		Component->Register(RegisteredWorld);
-	}
-
-	if (bHasBegunPlay)
-	{
-		Component->BeginPlay();
-	}
-
-	if (!SceneComponent)
-	{
-		return;
-	}
-
-	RootComponent = SceneComponent;
-
-	RootComponent->SetupAttachment(nullptr);
-	AttachedComp.push_back(RootComponent);
-
-
+	AddComponent(Component);
 }
 
 void AActor::MarkComponentsTransformDirty()
@@ -477,16 +451,9 @@ void AActor::AddComponent(UActorComponent* Addcomp)
 			CastSceneComponent->SetupAttachment(RootComponent);
 		}
 
-		if (CastSceneComponent->GetActorOwner() != this)
-		{
-			CastSceneComponent->SetActorOwner(this);
-		}
-
-
 		AttachedComp.push_back(CastSceneComponent);
 	}
 
-	//Addcomp->ActorOwner = this;
 	OwnedComponents.push_back(Addcomp);
 	RegisterComponentName(Addcomp);
 	Addcomp->Initialize();

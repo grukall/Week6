@@ -60,7 +60,11 @@ void USceneComponent::AddChildren(USceneComponent* InChildren)
 
 void USceneComponent::SetupAttachment(USceneComponent* InParent, bool bKeepWorldTransform)
 {
-    if (!InParent) { return; }
+    if (!InParent) 
+    {
+        DetachFromParent();
+        return; 
+    }
 
     // 자기 자신이나 자기 자손 밑으로는 못 붙인다. 순환이 생기면 GetGlobalTransform이 무한 재귀한다.
     for (const USceneComponent* It = InParent; It; It = It->SceneOwner)
@@ -86,9 +90,11 @@ void USceneComponent::SetupAttachment(USceneComponent* InParent, bool bKeepWorld
     }
     else
     {
-        FTransform ParentScale;
-        ParentScale.SetScale3D(InParent->GetGlobalTransform().GetScale3D());
-        SetRelativeTransform(FTransform{}.GetRelativeTo(ParentScale));
+        //FTransform ParentScale;
+        //ParentScale.SetScale3D(InParent->GetGlobalTransform().GetScale3D());
+        FTransform DefaultTransform;
+
+        SetRelativeTransform(FTransform().GetRelativeTo(DefaultTransform));
     }
 }
 
@@ -209,7 +215,7 @@ USceneComponent* USceneComponent::GetTransformParent() const
     return Root == this ? nullptr : Root;
 }
 
-const FTransform& USceneComponent::GetGlobalTransform() const //나중에 부모 rootcomponent world좌표 써야됨
+const FTransform& USceneComponent::GetGlobalTransform() const
 {
     const USceneComponent* Parent = GetTransformParent();
     uint32 ParentVersion = 0;

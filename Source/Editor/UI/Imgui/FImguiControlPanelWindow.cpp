@@ -47,20 +47,23 @@ void FImguiControlPanelWindow::Process(FEditor& Editor)
     // DirectionLightSetting(Editor);
 
     ImGui::Separator();
-    BVHDebugSetting(Editor);
 
-    ImGui::Separator();
-    RenderStateSort(Editor);
+    if (ImGui::CollapsingHeader("Debug/Optimization"))
+    {
+        BVHDebugSetting(Editor);
 
-    ImGui::Separator();
-	SIMDCullingDebugSetting(Editor);
+        ImGui::Separator();
+        RenderStateSort(Editor);
 
-    ImGui::Separator();
-    LODSetting(Editor);
+        ImGui::Separator();
+	    SIMDCullingDebugSetting(Editor);
 
-    ImGui::Separator();
-    CullingSetting(Editor);
+        ImGui::Separator();
+        LODSetting(Editor);
 
+        ImGui::Separator();
+        CullingSetting(Editor);
+    }
     ImGui::End();
 }
 

@@ -37,7 +37,6 @@ public:
 
 private:
 	//액터 한 개의 트리노드, 펼쳐지면 붙어 있는 자식 액터까지
-	void ShowActorNode(FEditor& Editor, AActor* Actor, const std::string& FilterStr, AActor* SelectedActor);
 	void ShowActorNode_Cached(FEditor& Editor, const FOutlinerItem& Item, AActor* SelectedActor);
 
 	// TreeNodeEx 직후에 호출한다. 직전 아이템을 드래그 소스 겸 드롭 타깃으로 만든다.
@@ -72,6 +71,5 @@ private:
 	FString CurrentFilterStr = "";
 	bool bCacheDirty = true;
 	bool bDisplayListDirty = false;
-	bool bUseOptimized = true;
 
 };

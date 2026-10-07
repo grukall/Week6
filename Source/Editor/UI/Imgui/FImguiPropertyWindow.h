@@ -4,6 +4,8 @@
 class AActor;
 class USceneComponent;
 class UStaticMeshComponent;
+class UDirectionLightComponent;
+class UPointLightComponent;
 class USpotLightComponent;
 class UTextInstanceComponent;
 class UBillBoardComp;
@@ -40,8 +42,11 @@ private:
 	void ShowTextSettings(UTextInstanceComponent& TextComp) const;
 	void ShowBillboardSettings(UBillBoardComp& BillboardComp) const;
 	void ShowAnimatedBillboardSettings(UAnimatedBillboardComp& BillboardComp) const;
-	void ShowSpotLightSettings(USpotLightComponent& LightComp) const;
 	void ShowStaticMeshSettings(AActor& Actor, UStaticMeshComponent& MeshComp, bool bIsRoot) const;
+	void ShowDirectionLightSettings(UDirectionLightComponent& LightComp) const;
+	void ShowPointLightSettings(UPointLightComponent& LightComp) const;
+	void ShowSpotLightSettings(USpotLightComponent& LightComp) const;
+
 
 	// 머티리얼의 텍스처 미리보기 겸 드롭 타깃.
 	void ShowMaterialSlot(UStaticMeshComponent& MeshComp, int Slot = 0) const;

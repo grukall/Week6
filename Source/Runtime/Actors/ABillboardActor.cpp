@@ -24,8 +24,8 @@ ABillboardActor::ABillboardActor()
 	Object->SetTexture(Registry.Get<UTexture>("Texture/Space.json"));
 
 	ULightComponent* Light = NewObject<UPointLightComponent>();
-	Light->SetAmbientInensity(0.3f);
-	Light->SetInensity(1.0f);
+	Light->SetAmbientIntensity(0.3f);
+	Light->SetIntensity(1.0f);
 	Light->SetFallOffStart(0.0f);
 	Light->SetFallOffEnd(10.0f);
 	Light->SetLightColor(FVector(1.0f, 0.0f, 0.0f));

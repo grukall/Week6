@@ -270,9 +270,9 @@ void FImguiPropertyWindow::ShowComponentButtons(FEditor& Editor, AActor& Actor)
 
 void FImguiPropertyWindow::ShowComponentSections(FEditor& Editor, AActor& Actor)
 {
-	USceneComponent* RootComp = Actor.GetRootComponent();
+	UActorComponent* RootComp = Actor.GetRootComponent();
 
-	for (USceneComponent* Comp : Actor.GetAttachedComponents())
+	for (UActorComponent* Comp : Actor.GetOwnedComponents())
 	{
 		if (!Comp)
 		{
@@ -325,9 +325,13 @@ void FImguiPropertyWindow::ShowActorComponentSections(AActor& Actor)
 }
 
 void FImguiPropertyWindow::ShowComponentDetails(FEditor& Editor, AActor& Actor,
-	USceneComponent& Comp, bool bIsRoot)
+	UActorComponent& Comp, bool bIsRoot)
 {
-	ShowTransform(Editor, Comp, bIsRoot);
+	if (Comp.IsA<USceneComponent>())
+	{
+		ShowTransform(Editor, static_cast<USceneComponent&>(Comp), bIsRoot);
+	}
+	
 
 	if (Comp.IsA<UTextInstanceComponent>())
 	{

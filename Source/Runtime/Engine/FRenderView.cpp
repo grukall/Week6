@@ -225,9 +225,8 @@ void FRenderView::RenderView(const FSceneView& View, const FScene& Scene, const 
 {
     // 뷰포트 시작
     BeginView(View);
-    UpdateLight(Scene);
-
-
+    // UpdateLight(Scene);
+   
     //컬링 측정
     {
         CullScene(View, Scene);
@@ -244,8 +243,11 @@ void FRenderView::RenderView(const FSceneView& View, const FScene& Scene, const 
         RenderQueue.Sort();
     }
 
+    RenderGBufferPass(View.Camera, EditorCtx.SelectedActor, View.TopLeftUV, View.LengthUV);
+
     // 기본 씬 오브젝트 패스
     FlushBasePass(View.Camera);
+    UpdateLight(Scene, View.TopLeftUV, View.LengthUV);
 
     //BasePass 이후에 깊이 버퍼 기준으로 가시성 질의
     if (bOracleRequested)
@@ -315,12 +317,22 @@ void FRenderView::BeginView(const FSceneView& View)
     Renderer.SetRenderMode(View.ViewMode);
     // Renderer.UpdateLightConstants(View.LightConstants, View.ViewMode);
 
+    FMatrix ViewM = View.Camera.GetViewMatrix();
+    FMatrix ProjectionM = View.Camera.GetProjectionMatrix();
+    FMatrix VP = ViewM * ProjectionM;
+    FMatrix InvVP;
+    if (!VP.Inverse(InvVP))
+    {
+        return;
+    }
+
     // ViewConstants 갱신
     FViewConstants ViewConstants
     {
         .Pos = View.Camera.GetPosition(),
         .View = View.Camera.GetViewMatrix(),
         .Projection = View.Camera.GetProjectionMatrix(),
+        .InvVP = InvVP,
         .ViewportSize = FVector2
         {
             View.LengthUV.X * Renderer.GetWidth(),
@@ -455,9 +467,17 @@ void FRenderView::RenderSphere(const FVector &Center, float Radius,
   LineBatcher.DrawSphere(Center, Radius, Color, Segments);
 }
 
-void FRenderView::RenderGBufferPass()
+void FRenderView::RenderGBufferPass(const FCamera& Camera, const AActor* SelectedActor,
+    const FVector2& TopLeftUV, const FVector2& LengthUV)
 {
-    Renderer.RenderGBufferPass();
+    Renderer.RenderDeferredLightingPass(TopLeftUV, LengthUV);
+    Renderer.DrawPrimitiveBatch(RenderQueue.GetPrimRenderQ());
+}
+
+void FRenderView::RenderDifferedLightingPass(const FCamera& Camera, const AActor* SelectedActor,
+    const FVector2& TopLeftUV, const FVector2& LengthUV)
+{
+    Renderer.RenderDeferredLightingPass(TopLeftUV, LengthUV);
 }
 
 void FRenderView::RenderScreenPass(const FCamera& Camera, const AActor* SelectedActor, 
@@ -714,16 +734,22 @@ void FRenderView::RunOcclusionOracle()
 
 
 // Lights Update
-void FRenderView::UpdateLight(const FScene& Scene)
+void FRenderView::UpdateLight(const FScene& Scene, const FVector2& TopLeftUV, const FVector2& LengthUV)
 {
-    FLightConstants Constants;
-
     for (ULightComponent* Light : Scene.GetLightComponents())
     {
-        Light->BuildConstants(Constants);
-    }
+        FLightConstants Constants{}; 
+        Constants.AmbientLight = { 0.0f, 0.0f, 0.0f };
 
-    Renderer.UpdateLightConstants(Constants, EViewModeIndex::VMI_Lit);
+        if (!Light)
+        {
+            continue;
+        }
+
+        Light->BuildConstants(Constants);
+        Renderer.UpdateLightConstants(Constants, EViewModeIndex::VMI_Lit);
+        Renderer.RenderDeferredLightingPass(TopLeftUV, LengthUV);
+    }
 }
 
 

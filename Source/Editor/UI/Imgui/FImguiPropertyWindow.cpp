@@ -570,7 +570,7 @@ void FImguiPropertyWindow::ShowDirectionLightSettings(UDirectionLightComponent& 
 	FVector Direction = LightComp.GetLightDirection();
 	if (ImGui::DragFloat3("Light Direction", &Direction.X, 1.0f, 89.0f))
 	{
-		Direction.Normalize();
+		//Direction.Normalize();
 		LightComp.SetLightDirection(Direction);
 	}
 }

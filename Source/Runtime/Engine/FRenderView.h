@@ -44,6 +44,7 @@ public:
 	// 뷰포트 패스 파이프라인
 	void BeginView(const FSceneView& View);
 	void UpdateViewConstants(const FCamera& Camera, const FVector2& LengthUV);
+	void UpdateFogConstants(const FCamera& Camera, const FVector2& LengthUV, const FVector2& TopLeftUV);
 	void DrawGrid(const FCamera& Camera, FGrid& Grid);
 	void FlushBasePass(const FCamera& Camera);
 	void FlushLinePass(const FCamera& Camera);

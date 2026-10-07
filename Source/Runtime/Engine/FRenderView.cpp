@@ -316,6 +316,18 @@ void FRenderView::BeginView(const FSceneView& View)
     // Renderer.UpdateLightConstants(View.LightConstants, View.ViewMode);
 
     UpdateViewConstants(View.Camera, View.LengthUV);
+
+    FFogData FogConstants{};
+
+    FMatrix VP = View.Camera.GetViewMatrix() * View.Camera.GetProjectionMatrix();
+    VP = VP.ToD3DMatrix();
+    VP.Inverse(FogConstants.InverseVP);
+    // FogConstants.Density 
+    // FogConstants.StartDistance
+    // FogConstants.CutoffDistance
+    // FogConstants.MaxOpacity
+    // FogConstants.InscatteringColor
+    Renderer.UpdateFogConstants(FogConstants);
 }
 
 void FRenderView::UpdateViewConstants(const FCamera& Camera, const FVector2& LengthUV)
@@ -335,6 +347,23 @@ void FRenderView::UpdateViewConstants(const FCamera& Camera, const FVector2& Len
     };
 
     Renderer.UpdateViewConstants(ViewConstants);
+}
+
+void FRenderView::UpdateFogConstants(const FCamera& Camera, const FVector2& LengthUV, const FVector2& TopLeftUV)
+{
+    FFogData FogConstants{};
+
+    FMatrix VP = Camera.GetViewMatrix() * Camera.GetProjectionMatrix();
+    VP = VP.ToD3DMatrix();
+    VP.Inverse(FogConstants.InverseVP);
+    
+    // FogConstants.Density 
+    // FogConstants.StartDistance
+    // FogConstants.CutoffDistance
+    // FogConstants.MaxOpacity
+    // FogConstants.InscatteringColor
+
+    Renderer.UpdateFogConstants(FogConstants);
 }
 
 void FRenderView::DrawGrid(const FCamera& Camera, FGrid& Grid)
@@ -467,6 +496,7 @@ void FRenderView::RenderScreenPass(const FCamera& Camera, const AActor* Selected
 {
     DrawStencilMask(Camera, SelectedActor);
     Renderer.RenderScreenPass(TopLeftUV, LengthUV);
+    UpdateFogConstants(Camera, TopLeftUV, LengthUV);
 }
 
 void FRenderView::RenderDepthPass(const FVector2& TopLeftUV, const FVector2& LengthUV) {
@@ -722,10 +752,10 @@ void FRenderView::UpdateLight(const FScene& Scene)
 
     for (ULightComponent* Light : Scene.GetLightComponents())
     {
-        Light->BuildConstants(Constants);
+    //    Light->BuildConstants(Constants);
     }
 
-    Renderer.UpdateLightConstants(Constants, EViewModeIndex::VMI_Lit);
+    //Renderer.UpdateLightConstants(Constants, EViewModeIndex::VMI_Lit);
 }
 
 

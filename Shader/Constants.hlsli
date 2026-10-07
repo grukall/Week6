@@ -50,3 +50,15 @@ cbuffer MaterialConstants : register(b5)
     float Shininess;
     float3 specAlbedo;
 }
+
+cbuffer FogConstants : register(b6)
+{
+    row_major float4x4 InverseVP;
+    float Density = 0.5f; // h = z0 일때의 농도
+    float FogHeightFalloff; // 높이에 따른 농도 감소 속도
+    float StartDistance;
+    float CutoffDistance;
+    float MaxOpacity;
+    float3 FogPadding;
+    float4 InscatteringColor;
+}

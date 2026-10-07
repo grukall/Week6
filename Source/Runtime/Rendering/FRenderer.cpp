@@ -1053,6 +1053,19 @@ bool FRenderer::InitializeConstantBuffers() {
       return false;
   }
 
+  D3D11_BUFFER_DESC FogConstantBufferDesc = {
+      .ByteWidth = sizeof(FFogData),
+      .Usage = D3D11_USAGE_DEFAULT,
+      .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+  };
+
+  Result =
+      Device->CreateBuffer(&FogConstantBufferDesc, nullptr, &FogConstantBuffer);
+
+  if (FAILED(Result)) {
+      return false;
+  }
+
   for (int32 i = 0; i < NumFrameResourceCount; i++)
   {
 	  D3D11_BUFFER_DESC FrameResourceConstantBufferDesc = {
@@ -1131,6 +1144,11 @@ void FRenderer::UpdateViewConstants(const FViewConstants &Constants) {
 void FRenderer::UpdateMaterialConstants(const FMaterialConstants& Constants) {
     Context->UpdateSubresource(MaterialConstantBuffer.Get(), 0, nullptr, &Constants, 0, 0);
     Context->PSSetConstantBuffers(5, 1, MaterialConstantBuffer.GetAddressOf());
+}
+
+void FRenderer::UpdateFogConstants(const FFogData& Constants) {
+    Context->UpdateSubresource(FogConstantBuffer.Get(), 0, nullptr, &Constants, 0, 0);
+    Context->PSSetConstantBuffers(6, 1, FogConstantBuffer.GetAddressOf());
 }
 
 void FRenderer::Draw(const FDrawCommand &Command, uint32 Slot,

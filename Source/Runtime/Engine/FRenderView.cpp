@@ -736,15 +736,20 @@ void FRenderView::RunOcclusionOracle()
 // Lights Update
 void FRenderView::UpdateLight(const FScene& Scene, const FVector2& TopLeftUV, const FVector2& LengthUV)
 {
+    FLightConstants AmbientConstants{};
+    AmbientConstants.AmbientLight = { 0.2f, 0.2f, 0.2f };
+    Renderer.UpdateLightConstants(AmbientConstants, EViewModeIndex::VMI_Lit);
+    Renderer.RenderDeferredLightingPass(TopLeftUV, LengthUV);
+
     for (ULightComponent* Light : Scene.GetLightComponents())
     {
-        FLightConstants Constants{}; 
-        Constants.AmbientLight = { 0.0f, 0.0f, 0.0f };
-
         if (!Light)
         {
             continue;
         }
+
+        FLightConstants Constants{};
+        Constants.AmbientLight = { 0.2f, 0.2f, 0.2f };
 
         Light->BuildConstants(Constants);
         Renderer.UpdateLightConstants(Constants, EViewModeIndex::VMI_Lit);

@@ -60,8 +60,10 @@ float4 MainPS(PS_INPUT Input) : SV_Target0
                         NumDirLights, NumPointLights, NumSpotLights,
                         Mat, PosW, NormalW, ToEye);
     
+    float3 Ambient = Mat.DiffAlbedo * AmbientLight;
+    
     // return float4(이번 광원의 조명값, 1.0f);
-    return float4(FinalColor, 1.0f);
+    return float4(Ambient + FinalColor, 1.0f);
     
     //return float4(Depth.xxx, 1.0f); // 우선 GBuffer 확인용
 

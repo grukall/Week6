@@ -90,10 +90,12 @@ void FRenderer::BeginFrame() {
   Context->RSSetViewports(1, &Viewport);
   BindEditorViewportRenderTargets();
 
-  constexpr float BackGroundColor[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+  /*constexpr float BackGroundColor[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+  Context->ClearRenderTargetView(BackBufferRTV.Get(), BackGroundColor);*/
+
   constexpr float ClearColor[] = {0.0f, 0.0f, 0.0f, 1.0f};
   constexpr float Zero[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-  //constexpr float ClearColor[] = {0.05f, 0.05f, 0.08f, 1.0f};
+  
   Context->ClearRenderTargetView(EditorViewPortRTV.Get(), ClearColor);
   Context->ClearRenderTargetView(GBufferARTV.Get(), Zero);
   Context->ClearRenderTargetView(GBufferBRTV.Get(), Zero);
@@ -1653,7 +1655,7 @@ void FRenderer::RenderScreenPass(const FVector2& TopLeftUV, const FVector2& Leng
     UINT Zero = 0;
     Context->IASetVertexBuffers(0, 1, &NullVB, &Zero, &Zero);
 
-    Context->OMSetRenderTargets(1, SceneColorRTV.GetAddressOf(), DepthStencilView.Get());
+    Context->OMSetRenderTargets(1, SceneColorRTV.GetAddressOf(), nullptr); //DepthStencilView.Get());
 
     // 텍스처 바인딩
     ID3D11ShaderResourceView* SRVs[] = { EditorViewPortSRV.Get(),
@@ -1670,6 +1672,10 @@ void FRenderer::RenderScreenPass(const FVector2& TopLeftUV, const FVector2& Leng
     // 슬롯 해제
     ID3D11ShaderResourceView* NullSRV[2] = {nullptr, nullptr};
     Context->PSSetShaderResources(6, 2, NullSRV);
+
+    Context->OMSetRenderTargets(
+        1, SceneColorRTV.GetAddressOf(), DepthStencilView.Get()
+    );
 }
 
 void FRenderer::RenderDepthPass(const FVector2& TopLeftUV, const FVector2& LengthUV)

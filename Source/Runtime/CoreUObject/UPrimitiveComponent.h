@@ -41,6 +41,9 @@ public:
     int32 GetBVHIndex() const { return BVHIndex; }
     void SetBVHIndex(int32 i) { BVHIndex = i; }
 
+    bool IsHiddenInGame() const { return bHiddenInGame; }
+    void SetHiddenInGame(bool value) { bHiddenInGame = value; }
+
     void MarkBoundDirty();
     int32 GetSceneIndex() const { return SceneIndex; }
     void SetSceneIndex(int32 pIndex) { SceneIndex = pIndex; }
@@ -83,6 +86,7 @@ protected:
 private:
     int32 SceneIndex = -1;
     bool bBoundDirtyQueued = false;
+    bool bHiddenInGame = false;
 
     TArray<FMaterial> CachedMaterials;
 };

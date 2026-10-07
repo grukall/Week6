@@ -322,48 +322,40 @@ void AActor::SetRootComponent(UActorComponent* Component)
 {
 	if (RootComponent)
 	{
-		throw EngineUtil::CreateError("이미 Root 컴포넌트가 있습니다.");
-	}
-
-	OwnedComponents.push_back(Component);
-	Component->SetActorOwner(this);
-	RegisterComponentName(Component);
-	Component->Initialize();
-	USceneComponent* SceneComponent = Component->Cast<USceneComponent>();
-
-	if (RegisteredWorld)
-	{
-		Component->Register(RegisteredWorld);
-	}
-
-	if (bHasBegunPlay)
-	{
-		Component->BeginPlay();
-	}
-
-	if (!SceneComponent)
-	{
+		UE_LOG_WARN("이미 Root 컴포넌트가 있습니다.");
 		return;
 	}
 
-	RootComponent = SceneComponent;
-
-	RootComponent->SetupAttachment(nullptr);
-	AttachedComp.push_back(RootComponent);
-
-
+	AddComponent(Component);
 }
 
 void AActor::MarkComponentsTransformDirty()
 {
 	for (USceneComponent* Component : AttachedComp)
 	{
-		if (Component)
+		if (!Component)
 		{
-			Component->OnTransformChanged();
-			for (USceneComponent* Child : Component->GetChildren())
+			continue;
+		}
+
+		Component->OnTransformChanged();
+
+		// 같은 액터의 자식은 AttachedComp에 있으므로, 여기서는 붙어 있는 다른 액터로만 내려간다.
+		for (USceneComponent* Child : Component->GetChildren())
+		{
+			if (!Child || Child->GetSceneOwner() != Component)
+			{
+				continue;
+			}
+
+			AActor* ChildActor = Child->GetActorOwner();
+			if (ChildActor == nullptr)
 			{
 				Child->OnTransformChanged();
+			}
+			else if (ChildActor != this)
+			{
+				ChildActor->MarkComponentsTransformDirty();
 			}
 		}
 	}
@@ -460,16 +452,9 @@ void AActor::AddComponent(UActorComponent* Addcomp)
 			CastSceneComponent->SetupAttachment(RootComponent);
 		}
 
-		if (CastSceneComponent->GetActorOwner() != this)
-		{
-			CastSceneComponent->SetActorOwner(this);
-		}
-
-
 		AttachedComp.push_back(CastSceneComponent);
 	}
 
-	//Addcomp->ActorOwner = this;
 	OwnedComponents.push_back(Addcomp);
 	RegisterComponentName(Addcomp);
 	Addcomp->Initialize();

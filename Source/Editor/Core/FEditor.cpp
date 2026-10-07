@@ -502,3 +502,4 @@ void FEditor::SetViewLayout(FEditorState::SplitViewMode mode) {
 
     }
 }
+

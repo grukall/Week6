@@ -1,7 +1,11 @@
 #include "FImguiPropertyWindow.h"
 #include "Runtime/CoreUObject/USceneComponent.h"
 #include "Runtime/CoreUObject/UPrimitiveComponent.h"
+#include "Runtime/CoreUObject/UDirectionLightComponent.h"
+#include "Runtime/CoreUObject/UPointLightComponent.h"
 #include "Runtime/CoreUObject/USpotLightComponent.h"
+#include "Runtime/CoreUObject/UProjectileMovementComponent.h"
+#include "Runtime/CoreUObject/URotationMovementComponent.h"
 #include "Runtime/CoreUObject/UTextInstanceComponent.h"
 #include "Runtime/CoreUObject/UBillBoardComp.h"
 #include "Runtime/CoreUObject/UAnimatedBillboardComp.h"
@@ -72,7 +76,7 @@ void FImguiPropertyWindow::Process(FEditor& Editor)
 		ImGui::Separator();
 
 		ShowComponentSections(Editor, *SelectedActor);
-		ShowActorComponentSections(*SelectedActor);
+		//ShowActorComponentSections(*SelectedActor);
 	}
 	else
 	{
@@ -259,7 +263,7 @@ void FImguiPropertyWindow::ShowComponentSections(FEditor& Editor, AActor& Actor)
 {
 	USceneComponent* RootComp = Actor.GetRootComponent();
 
-	for (USceneComponent* Comp : Actor.GetAttachedComponents())
+	for (UActorComponent* Comp : Actor.GetOwnedComponents())
 	{
 		if (!Comp)
 		{
@@ -291,7 +295,7 @@ void FImguiPropertyWindow::ShowActorComponentSections(AActor& Actor)
 {
 	for (UActorComponent* Comp : Actor.GetOwnedComponents())
 	{
-		if (!Comp || Comp->IsA<USceneComponent>())
+		if (!Comp || Comp->IsA<UActorComponent>())
 		{
 			continue;
 		}
@@ -312,10 +316,12 @@ void FImguiPropertyWindow::ShowActorComponentSections(AActor& Actor)
 }
 
 void FImguiPropertyWindow::ShowComponentDetails(FEditor& Editor, AActor& Actor,
-	USceneComponent& Comp, bool bIsRoot)
+	UActorComponent& Comp, bool bIsRoot)
 {
-	ShowTransform(Editor, Comp, bIsRoot);
-
+	if (Comp.IsA<USceneComponent>())
+	{
+		ShowTransform(Editor, static_cast<USceneComponent&>(Comp), bIsRoot);
+	}
 	if (Comp.IsA<UTextInstanceComponent>())
 	{
 		ShowTextSettings(static_cast<UTextInstanceComponent&>(Comp));
@@ -330,15 +336,35 @@ void FImguiPropertyWindow::ShowComponentDetails(FEditor& Editor, AActor& Actor,
 	{
 		ShowBillboardSettings(static_cast<UBillBoardComp&>(Comp));
 	}
-	/*else if (Comp.IsA<USpotLightComponent>())
+	else if (Comp.IsA<UDirectionLightComponent>())
+	{
+		ShowDirectionLightSettings(static_cast<UDirectionLightComponent&>(Comp));
+	}
+	else if (Comp.IsA<UPointLightComponent>())
+	{
+		ShowPointLightSettings(static_cast<UPointLightComponent&>(Comp));
+	}
+	else if (Comp.IsA<USpotLightComponent>())
 	{
 		ShowSpotLightSettings(static_cast<USpotLightComponent&>(Comp));
-	}*/
+	}
+
+	else if (Comp.IsA<UProjectileMovementComponent>())
+	{
+		ShowProjectileMovementSettings(static_cast<UProjectileMovementComponent&>(Comp));
+	}
+
+	else if (Comp.IsA<URotationMovementComponent>())
+	{
+		ShowRotationMovementSettings(static_cast<URotationMovementComponent&>(Comp));
+	}
 
 	else if (Comp.IsA<UStaticMeshComponent>())
 	{
 		ShowStaticMeshSettings(Actor, static_cast<UStaticMeshComponent&>(Comp), bIsRoot);
 	}
+
+	
 }
 
 void FImguiPropertyWindow::ShowTransform(FEditor& Editor, USceneComponent& Comp, bool bIsRoot) const
@@ -524,12 +550,12 @@ void FImguiPropertyWindow::ShowAnimatedBillboardSettings(UAnimatedBillboardComp&
 	if (ImGui::Button("Stop")) { BillboardComp.Stop(); }
 }
 
-void FImguiPropertyWindow::ShowSpotLightSettings(USpotLightComponent& LightComp) const
+void FImguiPropertyWindow::ShowDirectionLightSettings(UDirectionLightComponent& LightComp) const
 {
 	ImGui::Separator();
-	ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.3f, 1.0f), "Spot Light Settings");
+	ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.3f, 1.0f), "Direction Light Settings");
 
-	/*FVector LightCol = LightComp.GetLightColor();
+	FVector LightCol = LightComp.GetLightColor();
 	if (ImGui::ColorEdit3("Light Color", &LightCol.X))
 	{
 		LightComp.SetLightColor(LightCol);
@@ -541,17 +567,121 @@ void FImguiPropertyWindow::ShowSpotLightSettings(USpotLightComponent& LightComp)
 		LightComp.SetIntensity(LightIntensity);
 	}
 
-	float SpotAngle = LightComp.GetSpotAngle();
-	if (ImGui::SliderFloat("Spot Angle", &SpotAngle, 1.0f, 89.0f))
+	FVector Direction = LightComp.GetLightDirection();
+	if (ImGui::DragFloat3("Light Direction", &Direction.X, 1.0f, 89.0f))
 	{
-		LightComp.SetSpotAngle(SpotAngle);
+		Direction.Normalize();
+		LightComp.SetLightDirection(Direction);
+	}
+}
+
+void FImguiPropertyWindow::ShowPointLightSettings(UPointLightComponent& LightComp) const
+{
+	ImGui::Separator();
+	ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.3f, 1.0f), "Point Light Settings");
+
+	FVector LightCol = LightComp.GetLightColor();
+	if (ImGui::ColorEdit3("Light Color", &LightCol.X))
+	{
+		LightComp.SetLightColor(LightCol);
 	}
 
-	float LightRange = LightComp.GetRange();
-	if (ImGui::DragFloat("Range", &LightRange, 0.1f, 0.1f, 100.0f))
+	float LightIntensity = LightComp.GetIntensity();
+	if (ImGui::DragFloat("Intensity", &LightIntensity, 0.05f, 0.0f, 50.0f))
 	{
-		LightComp.SetRange(LightRange);
-	}*/
+		LightComp.SetIntensity(LightIntensity);
+	}
+
+	float FallOffStart = LightComp.GetFallOffStart();
+	if (ImGui::DragFloat("FallOffStart", &FallOffStart, 0.05f, 0.0f, 50.0f))
+	{
+		LightComp.SetFallOffStart(FallOffStart);
+	}
+
+	float FallOffEnd = LightComp.GetFallOffEnd();
+	if (ImGui::DragFloat("FallOffEnd", &FallOffEnd, 0.05f, 0.0f, 50.0f))
+	{
+		LightComp.SetFallOffEnd(FallOffEnd);
+	}
+}
+
+void FImguiPropertyWindow::ShowSpotLightSettings(USpotLightComponent& LightComp) const
+{
+	ImGui::Separator();
+	ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.3f, 1.0f), "Spot Light Settings");
+
+	FVector LightCol = LightComp.GetLightColor();
+	if (ImGui::ColorEdit3("Light Color", &LightCol.X))
+	{
+		LightComp.SetLightColor(LightCol);
+	}
+
+	float LightIntensity = LightComp.GetIntensity();
+	if (ImGui::DragFloat("Intensity", &LightIntensity, 0.05f, 0.0f, 50.0f))
+	{
+		LightComp.SetIntensity(LightIntensity);
+	}
+
+	float FallOffStart = LightComp.GetFallOffStart();
+	if (ImGui::DragFloat("FallOffStart", &FallOffStart, 0.05f, 0.0f, 50.0f))
+	{
+		LightComp.SetFallOffStart(FallOffStart);
+	}
+
+	float FallOffEnd = LightComp.GetFallOffEnd();
+	if (ImGui::DragFloat("FallOffEnd", &FallOffEnd, 0.05f, 0.0f, 50.0f))
+	{
+		LightComp.SetFallOffEnd(FallOffEnd);
+	}
+
+	FVector Direction = LightComp.GetLightDirection();
+	if (ImGui::DragFloat3("Light Direction", &Direction.X, 1.0f, 89.0f))
+	{
+		Direction.Normalize();
+		LightComp.SetLightDirection(Direction);
+	}
+
+	float SpotPower = LightComp.GetSpotPower();
+	if (ImGui::DragFloat("SpotPower", &SpotPower, 0.05f, 0.0f, 50.0f))
+	{
+		LightComp.SetSpotPower(SpotPower);
+	}
+}
+
+void FImguiPropertyWindow::ShowProjectileMovementSettings(UProjectileMovementComponent& MovComp) const
+{
+	FVector Velocity = MovComp.GetVelocity();
+	if (ImGui::DragFloat3("Velocity", &Velocity.X, 1.0f, 89.0f))
+	{
+		MovComp.SetVelocity(Velocity);
+	}
+
+	float Gravity = MovComp.ProjectileGravityScale;
+	if (ImGui::DragFloat("Gravity", &Gravity, 0.05f, 0.0f, 50.0f))
+	{
+		MovComp.ProjectileGravityScale = Gravity;
+	}
+
+	bool bIsHoming = MovComp.bIsHomingProjectile;
+	if (ImGui::Checkbox("IsHoming", &bIsHoming))
+	{
+		MovComp.bIsHomingProjectile = bIsHoming;
+	}
+
+	float Hommer = MovComp.HomingAccelerationMagnitude;
+	if (ImGui::DragFloat("Acceleration", &Hommer, 0.05f, 0.0f, 50.0f))
+	{
+		MovComp.HomingAccelerationMagnitude = Hommer;
+	}
+}
+
+void FImguiPropertyWindow::ShowRotationMovementSettings(URotationMovementComponent& MovComp) const
+{
+	FVector RotationRate = MovComp.GetRotationRate();
+	if (ImGui::DragFloat3("Rotation Rate", &RotationRate.X, 1.0f, 89.0f))
+	{
+		MovComp.SetRotationRate(RotationRate);
+	}
 }
 
 void FImguiPropertyWindow::ShowStaticMeshSettings(AActor& Actor, UStaticMeshComponent& MeshComp, bool bIsRoot) const

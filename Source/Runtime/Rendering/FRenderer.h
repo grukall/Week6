@@ -101,6 +101,8 @@ public:
 
   void DrawUploadedCommand(const FDrawCommand& Command, bool bApplyViewMode = true);
 
+  void RenderGBufferPass();
+
   void RenderScreenPass(const FVector2& TopLeftUV, const FVector2& LengthUV);
   void RenderDepthPass(const FVector2& TopLeftUV, const FVector2& LengthUV);
   void RenderOutline(const FVector2& TopLeftUV, const FVector2& LengthUV);

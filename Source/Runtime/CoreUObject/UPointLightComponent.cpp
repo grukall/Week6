@@ -7,8 +7,8 @@ void UPointLightComponent::BuildConstants(FLightConstants& Constants)
 {
 	int32 NumLight = Constants.NumPointLights++;
 	PointLight Light;
-	Light.Intensity = GetInensity();
-	Light.AmbientIntensity = GetAmbientInensity();
+	Light.Intensity = GetIntensity();
+	Light.AmbientIntensity = GetAmbientIntensity();
 	Light.LightColor = GetLightColor();
 	Light.Position = GetGlobalTransform().GetLocation();
 	Light.FallOffStart = GetFallOffStart();

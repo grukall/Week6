@@ -7,8 +7,8 @@ void USpotLightComponent::BuildConstants(FLightConstants& Constants)
 {
 	int32 NumLight = Constants.NumSpotLights++;
 	SpotLight Light;
-	Light.Intensity = GetIntensity();
-	Light.AmbientIntensity = GetAmbientIntensity();
+	Light.Intensity = GetInensity();
+	Light.AmbientIntensity = GetAmbientInensity();
 	Light.LightColor = GetLightColor();
 	Light.Position = GetGlobalTransform().GetLocation();
 	Light.LightDirection = GetLightDirection();

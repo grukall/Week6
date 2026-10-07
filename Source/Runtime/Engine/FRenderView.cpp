@@ -499,19 +499,6 @@ void FRenderView::RenderSphere(const FVector &Center, float Radius,
   LineBatcher.DrawSphere(Center, Radius, Color, Segments);
 }
 
-void FRenderView::RenderGBufferPass(const FCamera& Camera, const AActor* SelectedActor,
-    const FVector2& TopLeftUV, const FVector2& LengthUV)
-{
-    Renderer.RenderDeferredLightingPass(TopLeftUV, LengthUV);
-    Renderer.DrawPrimitiveBatch(RenderQueue.GetPrimRenderQ());
-}
-
-void FRenderView::RenderDifferedLightingPass(const FCamera& Camera, const AActor* SelectedActor,
-    const FVector2& TopLeftUV, const FVector2& LengthUV)
-{
-    Renderer.RenderDeferredLightingPass(TopLeftUV, LengthUV);
-}
-
 void FRenderView::RenderScreenPass(const FCamera& Camera, const AActor* SelectedActor, 
                                     const FVector2& TopLeftUV, const FVector2& LengthUV)
 {

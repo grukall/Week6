@@ -1,8 +1,6 @@
 #include "FImguiPropertyWindow.h"
 #include "Runtime/CoreUObject/USceneComponent.h"
 #include "Runtime/CoreUObject/UPrimitiveComponent.h"
-#include "Runtime/CoreUObject/UDirectionLightComponent.h"
-#include "Runtime/CoreUObject/UPointLightComponent.h"
 #include "Runtime/CoreUObject/USpotLightComponent.h"
 #include "Runtime/CoreUObject/UExponentialHeightFogComponent.h"
 #include "Runtime/CoreUObject/UProjectileMovementComponent.h"
@@ -78,7 +76,7 @@ void FImguiPropertyWindow::Process(FEditor& Editor)
 		ImGui::Separator();
 
 		ShowComponentSections(Editor, *SelectedActor);
-		//ShowActorComponentSections(*SelectedActor);
+		ShowActorComponentSections(*SelectedActor);
 	}
 	else
 	{
@@ -274,7 +272,7 @@ void FImguiPropertyWindow::ShowComponentSections(FEditor& Editor, AActor& Actor)
 {
 	USceneComponent* RootComp = Actor.GetRootComponent();
 
-	for (UActorComponent* Comp : Actor.GetOwnedComponents())
+	for (USceneComponent* Comp : Actor.GetAttachedComponents())
 	{
 		if (!Comp)
 		{
@@ -306,7 +304,7 @@ void FImguiPropertyWindow::ShowActorComponentSections(AActor& Actor)
 {
 	for (UActorComponent* Comp : Actor.GetOwnedComponents())
 	{
-		if (!Comp || Comp->IsA<UActorComponent>())
+		if (!Comp || Comp->IsA<USceneComponent>())
 		{
 			continue;
 		}
@@ -327,12 +325,10 @@ void FImguiPropertyWindow::ShowActorComponentSections(AActor& Actor)
 }
 
 void FImguiPropertyWindow::ShowComponentDetails(FEditor& Editor, AActor& Actor,
-	UActorComponent& Comp, bool bIsRoot)
+	USceneComponent& Comp, bool bIsRoot)
 {
-	if (Comp.IsA<USceneComponent>())
-	{
-		ShowTransform(Editor, static_cast<USceneComponent&>(Comp), bIsRoot);
-	}
+	ShowTransform(Editor, Comp, bIsRoot);
+
 	if (Comp.IsA<UTextInstanceComponent>())
 	{
 		ShowTextSettings(static_cast<UTextInstanceComponent&>(Comp));
@@ -346,14 +342,6 @@ void FImguiPropertyWindow::ShowComponentDetails(FEditor& Editor, AActor& Actor,
 	else if (Comp.IsA<UBillBoardComp>())
 	{
 		ShowBillboardSettings(static_cast<UBillBoardComp&>(Comp));
-	}
-	else if (Comp.IsA<UDirectionLightComponent>())
-	{
-		ShowDirectionLightSettings(static_cast<UDirectionLightComponent&>(Comp));
-	}
-	else if (Comp.IsA<UPointLightComponent>())
-	{
-		ShowPointLightSettings(static_cast<UPointLightComponent&>(Comp));
 	}
 	else if (Comp.IsA<USpotLightComponent>())
 	{
@@ -379,8 +367,6 @@ void FImguiPropertyWindow::ShowComponentDetails(FEditor& Editor, AActor& Actor,
 	{
 		ShowStaticMeshSettings(Actor, static_cast<UStaticMeshComponent&>(Comp), bIsRoot);
 	}
-
-	
 }
 
 void FImguiPropertyWindow::ShowTransform(FEditor& Editor, USceneComponent& Comp, bool bIsRoot) const
@@ -632,7 +618,7 @@ void FImguiPropertyWindow::ShowSpotLightSettings(USpotLightComponent& LightComp)
 	ImGui::Separator();
 	ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.3f, 1.0f), "Spot Light Settings");
 
-	FVector LightCol = LightComp.GetLightColor();
+	/*FVector LightCol = LightComp.GetLightColor();
 	if (ImGui::ColorEdit3("Light Color", &LightCol.X))
 	{
 		LightComp.SetLightColor(LightCol);
@@ -644,14 +630,14 @@ void FImguiPropertyWindow::ShowSpotLightSettings(USpotLightComponent& LightComp)
 		LightComp.SetIntensity(LightIntensity);
 	}
 
-	float FallOffStart = LightComp.GetFallOffStart();
-	if (ImGui::DragFloat("FallOffStart", &FallOffStart, 0.05f, 0.0f, 50.0f))
+	float SpotAngle = LightComp.GetSpotAngle();
+	if (ImGui::SliderFloat("Spot Angle", &SpotAngle, 1.0f, 89.0f))
 	{
-		LightComp.SetFallOffStart(FallOffStart);
+		LightComp.SetSpotAngle(SpotAngle);
 	}
 
-	float FallOffEnd = LightComp.GetFallOffEnd();
-	if (ImGui::DragFloat("FallOffEnd", &FallOffEnd, 0.05f, 0.0f, 50.0f))
+	float LightRange = LightComp.GetRange();
+	if (ImGui::DragFloat("Range", &LightRange, 0.1f, 0.1f, 100.0f))
 	{
 		LightComp.SetFallOffEnd(FallOffEnd);
 	}

@@ -4,8 +4,6 @@
 class AActor;
 class USceneComponent;
 class UStaticMeshComponent;
-class UDirectionLightComponent;
-class UPointLightComponent;
 class USpotLightComponent;
 class UExponentialHeightFogComponent;
 class UProjectileMovementComponent;
@@ -46,7 +44,7 @@ private:
 
 	// 컴포넌트마다 접이식 헤더를 만들고 그 안에 상세 속성을 그린다.
 	void ShowComponentSections(FEditor& Editor, AActor& Actor);
-	void ShowComponentDetails(FEditor& Editor, AActor& Actor, UActorComponent& Comp, bool bIsRoot);
+	void ShowComponentDetails(FEditor& Editor, AActor& Actor, USceneComponent& Comp, bool bIsRoot);
 
 	// 루트는 에디터 기즈모와 동기화되고, 서브는 상대 트랜스폼을 편집한다.
 	void ShowTransform(FEditor& Editor, USceneComponent& Comp, bool bIsRoot) const;
@@ -55,14 +53,12 @@ private:
 	void ShowTextSettings(UTextInstanceComponent& TextComp) const;
 	void ShowBillboardSettings(UBillBoardComp& BillboardComp) const;
 	void ShowAnimatedBillboardSettings(UAnimatedBillboardComp& BillboardComp) const;
-	void ShowStaticMeshSettings(AActor& Actor, UStaticMeshComponent& MeshComp, bool bIsRoot) const;
-	void ShowDirectionLightSettings(UDirectionLightComponent& LightComp) const;
-	void ShowPointLightSettings(UPointLightComponent& LightComp) const;
 	void ShowSpotLightSettings(USpotLightComponent& LightComp) const;
 	void ShowFogSettings(UExponentialHeightFogComponent& FogComp) const;
 	void ShowProjectileMovementSettings(UProjectileMovementComponent& MovComp) const;
 	void ShowRotationMovementSettings(URotationMovementComponent& MovComp) const;
 
+	void ShowStaticMeshSettings(AActor& Actor, UStaticMeshComponent& MeshComp, bool bIsRoot) const;
 
 	// 머티리얼의 텍스처 미리보기 겸 드롭 타깃.
 	void ShowMaterialSlot(UStaticMeshComponent& MeshComp, int Slot = 0) const;

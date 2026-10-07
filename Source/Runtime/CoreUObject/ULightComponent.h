@@ -18,11 +18,11 @@ public:
 
 	virtual void BuildConstants(FLightConstants& Constants);
 
-	void SetIntensity(const float& InIntensity) { Intensity = InIntensity; }
-	float GetIntensity() { return Intensity; }
+	void SetInensity(const float& InIntensity) { Intensity = InIntensity; }
+	float GetInensity() { return Intensity; }
 
-	void SetAmbientIntensity(const float& InAmbientIntensity) { AmbientIntensity = InAmbientIntensity; }
-	float GetAmbientIntensity() { return AmbientIntensity; }
+	void SetAmbientInensity(const float& InAmbientIntensity) { AmbientIntensity = InAmbientIntensity; }
+	float GetAmbientInensity() { return AmbientIntensity; }
 	
 	void SetFallOffStart(const float& FallStart) { FallOffStart= FallStart; }
 	float GetFallOffStart() { return FallOffStart; }
@@ -30,7 +30,7 @@ public:
 	void SetFallOffEnd(const float& FallEnd) { FallOffEnd = FallEnd; }
 	float GetFallOffEnd() { return FallOffEnd; }
 	
-	void SetSpotPower(const float& InSpotPower) { SpotPower = InSpotPower; }
+	void SetSpotPwoer(const float& InSpotPower) { SpotPower = InSpotPower; }
 	float GetSpotPower() { return SpotPower; }
 	
 	void SetLightColor(const FVector& Color) { LightColor = Color; }

@@ -4,6 +4,8 @@
 #include "Runtime/CoreUObject/UDirectionLightComponent.h"
 #include "Runtime/CoreUObject/UPointLightComponent.h"
 #include "Runtime/CoreUObject/USpotLightComponent.h"
+#include "Runtime/CoreUObject/UProjectileMovementComponent.h"
+#include "Runtime/CoreUObject/URotationMovementComponent.h"
 #include "Runtime/CoreUObject/UTextInstanceComponent.h"
 #include "Runtime/CoreUObject/UBillBoardComp.h"
 #include "Runtime/CoreUObject/UAnimatedBillboardComp.h"
@@ -163,10 +165,22 @@ void FImguiPropertyWindow::ShowComponentDetails(FEditor& Editor, AActor& Actor,
 		ShowSpotLightSettings(static_cast<USpotLightComponent&>(Comp));
 	}
 
+	else if (Comp.IsA<UProjectileMovementComponent>())
+	{
+		//ShowProjectileMovementSettings(static_cast<UProjectileMovementComponent&>(Comp));
+	}
+
+	else if (Comp.IsA<URotationMovementComponent>())
+	{
+		//ShowRotationMovementSettings(static_cast<URotationMovementComponent&>(Comp));
+	}
+
 	else if (Comp.IsA<UStaticMeshComponent>())
 	{
 		ShowStaticMeshSettings(Actor, static_cast<UStaticMeshComponent&>(Comp), bIsRoot);
 	}
+
+	
 }
 
 void FImguiPropertyWindow::ShowTransform(FEditor& Editor, USceneComponent& Comp, bool bIsRoot) const
@@ -450,6 +464,41 @@ void FImguiPropertyWindow::ShowSpotLightSettings(USpotLightComponent& LightComp)
 	}
 }
 
+void FImguiPropertyWindow::ShowProjectileMovementSettings(UProjectileMovementComponent& MovComp) const
+{
+	FVector Velocity = MovComp.GetVelocity();
+	if (ImGui::DragFloat3("Velocity", &Velocity.X, 1.0f, 89.0f))
+	{
+		MovComp.SetVelocity(Velocity);
+	}
+
+	float Gravity = MovComp.ProjectileGravityScale;
+	if (ImGui::DragFloat("Gravity", &Gravity, 0.05f, 0.0f, 50.0f))
+	{
+		MovComp.ProjectileGravityScale = Gravity;
+	}
+
+	bool bIsHoming = MovComp.bIsHomingProjectile;
+	if (ImGui::Checkbox("IsHoming", &bIsHoming))
+	{
+		MovComp.bIsHomingProjectile = bIsHoming;
+	}
+
+	float Hommer = MovComp.HomingAccelerationMagnitude;
+	if (ImGui::DragFloat("Acceleration", &Hommer, 0.05f, 0.0f, 50.0f))
+	{
+		MovComp.HomingAccelerationMagnitude = Hommer;
+	}
+}
+
+void FImguiPropertyWindow::ShowRotationMovementSettings(URotationMovementComponent& MovComp) const
+{
+	FVector RotationRate = MovComp.GetRotationRate();
+	if (ImGui::DragFloat3("Rotation Rate", &RotationRate.X, 1.0f, 89.0f))
+	{
+		MovComp.SetRotationRate(RotationRate);
+	}
+}
 
 void FImguiPropertyWindow::ShowStaticMeshSettings(AActor& Actor, UStaticMeshComponent& MeshComp, bool bIsRoot) const
 {

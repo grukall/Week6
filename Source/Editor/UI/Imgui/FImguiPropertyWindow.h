@@ -7,6 +7,8 @@ class UStaticMeshComponent;
 class UDirectionLightComponent;
 class UPointLightComponent;
 class USpotLightComponent;
+class UProjectileMovementComponent;
+class URotationMovementComponent;
 class UTextInstanceComponent;
 class UBillBoardComp;
 class UAnimatedBillboardComp;
@@ -46,6 +48,8 @@ private:
 	void ShowDirectionLightSettings(UDirectionLightComponent& LightComp) const;
 	void ShowPointLightSettings(UPointLightComponent& LightComp) const;
 	void ShowSpotLightSettings(USpotLightComponent& LightComp) const;
+	void ShowProjectileMovementSettings(UProjectileMovementComponent& MovComp) const;
+	void ShowRotationMovementSettings(URotationMovementComponent& MovComp) const;
 
 
 	// 머티리얼의 텍스처 미리보기 겸 드롭 타깃.

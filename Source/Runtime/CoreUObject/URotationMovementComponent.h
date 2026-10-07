@@ -11,7 +11,8 @@ protected:
 	virtual bool MoveUpdatedComponentImpl(const FVector& Delta, const FQuaternion& newRotation, bool bSweep) override;
 	
 public:
-	void SetRptationRate(const FVector& Rate) { RotationRate = Rate; }
+	void SetRotationRate(const FVector& Rate) { RotationRate = Rate; }
+	FVector GetRotationRate() { return RotationRate; }
 
 public:
 	

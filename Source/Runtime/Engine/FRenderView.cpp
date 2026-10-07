@@ -315,19 +315,23 @@ void FRenderView::BeginView(const FSceneView& View)
     Renderer.SetRenderMode(View.ViewMode);
     // Renderer.UpdateLightConstants(View.LightConstants, View.ViewMode);
 
-    // ViewConstants 갱신
+    UpdateViewConstants(View.Camera, View.LengthUV);
+}
+
+void FRenderView::UpdateViewConstants(const FCamera& Camera, const FVector2& LengthUV)
+{
     FViewConstants ViewConstants
     {
-        .Pos = View.Camera.GetPosition(),
-        .View = View.Camera.GetViewMatrix(),
-        .Projection = View.Camera.GetProjectionMatrix(),
+        .Pos = Camera.GetPosition(),
+        .View = Camera.GetViewMatrix(),
+        .Projection = Camera.GetProjectionMatrix(),
         .ViewportSize = FVector2
         {
-            View.LengthUV.X * Renderer.GetWidth(),
-            View.LengthUV.Y * Renderer.GetHeight(),
+            LengthUV.X * Renderer.GetWidth(),
+            LengthUV.Y * Renderer.GetHeight(),
         },
-        .Near = View.Camera.GetNearPlane(),
-        .Far = View.Camera.GetFarPlane(),
+        .Near = Camera.GetNearPlane(),
+        .Far = Camera.GetFarPlane(),
     };
 
     Renderer.UpdateViewConstants(ViewConstants);
@@ -391,6 +395,8 @@ void FRenderView::RenderOverlayPass(const FCamera& Camera, const FSceneView& Sce
 {
     // 뷰포트 영역 재설정
     Renderer.SetViewportUV(SceneView.TopLeftUV, SceneView.LengthUV);
+    // 오버레이는 뷰포트 루프가 끝난 뒤 그리므로, 마지막 뷰포트의 카메라가 남아 있지 않게 다시 설정한다.
+    UpdateViewConstants(Camera, SceneView.LengthUV);
 
     //// 기즈모 렌더링
     //Renderer.ClearDepth();
@@ -414,6 +420,7 @@ void FRenderView::RenderGizmo(const FTransform &Transform,
                               const FCamera &Camera, FVector2 TopLeftUV,
                               FVector2 LengthUV, const FGizmo &Gizmo) {
   Renderer.SetViewportUV(TopLeftUV, LengthUV);
+  UpdateViewConstants(Camera, LengthUV);
   Renderer.ClearDepth();
   Gizmo.Draw(Renderer, Transform, Camera);
 }

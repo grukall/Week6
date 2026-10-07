@@ -12,6 +12,7 @@ void UAnimatedBillboardComp::Initialize()
   Super::Initialize();
   bTickEnabled = true;
   bTickInEditor = true;
+  SetHiddenInGame(false);
 }
 
 void UAnimatedBillboardComp::SetSpriteSheet(int InGridX, int InGridY,

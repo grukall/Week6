@@ -122,6 +122,20 @@ void UPrimitiveComponent::Unregister()
     Super::Unregister();
 }
 
+void UPrimitiveComponent::Serialize(FArchive& Archive) const
+{
+    Super::Serialize(Archive);
+
+    Archive.SetBool("bHiddenInGame", bHiddenInGame);
+}
+
+void UPrimitiveComponent::Deserialize(const FArchive& Archive)
+{
+    Super::Deserialize(Archive);
+
+    bHiddenInGame = Archive.GetBool("bHiddenInGame");
+}
+
 void UPrimitiveComponent::UpdateMaterialCache()
 {
 	CachedMaterials.clear();

@@ -150,7 +150,16 @@ void FImguiPropertyWindow::ShowComponentTreeNode(FEditor& Editor, AActor& Actor,
 
 	if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
 	{
-		Editor.SelectComponent(&Comp);
+		PressedComponent = &Comp;
+	}
+
+	if (PressedComponent == &Comp && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+	{
+		if (ImGui::IsItemHovered() && !ImGui::IsDragDropActive())
+		{
+			Editor.SelectComponent(&Comp);
+		}
+		PressedComponent = nullptr;
 	}
 
 	if (!bIsRoot && ImGui::BeginDragDropSource())
@@ -499,6 +508,12 @@ void FImguiPropertyWindow::ShowBillboardSettings(UBillBoardComp& BillboardComp) 
 	{
 		BillboardComp.SetUVOffset(UVOffset);
 	}
+
+	bool bIsHiddenInGame = BillboardComp.IsHiddenInGame();
+	if (ImGui::Checkbox("IsHiddenInGame", &bIsHiddenInGame))
+	{
+		BillboardComp.SetHiddenInGame(bIsHiddenInGame);
+	}
 }
 
 void FImguiPropertyWindow::ShowAnimatedBillboardSettings(UAnimatedBillboardComp& BillboardComp) const
@@ -672,6 +687,34 @@ void FImguiPropertyWindow::ShowProjectileMovementSettings(UProjectileMovementCom
 	if (ImGui::DragFloat("Acceleration", &Hommer, 0.05f, 0.0f, 50.0f))
 	{
 		MovComp.HomingAccelerationMagnitude = Hommer;
+	}
+
+	ImGui::TextDisabled("Homing Target");
+	const USceneComponent* CurrentTarget = MovComp.HomingTargetComponent;
+	const FString TargetLabel = CurrentTarget ? CurrentTarget->GetName().ToString() : "None";
+	ImGui::Button(TargetLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f));
+
+	if (ImGui::BeginDragDropTarget())
+	{
+		USceneComponent* NewTarget = nullptr;
+
+		if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload(OutlinerDragPayloadType))
+		{
+			const auto* Dropped = static_cast<const FOutlinerDragPayload*>(Payload->Data);
+			// 아웃라이너의 액터 행은 Component가 비어 있으므로 루트 컴포넌트로 대신한다.
+			NewTarget = Dropped->Component ? Dropped->Component
+				: (Dropped->Actor ? Dropped->Actor->GetRootComponent() : nullptr);
+		}
+		else if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload(ComponentDragPayloadType))
+		{
+			NewTarget = *static_cast<USceneComponent* const*>(Payload->Data);
+		}
+
+		if (NewTarget && NewTarget != MovComp.UpdatedComponent)
+		{
+			MovComp.HomingTargetComponent = NewTarget;
+		}
+		ImGui::EndDragDropTarget();
 	}
 }
 

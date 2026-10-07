@@ -9,6 +9,7 @@
 #include <Runtime/Engine/UWorld.h>
 #include <Runtime/Core/TArray.h>
 #include <Editor/Core/EditorConstant.h>
+#include <ThirdParty/Imgui/imgui_internal.h>
 
 namespace
 {
@@ -273,7 +274,16 @@ void FImguiWorldOutliner::ShowActorNode_Cached(FEditor& Editor, const FOutlinerI
 
 	if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
 	{
-		Editor.SelectActor(Item.Actor);
+		PressedActor = Item.Actor;
+	}
+
+	if (PressedActor == Item.Actor && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+	{
+		if (ImGui::IsItemHovered() && !ImGui::IsDragDropActive())
+		{
+			Editor.SelectActor(Item.Actor);
+		}
+		PressedActor = nullptr;
 	}
 
 	if (Item.bHasChildren)

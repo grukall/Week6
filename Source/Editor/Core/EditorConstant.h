@@ -21,6 +21,12 @@
 #include "Runtime/CoreUObject/UTextInstanceComponent.h"
 #include "Runtime/CoreUObject/UAnimatedBillboardComp.h"
 #include "Runtime/CoreUObject/UBillBoardComp.h"
+#include "Runtime/CoreUObject/UDirectionLightComponent.h"
+#include "Runtime/CoreUObject/UFireBallComponent.h"
+#include "Runtime/CoreUObject/UMovementComponent.h"
+#include "Runtime/CoreUObject/UPointLightComponent.h"
+#include "Runtime/CoreUObject/UProjectileMovementComponent.h"
+#include "Runtime/CoreUObject/URotationMovementComponent.h"
 
 
 namespace EditorConstant
@@ -53,6 +59,12 @@ namespace EditorConstant
 	   UTextInstanceComponent::StaticClass(),
 	   UAnimatedBillboardComp::StaticClass(),
 	   UBillBoardComp::StaticClass(),
+	   UDirectionLightComponent::StaticClass(),
+	   //UFireBallComponent::StaticClass(),
+	   UMovementComponent::StaticClass(),
+	   UPointLightComponent::StaticClass(),
+	   UProjectileMovementComponent::StaticClass(),
+	   URotationMovementComponent::StaticClass(),
 	};
 
 }

@@ -100,11 +100,19 @@ inline static void RefitActorInBVH(FSceneBVH& BVH, AActor* Actor)
     if (USceneComponent* Root = Actor->GetRootComponent())
     {
         if (UPrimitiveComponent* P = Root->Cast<UPrimitiveComponent>()) { BVH.RefitObject(P); }
+        for (USceneComponent* Child : Root->GetChildren())
+        {
+            if (UPrimitiveComponent* ChildP = Child->Cast<UPrimitiveComponent>()) { BVH.RefitObject(ChildP); }
+        }
     }
 
     for (USceneComponent* S : Actor->GetAttachedComponents())
     {
         if (!S) { continue; }
         if (UPrimitiveComponent* P = S->Cast<UPrimitiveComponent>()) { BVH.RefitObject(P); }
+        for (USceneComponent* Child : S->GetChildren())
+        {
+            if (UPrimitiveComponent* ChildP = Child->Cast<UPrimitiveComponent>()) { BVH.RefitObject(ChildP); }
+        }
     }
 }

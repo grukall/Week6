@@ -24,6 +24,7 @@ public:
 
     void SetupAttachment(USceneComponent* InParent, bool bKeepWorldTransform = false);
     void DetachFromParent();
+    void RestoreAttachment(USceneComponent* InParent);
     TArray<USceneComponent*>& GetChildren();
     void AddChildren(USceneComponent* InChildren);
     void DeleteChildren(USceneComponent* InChildren);

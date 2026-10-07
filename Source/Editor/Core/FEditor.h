@@ -37,6 +37,8 @@ public:
   bool bHideUI = false;
   // F11. bHideUI가 숨기는 창에 더해 툴바까지 숨긴다.
   bool bZenMode = false;
+  // 컴포넌트 추가/삭제/재부착처럼 계층이 바뀔 때 올린다. 아웃라이너가 캐시 갱신에 쓴다.
+  uint32 HierarchyVersion = 0;
   bool bShowBenchmark = true;
   double LastPickingMs = 0.0;
   double AccumulatedPickingMs = 0.0;
@@ -106,13 +108,12 @@ public:
   void SetViewLayout(FEditorState::SplitViewMode mode);
   UTextInstanceComponent* GetTextcomp() { return SelectedActorTextComp; }
   UEditorEngine* GetEditorEngine() const { return EditorEngine; }
-
-  UActorComponent* GetSelectedComponent() { return SelectedComponent.Get();}
+  UActorComponent* GetSelectedComponent() { return SelectedComponent.Get(); }
   
  //Viewport관련
   int32 ActiveViewportIndex = 0;
   SWindow* Root=nullptr;
-  SWindow Leaf[4];
+  SWindow Leaf[4]; 
   SSplitterH HorizonSplitter; //세로선
   SSplitterH HorizonSplitter2; //세로선
   SSplitterV VerticalSplitter; // 가로선

@@ -3,6 +3,7 @@
 #include "ThirdParty/Json/json.hpp"
 #include "UObjectGlobals.h" 
 #include "UPrimitiveComponent.h"
+#include "Runtime/Actors/AActor.h"
 #include "Runtime/Engine/FArchive.h"
 #include "Runtime/Engine/FScene.h"
 
@@ -105,6 +106,25 @@ void USceneComponent::DetachFromParent()
     SetRelativeTransformFromGlobal(WorldTransform);
 }
 
+void USceneComponent::RestoreAttachment(USceneComponent* InParent)
+{
+    if (!InParent || InParent == SceneOwner) { return; }
+
+    for (const USceneComponent* It = InParent; It; It = It->SceneOwner)
+    {
+        if (It == this) { return; }
+    }
+
+    if (SceneOwner)
+    {
+        SceneOwner->DeleteChildren(this);
+    }
+
+    SceneOwner = InParent;
+    InParent->AddChildren(this);
+    MarkActorTransformDirty();
+}
+
 TArray<USceneComponent*>& USceneComponent::GetChildren()
 {
     return (Children);
@@ -130,6 +150,19 @@ void USceneComponent::Serialize(FArchive& Archive) const
     Archive.SetVector("Location", RelativeTransform.GetLocation());
     Archive.SetVector("Rotation", RelativeTransform.GetRotation().GetEulerXYZ());
     Archive.SetVector("Scale", RelativeTransform.GetScale3D());
+
+    if (!SceneOwner)
+    {
+        return;
+    }
+
+    Archive.SetString("Parent", SceneOwner->GetName().ToString());
+
+    const AActor* ParentActor = SceneOwner->GetActorOwner();
+    if (ParentActor && ParentActor != ActorOwner)
+    {
+        Archive.SetString("ParentActor", ParentActor->GetGuid().ToString());
+    }
 }
 
 void USceneComponent::Deserialize(const FArchive& Archive)

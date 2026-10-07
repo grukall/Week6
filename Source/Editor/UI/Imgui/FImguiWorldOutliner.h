@@ -7,23 +7,15 @@
 
 class UWorld;
 
-enum class EOutlinerItemRowType : uint8
-{
-	Actor,
-	Component
-};
-
 struct FOutlinerItem
 {
-	EOutlinerItemRowType Type = EOutlinerItemRowType::Actor;
-	// 펼침 상태 키 (액터는 이름 해시, 컴포넌트는 슬롯 번호)
+	// 펼침 상태 키 (액터 이름 해시)
 	uint64 Key = 0;
 	FString DisplayLabel;
 	FString LowerLabel;
 	int32 Depth = 0;
 	bool bHasChildren = false;
 	AActor* Actor = nullptr;
-	USceneComponent* Component = nullptr;
 };
 
 struct FOutlinerAttachRequest
@@ -44,13 +36,12 @@ public:
 	void UpdateFilter(const FString& FilterStr);
 
 private:
-	//액터 한 개의 트리노드, 펼쳐지면 컴포넌트까지
+	//액터 한 개의 트리노드, 펼쳐지면 붙어 있는 자식 액터까지
 	void ShowActorNode(FEditor& Editor, AActor* Actor, const std::string& FilterStr, AActor* SelectedActor);
 	void ShowActorNode_Cached(FEditor& Editor, const FOutlinerItem& Item, AActor* SelectedActor);
-	void ShowComponentNode(FEditor& Editor, USceneComponent& Comp);
 
 	// TreeNodeEx 직후에 호출한다. 직전 아이템을 드래그 소스 겸 드롭 타깃으로 만든다.
-	void HandleRowDragDrop(AActor* RowActor, USceneComponent* RowComp, const char* Label);
+	void HandleRowDragDrop(AActor* RowActor, const char* Label);
 	void ApplyAttach(const FOutlinerAttachRequest& Request);
 	// 드롭은 목록 순회 중에 일어나므로 기억만 해두고 순회가 끝난 뒤 처리한다.
 	TOptional<FOutlinerAttachRequest> PendingAttach;
@@ -64,7 +55,6 @@ private:
 	void RebuildDisplayList();
 	// 행 하나를 넣고, 펼쳐져 있으면 자식 행까지 깊이 우선으로 이어 넣는다.
 	void AppendActorRows(const FOutlinerItem& ActorItem, int32 Depth);
-	void AppendComponentRows(USceneComponent& Comp, int32 Depth);
 
 
 	UWorld* LastWorld = nullptr;
@@ -77,6 +67,7 @@ private:
 	TSet<uint64> ExpandedNodeKeys;
 
 	size_t LastActorCount = 0;
+	uint32 LastHierarchyVersion = 0;
 	FString LastFilterStr = "";
 	FString CurrentFilterStr = "";
 	bool bCacheDirty = true;

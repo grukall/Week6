@@ -136,6 +136,12 @@ void FRenderView::CollectScenePrimitives(const FScene& Scene, const FSceneView& 
             continue;
         }
 
+        //PIE일때 표시안되는 것들 처리 (예시 : BillBoardComp)
+        if (PrimitiveComponent->GetWorld()->GetWorldType() == EWorldType::PIE && PrimitiveComponent->IsHiddenInGame())
+        {
+            continue;
+        }
+
         bool bSelected = false;
         if (PrimitiveComponent->GetActorOwner() && PrimitiveComponent->GetActorOwner() == SelectedActor)
         {

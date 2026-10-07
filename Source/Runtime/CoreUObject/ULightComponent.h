@@ -11,6 +11,7 @@ class ULightComponent : public USceneComponent
 
 public:
 	void Register(UWorld* InWorld) override;
+	void Unregister() override;
 
 	virtual void BuildConstants(FLightConstants& Constants);
 

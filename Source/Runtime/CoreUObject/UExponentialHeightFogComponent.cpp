@@ -4,11 +4,13 @@
 #include <Runtime/Rendering/ShaderConstants.h>
 #include "Runtime/Engine/UWorld.h"
 #include "Runtime/Engine/FScene.h"
+#include "Runtime/Engine/FArchive.h"
 
 IMPLEMENT_UCLASS(UExponentialHeightFogComponent, USceneComponent)
 
 void UExponentialHeightFogComponent::Initialize()
 {
+	Super::Initialize();
 	//Tick 해야하면 True로
 	bTickEnabled = false;
 	bTickInEditor = false;
@@ -17,15 +19,26 @@ void UExponentialHeightFogComponent::Initialize()
 void UExponentialHeightFogComponent::Serialize(FArchive& Archive) const
 {
 	Super::Serialize(Archive);
-		
-	//직렬화 해야 하는 정보를 여기에 작성 ex) 안개 밀도 등,
+
+	Archive.SetFloat("Density", Density);
+	Archive.SetFloat("HeightFalloff", HeightFalloff);
+	Archive.SetFloat("StartDistance", StartDistance);
+	Archive.SetFloat("CutoffDistance", CutoffDistance);
+	Archive.SetFloat("MaxOpacity", MaxOpacity);
+	Archive.SetVector4("InscatteringColor", InscatteringColor);
 }
 
 void UExponentialHeightFogComponent::Deserialize(const FArchive & Archive)
 {
 	Super::Deserialize(Archive);
 
-	//역직렬화 해야 하는 정보를 여기에 작성
+	// 안개 값을 저장하기 전에 만든 씬에는 키가 없다. 없는 값은 기본값을 유지한다.
+	if (!Archive.IsNull("Density")) { Density = Archive.GetFloat("Density"); }
+	if (!Archive.IsNull("HeightFalloff")) { HeightFalloff = Archive.GetFloat("HeightFalloff"); }
+	if (!Archive.IsNull("StartDistance")) { StartDistance = Archive.GetFloat("StartDistance"); }
+	if (!Archive.IsNull("CutoffDistance")) { CutoffDistance = Archive.GetFloat("CutoffDistance"); }
+	if (!Archive.IsNull("MaxOpacity")) { MaxOpacity = Archive.GetFloat("MaxOpacity"); }
+	if (!Archive.IsNull("InscatteringColor")) { InscatteringColor = Archive.GetVector4("InscatteringColor"); }
 }
 
 void UExponentialHeightFogComponent::Register(UWorld* InWorld)

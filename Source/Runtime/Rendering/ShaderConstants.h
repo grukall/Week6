@@ -155,3 +155,19 @@ struct FMaterialConstants
 };
 
 static_assert(sizeof(FMaterialConstants) % 16 == 0);
+
+
+// 안개 데이터
+// Register = b6
+struct FFogData
+{
+	FMatrix InverseVP;
+	float Density = 0.5f;
+	float HeightFalloff = 0.1f;
+	float StartDistance = 10.0f;
+	float CutoffDistance = 1000.0f;
+	float MaxOpacity = 0.8f;
+	FVector4 InscatteringColor{ 0.0f, 1.0f, 0.0f, 1.0f };
+};
+
+static_assert(sizeof(FFogData) % 16 == 0);

@@ -1610,7 +1610,7 @@ void FRenderer::RenderScreenPass(const FVector2& TopLeftUV, const FVector2& Leng
     UINT Zero = 0;
     Context->IASetVertexBuffers(0, 1, &NullVB, &Zero, &Zero);
 
-    Context->OMSetRenderTargets(1, SceneColorRTV.GetAddressOf(), DepthStencilView.Get());
+    Context->OMSetRenderTargets(1, SceneColorRTV.GetAddressOf(), nullptr);
 
     // 텍스처 바인딩
     ID3D11ShaderResourceView* SRVs[] = { EditorViewPortSRV.Get(),

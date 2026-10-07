@@ -100,9 +100,6 @@ public:
   );
 
   void DrawUploadedCommand(const FDrawCommand& Command, bool bApplyViewMode = true);
-
-  void RenderGBufferPass();
-
   void RenderScreenPass(const FVector2& TopLeftUV, const FVector2& LengthUV);
   void RenderDepthPass(const FVector2& TopLeftUV, const FVector2& LengthUV);
   void RenderOutline(const FVector2& TopLeftUV, const FVector2& LengthUV);
@@ -119,6 +116,8 @@ public:
   float GetHeight() const { return Viewport.Height; }
 
   void ClearLastRenderState();
+
+  void RenderDeferredLightingPass(const FVector2& TopLeftUV, const FVector2& LengthUV);
 
 private:
   bool InitializeDeviceAndSwapChain(HWND Window);
@@ -167,6 +166,16 @@ private:
   // 임시 상수버퍼
   Microsoft::WRL::ComPtr<ID3D11Buffer> ObjectConstantUploadBuffer;
 
+  Microsoft::WRL::ComPtr<ID3D11RenderTargetView> GBufferARTV;
+  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GBufferASRV;
+  Microsoft::WRL::ComPtr<ID3D11RenderTargetView> GBufferBRTV;
+  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GBufferBSRV;
+  Microsoft::WRL::ComPtr<ID3D11RenderTargetView> GBufferCRTV;
+  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> GBufferCSRV;
+
+  Microsoft::WRL::ComPtr<ID3D11RenderTargetView> LightPassRTV;
+  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> LightPassSRV;
+
   Microsoft::WRL::ComPtr<ID3D11RenderTargetView> EditorViewPortRTV;
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> EditorViewPortSRV;
   Microsoft::WRL::ComPtr<ID3D11RenderTargetView> SceneColorRTV;
@@ -174,6 +183,9 @@ private:
 
   Microsoft::WRL::ComPtr<ID3D11Texture2D> renderTexture;
   Microsoft::WRL::ComPtr<ID3D11Texture2D> SceneColorTexture;
+  Microsoft::WRL::ComPtr<ID3D11Texture2D> GBufferATexture;
+  Microsoft::WRL::ComPtr<ID3D11Texture2D> GBufferBTexture;
+  Microsoft::WRL::ComPtr<ID3D11Texture2D> GBufferCTexture;
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> DepthStencilSRV;
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> DepthSRV;
 

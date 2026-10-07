@@ -114,6 +114,7 @@ float3 BlinnPhong(float3 LightStrength, float3 LightVec,
 float3 ComputeDirectionalLight(DirectionLight L, Material Mat, float3 Normal, float3 ToEye)
 {
     float3 LightVec = -L.LightDirection;
+    LightVec = normalize(LightVec);
     
     // Lambert's Cosine Law
     float NdotL = max(dot(LightVec, Normal), 0.0f);

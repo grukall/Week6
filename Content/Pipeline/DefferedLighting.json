@@ -1,0 +1,21 @@
+{
+  "Version": 1,
+  "Name": "#DeferredLighting",
+  "AssetType": "Pipeline",
+  "VertexShaderFilePath": "Shader/ScreenPassVS.cso",
+  "PixelShaderFilePath": "Shader/DefferedLightingPS.cso",
+  "Rasterizer": {
+    "FillMode": "Solid",
+    "CullMode": "None",
+    "FrontFaceMode": "Clockwise",
+    "Multisample": false,
+    "AntialiasedLine": false
+  },
+  "Blend": { "BlendMode": "Additive" },
+  "DepthStencil": {
+    "DepthEnable": false,
+    "StencilEnable": false,
+    "DepthWriteMode": "Disable"
+  },
+  "Instancing": false
+}

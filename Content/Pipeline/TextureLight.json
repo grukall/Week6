@@ -1,8 +1,8 @@
 {
     "Version": 1,
-    "Name": "UVScroll",
+    "Name": "#TextureLight",
     "AssetType": "Pipeline",
-    "VertexShaderFilePath": "Shader/UVScrollVS.cso",
+    "VertexShaderFilePath": "Shader/ExampleVS.cso",
     "PixelShaderFilePath": "Shader/TextureLightPS.cso",
     "Rasterizer": {
         "FillMode": "Solid",

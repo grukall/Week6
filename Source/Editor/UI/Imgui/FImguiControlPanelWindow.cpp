@@ -418,6 +418,11 @@ void FImguiControlPanelWindow::RenderModeAndShowFlagSetting(FEditor& Editor)
             {
                 ActiveViewport->ToggleShowFlag(EEngineShowFlags::SF_Grid);
             }
+            bool bFog = ActiveViewport->HasShowFlag(EEngineShowFlags::SF_Fog);
+            if (ImGui::Checkbox("Fog", &bFog))
+            {
+                ActiveViewport->ToggleShowFlag(EEngineShowFlags::SF_Fog);
+            }
             ImGui::EndCombo();
         }
         ImGui::SameLine();

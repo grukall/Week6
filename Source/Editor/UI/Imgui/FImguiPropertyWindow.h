@@ -7,6 +7,7 @@ class UStaticMeshComponent;
 class UDirectionLightComponent;
 class UPointLightComponent;
 class USpotLightComponent;
+class UExponentialHeightFogComponent;
 class UProjectileMovementComponent;
 class URotationMovementComponent;
 class UTextInstanceComponent;
@@ -58,6 +59,7 @@ private:
 	void ShowDirectionLightSettings(UDirectionLightComponent& LightComp) const;
 	void ShowPointLightSettings(UPointLightComponent& LightComp) const;
 	void ShowSpotLightSettings(USpotLightComponent& LightComp) const;
+	void ShowFogSettings(UExponentialHeightFogComponent& FogComp) const;
 	void ShowProjectileMovementSettings(UProjectileMovementComponent& MovComp) const;
 	void ShowRotationMovementSettings(URotationMovementComponent& MovComp) const;
 

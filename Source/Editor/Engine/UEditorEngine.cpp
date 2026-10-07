@@ -307,6 +307,16 @@ void UEditorEngine::ExecuteCommand(const char* Command)
         UE_LOG("FXAA : %s", RenderView.bIsFXAA ? "ON" : "OFF");
     }
 
+    else if (lowerCmd.compare("show fog") == 0)
+    {
+        //fog 토글
+        if (FEditorViewportClient* ActiveViewport = Editor.GetActiveEditorClient())
+        {
+            ActiveViewport->ToggleShowFlag(EEngineShowFlags::SF_Fog);
+            UE_LOG("Fog : %s", ActiveViewport->HasShowFlag(EEngineShowFlags::SF_Fog) ? "ON" : "OFF");
+        }
+    }
+
     else {
         UE_LOG("Unknown command: '%s'\n", Command);
         return;

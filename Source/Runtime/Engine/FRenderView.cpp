@@ -811,5 +811,10 @@ void FRenderView::UpdateFog(const FScene& Scene, const FSceneView& View)
         Fog->BuildConstants(FogConstants);
     }
 
+    if ((View.ShowFlags & static_cast<uint64>(EEngineShowFlags::SF_Fog)) == 0)
+    {
+        FogConstants.MaxOpacity = 0;
+    }
+
     Renderer.UpdateFogConstants(FogConstants);
 }

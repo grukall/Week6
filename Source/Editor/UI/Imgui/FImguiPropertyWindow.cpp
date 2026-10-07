@@ -4,6 +4,7 @@
 #include "Runtime/CoreUObject/UDirectionLightComponent.h"
 #include "Runtime/CoreUObject/UPointLightComponent.h"
 #include "Runtime/CoreUObject/USpotLightComponent.h"
+#include "Runtime/CoreUObject/UExponentialHeightFogComponent.h"
 #include "Runtime/CoreUObject/UProjectileMovementComponent.h"
 #include "Runtime/CoreUObject/URotationMovementComponent.h"
 #include "Runtime/CoreUObject/UTextInstanceComponent.h"
@@ -359,6 +360,11 @@ void FImguiPropertyWindow::ShowComponentDetails(FEditor& Editor, AActor& Actor,
 		ShowSpotLightSettings(static_cast<USpotLightComponent&>(Comp));
 	}
 
+	else if (Comp.IsA<UExponentialHeightFogComponent>())
+	{
+		ShowFogSettings(static_cast<UExponentialHeightFogComponent&>(Comp));
+	}
+
 	else if (Comp.IsA<UProjectileMovementComponent>())
 	{
 		ShowProjectileMovementSettings(static_cast<UProjectileMovementComponent&>(Comp));
@@ -661,6 +667,49 @@ void FImguiPropertyWindow::ShowSpotLightSettings(USpotLightComponent& LightComp)
 	if (ImGui::DragFloat("SpotPower", &SpotPower, 0.05f, 0.0f, 50.0f))
 	{
 		LightComp.SetSpotPower(SpotPower);
+	}
+}
+
+void FImguiPropertyWindow::ShowFogSettings(UExponentialHeightFogComponent& FogComp) const
+{
+	ImGui::Separator();
+	ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.3f, 1.0f), "Exponential Height Fog Settings");
+
+	FVector4 InscatteringColor = FogComp.GetInscatteringColor();
+	if (ImGui::ColorEdit3("Inscattering Color", &InscatteringColor.X))
+	{
+		FogComp.SetInscatteringColor(InscatteringColor);
+	}
+
+	float Density = FogComp.GetDensity();
+	if (ImGui::DragFloat("Density", &Density, 0.005f, 0.0f, 10.0f, "%.3f"))
+	{
+		FogComp.SetDensity(Density);
+	}
+
+	// 셰이더가 이 값으로 나누므로 0은 허용하지 않는다.
+	float HeightFalloff = FogComp.GetHeightFalloff();
+	if (ImGui::DragFloat("Height Falloff", &HeightFalloff, 0.005f, 0.001f, 10.0f, "%.3f"))
+	{
+		FogComp.SetHeightFalloff(std::max(HeightFalloff, 0.001f));
+	}
+
+	float StartDistance = FogComp.GetStartDistance();
+	if (ImGui::DragFloat("Start Distance", &StartDistance, 1.0f, 0.0f, 100000.0f, "%.1f"))
+	{
+		FogComp.SetStartDistance(std::max(StartDistance, 0.0f));
+	}
+
+	float CutoffDistance = FogComp.GetCutoffDistance();
+	if (ImGui::DragFloat("Cutoff Distance", &CutoffDistance, 10.0f, 0.0f, 1000000.0f, "%.1f"))
+	{
+		FogComp.SetCutoffDistance(std::max(CutoffDistance, 0.0f));
+	}
+
+	float MaxOpacity = FogComp.GetMaxOpacity();
+	if (ImGui::SliderFloat("Max Opacity", &MaxOpacity, 0.0f, 1.0f))
+	{
+		FogComp.SetMaxOpacity(MaxOpacity);
 	}
 }
 

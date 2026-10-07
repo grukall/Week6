@@ -39,9 +39,9 @@ private:
 
 	FMatrix InverseVP;
 	float Density = 0.5f;
-	float HeightFalloff = 0.1f;
-	float StartDistance = 10.0f;
-	float CutoffDistance = 1000.0f;
-	float MaxOpacity = 0.8f;
-	FVector4 InscatteringColor{ 0.0f, 1.0f, 0.0f, 1.0f };
+	float HeightFalloff = 0.241f;
+	float StartDistance = 16.0f;
+	float CutoffDistance = 20000.0f;
+	float MaxOpacity = 1.f;
+	FVector4 InscatteringColor{ 0.047f, 0.047f, 0.047f, 1.0f };
 };

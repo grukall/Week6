@@ -16,6 +16,8 @@
 #include <string>
 #include <algorithm>
 #include "FImguiDragDrop.h"
+#include "Editor/Core/EditorConstant.h"
+#include "Runtime/CoreUObject/UObjectGlobals.h"
 #include "Runtime/Rendering/FMaterial.h"
 #include "Runtime/Rendering/FRenderResourceLibrary.h"
 #include "Runtime/Asset/FAssetRegistry.h"
@@ -25,6 +27,30 @@
 namespace
 {
 	constexpr float SlotSize = 64.0f;
+
+	TArray<USceneComponent*> GetTreeChildren(const AActor& Actor, USceneComponent& Comp)
+	{
+		TArray<USceneComponent*> TreeChildren;
+		for (USceneComponent* Child : Comp.GetChildren())
+		{
+			if (Child && Child->GetSceneOwner() == &Comp && Child->GetActorOwner() == &Actor)
+			{
+				TreeChildren.push_back(Child);
+			}
+		}
+
+		if (&Comp == Actor.GetRootComponent())
+		{
+			for (USceneComponent* Other : Actor.GetAttachedComponents())
+			{
+				if (Other && Other != &Comp && !Other->GetSceneOwner())
+				{
+					TreeChildren.push_back(Other);
+				}
+			}
+		}
+		return TreeChildren;
+	}
 }
 
 
@@ -42,17 +68,11 @@ void FImguiPropertyWindow::Process(FEditor& Editor)
 		ShowActorHeader(*SelectedActor);
 		ImGui::Separator();
 
-		if (SelectedActor->GetRootComponent())
-		{
-			ShowComponentHierarchy(*SelectedActor);
-			ImGui::Separator();
+		ShowComponentHierarchy(Editor, *SelectedActor);
+		ImGui::Separator();
 
-			ShowComponentSections(Editor, *SelectedActor);
-		}
-		else
-		{
-			ImGui::TextDisabled("No RootComponent");
-		}
+		ShowComponentSections(Editor, *SelectedActor);
+		ShowActorComponentSections(*SelectedActor);
 	}
 	else
 	{
@@ -72,28 +92,166 @@ void FImguiPropertyWindow::ShowActorHeader(const AActor& Actor) const
 	ImGui::Text("Actor Guid: %s", Actor.GetGuid().ToString().c_str());
 }
 
-void FImguiPropertyWindow::ShowComponentHierarchy(const AActor& Actor) const
+void FImguiPropertyWindow::ShowComponentHierarchy(FEditor& Editor, AActor& Actor)
 {
 	ImGui::TextDisabled("Components Hierarchy");
 
-	const USceneComponent* RootComp = Actor.GetRootComponent();
-	if (RootComp)
+	PendingDragged = nullptr;
+	PendingTarget = nullptr;
+
+	if (USceneComponent* RootComp = Actor.GetRootComponent())
 	{
-		const char* RootName = RootComp->GetClass() ? RootComp->GetClass()->GetDisplayName().c_str() : "RootComponent";
-		ImGui::BulletText("[Root] %s (Index: %u)", RootName, RootComp->GetInternalIndex());
+		ShowComponentTreeNode(Editor, Actor, *RootComp);
+	}
+	else
+	{
+		ImGui::TextDisabled("No RootComponent");
 	}
 
-	for (const USceneComponent* Comp : Actor.GetAttachedComponents())
+	ShowActorComponentList(Editor, Actor);
+
+	if (PendingDragged && PendingTarget
+		&& PendingDragged != Actor.GetRootComponent()
+		&& PendingDragged->GetActorOwner() == &Actor
+		&& PendingTarget->GetActorOwner() == &Actor
+		&& PendingDragged->GetSceneOwner() != PendingTarget)
 	{
-		if (!Comp || Comp == RootComp)
+		PendingDragged->SetupAttachment(PendingTarget, true);
+		PendingDragged->MarkActorTransformDirty();
+		Editor.RefreshSelectedTransform();
+		++Editor.HierarchyVersion;
+	}
+
+	ShowComponentButtons(Editor, Actor);
+}
+
+void FImguiPropertyWindow::ShowComponentTreeNode(FEditor& Editor, AActor& Actor, USceneComponent& Comp)
+{
+	const bool bIsRoot = (&Comp == Actor.GetRootComponent());
+	const TArray<USceneComponent*> TreeChildren = GetTreeChildren(Actor, Comp);
+
+	ImGuiTreeNodeFlags NodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
+	if (&Comp == Editor.GetSelectedComponent())
+	{
+		NodeFlags |= ImGuiTreeNodeFlags_Selected;
+	}
+	if (TreeChildren.empty())
+	{
+		NodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+	}
+
+	const FString CompName = Comp.GetName().ToString();
+	const char* CompClassName = Comp.GetClass() ? Comp.GetClass()->GetDisplayName().c_str() : "Component";
+	const bool bNodeOpen = ImGui::TreeNodeEx(&Comp, NodeFlags, "%s%s (%s)", bIsRoot ? "[Root] " : "", CompName.c_str(), CompClassName);
+
+	if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+	{
+		Editor.SelectComponent(&Comp);
+	}
+
+	if (!bIsRoot && ImGui::BeginDragDropSource())
+	{
+		USceneComponent* Dragged = &Comp;
+		ImGui::SetDragDropPayload(ComponentDragPayloadType, &Dragged, sizeof(Dragged));
+		ImGui::TextUnformatted(CompName.c_str());
+		ImGui::EndDragDropSource();
+	}
+
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload(ComponentDragPayloadType))
+		{
+			PendingDragged = *static_cast<USceneComponent* const*>(Payload->Data);
+			PendingTarget = &Comp;
+		}
+		ImGui::EndDragDropTarget();
+	}
+
+	if (bNodeOpen && !TreeChildren.empty())
+	{
+		for (USceneComponent* Child : TreeChildren)
+		{
+			ShowComponentTreeNode(Editor, Actor, *Child);
+		}
+
+		ImGui::TreePop();
+	}
+}
+
+void FImguiPropertyWindow::ShowActorComponentList(FEditor& Editor, AActor& Actor)
+{
+	for (UActorComponent* Comp : Actor.GetOwnedComponents())
+	{
+		if (!Comp || Comp->IsA<USceneComponent>())
 		{
 			continue;
 		}
 
-		const char* SubName = Comp->GetClass() ? Comp->GetClass()->GetDisplayName().c_str() : "SubComponent";
-		ImGui::Indent(15.0f);
-		ImGui::BulletText("└── [Sub] %s (Index: %u)", SubName, Comp->GetInternalIndex());
-		ImGui::Unindent(15.0f);
+		ImGuiTreeNodeFlags NodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
+		if (Comp == Editor.GetSelectedComponent())
+		{
+			NodeFlags |= ImGuiTreeNodeFlags_Selected;
+		}
+
+		const FString CompName = Comp->GetName().ToString();
+		const char* CompClassName = Comp->GetClass() ? Comp->GetClass()->GetDisplayName().c_str() : "Component";
+		ImGui::TreeNodeEx(Comp, NodeFlags, "%s (%s)", CompName.c_str(), CompClassName);
+
+		if (ImGui::IsItemClicked())
+		{
+			Editor.SelectComponent(Comp);
+		}
+	}
+}
+
+void FImguiPropertyWindow::ShowComponentButtons(FEditor& Editor, AActor& Actor)
+{
+	if (ImGui::Button("Add Component"))
+	{
+		ImGui::OpenPopup("AddComponentPopup");
+	}
+
+	UActorComponent* SelectedComponent = Editor.GetSelectedComponent();
+	const bool bCanDelete = SelectedComponent
+		&& SelectedComponent->GetActorOwner() == &Actor
+		&& SelectedComponent != Actor.GetRootComponent();
+
+	ImGui::SameLine();
+	ImGui::BeginDisabled(!bCanDelete);
+	const bool bDeleteClicked = ImGui::Button("Delete Component");
+	ImGui::EndDisabled();
+
+	if (ImGui::BeginPopup("AddComponentPopup"))
+	{
+		for (UClass* Item : EditorConstant::SpawnableComponents)
+		{
+			if (!ImGui::Selectable(Item->GetUClassName().c_str()))
+			{
+				continue;
+			}
+
+			UObject* Object = NewObject(Item);
+			UActorComponent* NewComponent = Object ? Object->Cast<UActorComponent>() : nullptr;
+			if (NewComponent)
+			{
+				Actor.AddComponent(NewComponent);
+				++Editor.HierarchyVersion;
+			}
+			else if (Object)
+			{
+				DestroyObject(Object);
+			}
+		}
+		ImGui::EndPopup();
+	}
+
+	if (bDeleteClicked && bCanDelete)
+	{
+		// 선택을 먼저 풀어야 삭제된 컴포넌트의 트랜스폼이 액터 루트에 적용되지 않는다.
+		Editor.UnSelectActor();
+		Actor.DeleteComponent(SelectedComponent);
+		Editor.SelectActor(&Actor);
+		++Editor.HierarchyVersion;
 	}
 }
 
@@ -125,6 +283,30 @@ void FImguiPropertyWindow::ShowComponentSections(FEditor& Editor, AActor& Actor)
 		ShowComponentDetails(Editor, Actor, *Comp, bIsRoot);
 		ImGui::PopID();
 
+		ImGui::Spacing();
+	}
+}
+
+void FImguiPropertyWindow::ShowActorComponentSections(AActor& Actor)
+{
+	for (UActorComponent* Comp : Actor.GetOwnedComponents())
+	{
+		if (!Comp || Comp->IsA<USceneComponent>())
+		{
+			continue;
+		}
+
+		const char* CompTypeName = Comp->GetClass() ? Comp->GetClass()->GetDisplayName().c_str() : "Component";
+		std::string SectionTitle = "[Comp] " + std::string(CompTypeName)
+			+ " (Index: " + std::to_string(Comp->GetInternalIndex()) + ")###CompHeader_" + std::to_string(Comp->GetInternalIndex());
+
+		if (!ImGui::CollapsingHeader(SectionTitle.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			continue;
+		}
+
+		ImGui::Text("Name: %s", Comp->GetName().ToString().c_str());
+		ImGui::TextDisabled("No editable properties");
 		ImGui::Spacing();
 	}
 }

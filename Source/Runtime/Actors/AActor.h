@@ -24,6 +24,7 @@ protected:
 
 	virtual void Serialize(FArchive& Archive) const override;
 	virtual void Deserialize(const FArchive& Archive) override;
+	void RestoreExternalAttachments(const FArchive& Archive, const TMap<FString, AActor*>& LoadedActorsByGuid);
 
 public:
 	void Initialize() override;
@@ -42,8 +43,8 @@ public:
 	void SetRootComponent(UActorComponent* Component);
 	USceneComponent* GetRootComponent() const { return RootComponent; }
 	const TArray<USceneComponent*>& GetAttachedComponents() const { return AttachedComp; }
-
 	const TArray<UActorComponent*>& GetOwnedComponents() const { return OwnedComponents; }
+
 
 
 	FTransform GetTransform() const { return RootComponent ? RootComponent->GetRelativeTransform() : FTransform{}; }
@@ -51,10 +52,8 @@ public:
 
 	//하위 컴포넌트 월드 Tranform도 바뀐다.
 	void MarkComponentsTransformDirty();
-
-	const TMap<UActorComponent*, UActorComponent*>& GetDuplicateRemap() const;
-	void RemapExternalAttachments(const TMap<UActorComponent*, UActorComponent*>& WorldRemap);
-
+	UActorComponent* FindComponentByName(const FName& Name) const;
+	bool SetComponentName(UActorComponent* Component, const FName& NewName);
 	void AddComponent(UActorComponent* Addcomp);
 	void DeleteComponent(UActorComponent* Addcomp);
 	virtual void Register(UWorld *World);
@@ -75,7 +74,6 @@ protected:
 	USceneComponent* RootComponent = nullptr;
 	TArray<USceneComponent*> AttachedComp;
 	TArray<UActorComponent*> OwnedComponents;
-	TMap<UActorComponent*, UActorComponent*> DuplicateRemap;
 	bool bTickEnabled = false;
 	bool bRegistered = false;
 
@@ -83,9 +81,16 @@ protected:
 	bool bShouldTickIfViewportsOnly = false;
 
 private:
-	ULevel* OwningLevel = nullptr;     // 소속 레벨 (ULevel::AddActor/RemoveActor가 관리)
+	FName MakeUniqueComponentName(const UActorComponent* Component);
+	void RegisterComponentName(UActorComponent* Component);
+	void DeserializeRootComponent(const FArchive& Archive);
+	void DeserializeOwnedComponents(const TArray<FArchive>& ComponentArchives);
+
+	ULevel* OwningLevel = nullptr;    // 소속 레벨 (ULevel::AddActor/RemoveActor가 관리)
 	UWorld* RegisteredWorld = nullptr; // Register된 월드 (컴포넌트가 FScene에 연결된 상태)
 	bool bHasBegunPlay = false;
+	TMap<FString, int32> NextComponentNameNumber; // 클래스 이름별 다음 번호
+	TMap<FName, UActorComponent*> ComponentsByName; // 이름은 액터별로 유일하다 찾을때는 Actor를 GUID로 찾고 FName으로 컴포넌트 찾기
 
 	FName Name;  // 기본값 None. ULevel::AddActor가 유일한 이름을 부여한다.
 	FGuid Guid;  // 기본값 무효. ULevel::AddActor가 새로 발급하거나, 파일에서 읽은 값을 보존한다.

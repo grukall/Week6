@@ -70,10 +70,6 @@ void ULevel::Tick(float DeltaTime, ELevelTick eTickType)
         if (Actor->ShouldTick(eTickType))
             Actor->Tick(DeltaTime, eTickType);
 
-        /*for (USceneComponent* C : Actor->GetAttachedComponents())
-            if (C && C->ShouldTick(eTickType))
-                C->Tick(DeltaTime);*/
-
         for (UActorComponent* C : Actor->GetOwnedComponents())
             if (C && C->ShouldTick(eTickType))
                 C->Tick(DeltaTime);
@@ -87,13 +83,13 @@ void ULevel::Serialize(FArchive& Archive) const
     TArray<FArchive> ActorArchives;
 
     for (const auto &Item : Actors) {
-    if (!Item) {
-        continue;
+        if (!Item) {
+            continue;
     }
 
-    FArchive ItemArchive;
-    Item->Serialize(ItemArchive);
-    ActorArchives.push_back(ItemArchive);
+        FArchive ItemArchive;
+        Item->Serialize(ItemArchive);
+        ActorArchives.push_back(ItemArchive);
     }
 
     Archive.SetArchiveArray("Actors", ActorArchives);
@@ -111,18 +107,32 @@ void ULevel::Deserialize(const FArchive& Archive)
     
     TArray<FArchive> ActorArchives = Archive.GetArchiveArray("Actors");
     
-    for (const auto &Item : ActorArchives) {
-    UClass *ClassType = UClass::FindByName(Item.GetString("Type"));
-    if (ClassType == nullptr) {
-        continue;
+    TArray<AActor*> LoadedActors(ActorArchives.size(), nullptr);
+    TMap<FString, AActor*> LoadedActorsByGuid;
+
+    for (size_t i = 0; i < ActorArchives.size(); ++i) {
+        const FArchive& Item = ActorArchives[i];
+        UClass *ClassType = UClass::FindByName(Item.GetString("Type"));
+        if (ClassType == nullptr) {
+            continue;
+        }
+
+        AActor *Actor = OwningWorld->SpawnActor(ClassType);
+        if (!Actor) {
+            continue;
+        }
+        Actor->Deserialize(Item);
+
+        LoadedActors[i] = Actor;
+        if (!Item.IsNull("Guid")) {
+            LoadedActorsByGuid[Item.GetString("Guid")] = Actor;
+        }
     }
-    
-    AActor *Actor = OwningWorld->SpawnActor(ClassType);
-    if (!Actor) {
-        continue;
-    }
-    Actor->Deserialize(Item);
-    
+
+    for (size_t i = 0; i < ActorArchives.size(); ++i) {
+        if (LoadedActors[i]) {
+            LoadedActors[i]->RestoreExternalAttachments(ActorArchives[i], LoadedActorsByGuid);
+        }
     }
 }
 
@@ -245,3 +255,4 @@ FName ULevel::MakeUniqueActorName(const AActor* Actor)
         }
     }
 }
+

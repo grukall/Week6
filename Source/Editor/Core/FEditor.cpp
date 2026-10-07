@@ -47,9 +47,23 @@ void FEditor::Process()
     // 씬의 액터 업데이트
     if (FInputManager::Get().IsKeyPressed(VK_DELETE) && SelectedActor)
     {
-        AActor* Target = SelectedActor;
-        UnSelectActor();
-        Target->Destroy();
+
+        if (SelectedComponent)
+        {
+            // 선택을 먼저 풀어야 삭제된 컴포넌트의 트랜스폼이 액터 루트에 적용되지 않는다.
+            AActor* OwnerActor = SelectedComponent->GetActorOwner();
+            UnSelectActor();
+            if (OwnerActor)
+            {
+                OwnerActor->DeleteComponent(SelectedComponent);
+            }
+        }
+        else
+        {
+            AActor* Target = SelectedActor;
+            UnSelectActor();
+            Target->Destroy();
+        }
     }
 
     // 활성 뷰포트가 다른 월드를 보게 되면(PIE 시작/종료, 뷰포트 전환) 선택이 그 월드의 액터가 아니므로 해제한다.
@@ -65,24 +79,17 @@ void FEditor::Process()
     {
         UWorld* World = SelectedActor->GetWorld();
 
-        if (SelectedComponent)
+        // 씬 컴포넌트가 아닌 컴포넌트가 선택되면 액터의 루트를 움직인다.
+        USceneComponent* Target = SelectedComponent ? SelectedComponent->Cast<USceneComponent>() : nullptr;
+        if (!Target)
         {
-            USceneComponent* CastSceneComponent = SelectedComponent->Cast<USceneComponent>();
-            bChanged = CastSceneComponent && !(CastSceneComponent->GetGlobalTransform() == SelectedTransform);
-
-            if (CastSceneComponent)
-            {
-                CastSceneComponent->SetRelativeTransformFromGlobal(SelectedTransform);
-            }
+            Target = SelectedActor->GetRootComponent();
         }
-        else
+
+        bChanged = Target && !(Target->GetGlobalTransform() == SelectedTransform);
+        if (Target)
         {
-            USceneComponent* RootComponent = SelectedActor->GetRootComponent();
-            bChanged = RootComponent && !(RootComponent->GetGlobalTransform() == SelectedTransform);
-            if (RootComponent)
-            {
-                RootComponent->SetRelativeTransformFromGlobal(SelectedTransform);
-            }
+            Target->SetRelativeTransformFromGlobal(SelectedTransform);
         }
         // Transform이 변경되었을 때만 Refit
         if (bChanged && World && World->GetScene())
@@ -243,7 +250,6 @@ bool FEditor::SelectActor(AActor *Actor) {
     if (SelectedActor) {
         USceneComponent* RootComponent = SelectedActor->GetRootComponent();
         SelectedTransform = RootComponent ? RootComponent->GetGlobalTransform() : FTransform{};
-        SelectedTransform = SelectedActor->GetTransform();
         SelectedEulerDegDisplay = SelectedTransform.GetRotation().GetEulerXYZ();
     if (Gizmo.Mode == EGizmoMode::None) {
         Gizmo.Mode = EGizmoMode::Translate;
@@ -277,15 +283,9 @@ bool FEditor::SelectComponent(UActorComponent* InActorComponent)
 
     SelectedComponent = InActorComponent;
 
-    USceneComponent* CastSceneComponent = SelectedComponent->Cast<USceneComponent>();
-
-    if (CastSceneComponent)
-    {
-        SelectedTransform = CastSceneComponent->GetGlobalTransform();
-        SelectedEulerDegDisplay = SelectedTransform.GetRotation().GetEulerXYZ();
-        if (Gizmo.Mode == EGizmoMode::None) {
-            Gizmo.Mode = EGizmoMode::Translate;
-        }
+    RefreshSelectedTransform();
+    if (Gizmo.Mode == EGizmoMode::None) {
+        Gizmo.Mode = EGizmoMode::Translate;
     }
 
     return true;
@@ -294,22 +294,14 @@ bool FEditor::SelectComponent(UActorComponent* InActorComponent)
 void FEditor::UnSelectActor() {
     if (SelectedActor)
     {
-        if (SelectedComponent)
+        USceneComponent* Target = SelectedComponent ? SelectedComponent->Cast<USceneComponent>() : nullptr;
+        if (!Target)
         {
-            USceneComponent* CastComponent = SelectedComponent->Cast<USceneComponent>();
-            if (CastComponent)
-            {
-                CastComponent->SetRelativeTransformFromGlobal(SelectedTransform);
-            }
-
+            Target = SelectedActor->GetRootComponent();
         }
-        else
+        if (Target)
         {
-            USceneComponent* RootComponent = SelectedActor->GetRootComponent();
-            if (RootComponent)
-            {
-                RootComponent->SetRelativeTransformFromGlobal(SelectedTransform);
-            }
+            Target->SetRelativeTransformFromGlobal(SelectedTransform);
         }
     }
     SelectedActor = nullptr;

@@ -2,6 +2,7 @@
 
 #include "UObject.h"
 #include "Runtime/Engine/EngineBaseTypes.h"
+#include "Runtime/Core/FName.h"
 
 class UWorld;
 class ULevel;
@@ -16,10 +17,17 @@ public:
 	virtual void Initialize() override;
 	virtual void Release() override;
 
+	virtual void Serialize(FArchive& Archive) const override;
+	virtual void Deserialize(const FArchive& Archive) override;
+
 	AActor* GetActorOwner() const { return ActorOwner; }
-	void SetActorOwner(AActor* Owner) { ActorOwner = Owner; }
+	const FName& GetName() const { return Name; }
 	UWorld* GetWorld() const { return World; }
 	ULevel* GetLevel() const;
+	
+	void SetActorOwner(AActor* Owner) { ActorOwner = Owner; }
+	void SetName(FName InName) { Name = InName; }
+	
 
 	[[nodiscard]] bool IsRegistered() const { return World != nullptr; }
 	[[nodiscard]] bool HasBegunPlay() const { return bHasBegunPlay; }
@@ -43,4 +51,7 @@ protected:
 	bool bTickEnabled = false;
 	bool bTickInEditor = false;
 	int32 BatchIndex = -1;
+
+private:
+	FName Name;  // 기본값 None. AActor가 유일한 이름을 부여한다.
 };

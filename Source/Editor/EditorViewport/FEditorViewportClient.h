@@ -39,7 +39,8 @@ public:
 	EViewModeIndex ViewMode = EViewModeIndex::VMI_Lit;
 	uint64 ShowFlags = static_cast<uint64>(EEngineShowFlags::SF_Primitives) |
 	                   static_cast<uint64>(EEngineShowFlags::SF_BillboardText) |
-					   static_cast<uint64>(EEngineShowFlags::SF_Grid);
+					   static_cast<uint64>(EEngineShowFlags::SF_Grid) |
+					   static_cast<uint64>(EEngineShowFlags::SF_Fog);
 
 	virtual bool IsOrtho() const override { return eOrthogonalType != EOrthogonalType::PERSPECTIVE; }
 	virtual void AddAssociation(FViewport& _Viewport) override;

@@ -18,9 +18,10 @@ private:
 	bool bFocused = false;
 	bool bHovered = false;
 
-	//가리키고 있는 Client (소유하지 않는다)
+	//가리키고 있는 Client
 	FViewportClient* Client = nullptr;
 public:
+
 	FViewport() = default;
 	virtual ~FViewport();
 

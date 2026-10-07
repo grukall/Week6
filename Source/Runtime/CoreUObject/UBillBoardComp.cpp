@@ -23,6 +23,7 @@ void UBillBoardComp::Initialize() {
   SetMesh(Registry.Get<UStaticMesh>("#Rect"));
   SetMaterial(Registry.Get<UMaterial>("Material/Billboard.json"));
 
+  SetHiddenInGame(true);
   RenderData.Type = ERenderType::Primitive;
 }
 

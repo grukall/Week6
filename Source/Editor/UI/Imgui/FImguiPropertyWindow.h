@@ -27,6 +27,8 @@ public:
 	void Process(FEditor& Editor);
 
 private:
+	USceneComponent* PressedComponent = nullptr;
+
 	// 액터 클래스명과 UUID.
 	void ShowActorHeader(const AActor& Actor) const;
 

@@ -76,14 +76,15 @@ public:
   // 활성 뷰포트에 "지금 연결된" Client. 에디터 Client일 수도, 게임 Client일 수도 있다. (렌더, 월드 조회 등 범용)
   FViewportClient* GetActiveViewportClient();
 
-  // 에디터 Client는 뷰포트에 무엇이 연결되어 있든 항상 이 경로로 얻는다. (카메라 조작, 뷰모드, 그리드 등 에디터 도구)
-  // GetClient()를 FEditorViewportClient로 static_cast하면 안 된다. 게임 Client가 연결돼 있을 수 있다.
+  // 에디터 Client는 뷰포트에 무엇이 연결되어 있든 항상 이 경로로 얻는다.
   FEditorViewportClient* GetEditorClient(int32 Index);
   FEditorViewportClient* GetActiveEditorClient();
 
-  // 이 뷰포트에 에디터 Client가 연결돼 있는지. 연결돼 있을 때만(편집, SIE) 선택, 기즈모, 하이라이트 같은 에디터 도구를 쓴다.
-  // Play처럼 게임 Client가 연결된 뷰포트에서는 false이다.
+  // 이 뷰포트에 에디터 Client가 연결돼 있는지.
   [[nodiscard]] bool IsEditorClientAttached(int32 Index) const;
+
+  // 선택된 액터가 이 월드의 것인지.
+  [[nodiscard]] bool IsSelectionInWorld(const UWorld* World) const;
 
   void UpdateCamera();
   void RefreshSelectedTransform();

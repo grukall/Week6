@@ -3,6 +3,7 @@
 #include "Runtime/CoreUObject/UPrimitiveComponent.h"
 #include "Runtime/Core/PointerTypes.h"
 #include "Runtime/Math/FQuaternion.h"
+#include "Runtime/Engine/FArchive.h"
 #include "Runtime/Math/FVector.h"
 
 
@@ -12,6 +13,8 @@ class UMovementComponent : public UActorComponent
 	DECLARE_UCLASS(UMovementComponent, UActorComponent)
 
 public:
+	virtual void Deserialize(const FArchive& Archive) override;
+	virtual void Serialize(FArchive& Archive) const override;
 	virtual void Initialize() override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetUpdatedComponent(USceneComponent* InUpdatedComponent) { UpdatedComponent = InUpdatedComponent; }

@@ -47,20 +47,23 @@ void FImguiControlPanelWindow::Process(FEditor& Editor)
     // DirectionLightSetting(Editor);
 
     ImGui::Separator();
-    BVHDebugSetting(Editor);
 
-    ImGui::Separator();
-    RenderStateSort(Editor);
+    if (ImGui::CollapsingHeader("Debug/Optimization"))
+    {
+        BVHDebugSetting(Editor);
 
-    ImGui::Separator();
-	SIMDCullingDebugSetting(Editor);
+        ImGui::Separator();
+        RenderStateSort(Editor);
 
-    ImGui::Separator();
-    LODSetting(Editor);
+        ImGui::Separator();
+	    SIMDCullingDebugSetting(Editor);
 
-    ImGui::Separator();
-    CullingSetting(Editor);
+        ImGui::Separator();
+        LODSetting(Editor);
 
+        ImGui::Separator();
+        CullingSetting(Editor);
+    }
     ImGui::End();
 }
 
@@ -209,7 +212,7 @@ void FImguiControlPanelWindow::RunPickBenchmark(FEditor& Editor, int Iterations)
         else
         {
             FRayCastingManager::RayIntersectsMeshes(
-                Ray, Viewport->GetCamera(), Editor.GetPrimitiveComponents(), HitComponent, ImpactPoint);
+                Ray, *Viewport->GetCamera(), Editor.GetPrimitiveComponents(), HitComponent, ImpactPoint);
         }
         Times.push_back(Counter.Finish());
     }
@@ -424,12 +427,12 @@ void FImguiControlPanelWindow::RenderModeAndShowFlagSetting(FEditor& Editor)
 
 void FImguiControlPanelWindow::CameraSetting(FEditor& Editor)
 {
-    if (FEditorViewportClient* Viewport = Editor.GetActiveEditorClient())
+    if (FEditorViewportClient* ViewportClient = Editor.GetActiveEditorClient())
     {
-        FCamera& Camera = Viewport->GetCamera();
+        FCamera *Camera = ViewportClient->GetCamera();
 
         bool bOrthographic =
-            (Camera.GetProjection().GetProjectionType() == EProjectionType::Orthographic);
+            (Camera->GetProjection().GetProjectionType() == EProjectionType::Orthographic);
         //if (ImGui::Checkbox("Orthogonal", &bOrthographic))
         //{
         //    Camera.Projection.ProjectionType =
@@ -450,20 +453,20 @@ void FImguiControlPanelWindow::CameraSetting(FEditor& Editor)
         ImGui::Text("Speed");
         Editor.State.SetCameraSpeed(CameraSpeed);
 
-        float FOV = Camera.GetProjection().GetFOV();
+        float FOV = Camera->GetProjection().GetFOV();
         ImGui::SetNextItemWidth(180.0f);
         if (ImGui::DragFloat("##FOV", &FOV, 0.1f, 1.0f, 179.0f, "%.1f"))
         {
-            Camera.SetFOV(FOV);
+            Camera->SetFOV(FOV);
         }
         ImGui::SameLine();
         ImGui::Text("FOV");
 
-        FVector CameraPosition = Camera.GetPosition();
+        FVector CameraPosition = Camera->GetPosition();
         ImGui::SetNextItemWidth(180.0f);
         if (ImGui::DragFloat3("##CameraLocation", &CameraPosition.X, 0.05f, 0.0f, 0.0f, "%.3f"))
         {
-            Camera.SetPosition(CameraPosition);
+            Camera->SetPosition(CameraPosition);
         }
         ImGui::SameLine();
         ImGui::Text("Camera Location");
@@ -472,7 +475,7 @@ void FImguiControlPanelWindow::CameraSetting(FEditor& Editor)
         ImGui::Text("Pitch");
         ImGui::SameLine();
 
-        float Pitch = Camera.GetPitch();
+        float Pitch = Camera->GetPitch();
         ImGui::SetNextItemWidth(50.0f);
         if (ImGui::DragFloat(
             "##CameraPitch",
@@ -483,7 +486,7 @@ void FImguiControlPanelWindow::CameraSetting(FEditor& Editor)
             "%.2f"
         ))
         {
-            Camera.SetPitch(Pitch);
+            Camera->SetPitch(Pitch);
         }
         ImGui::SameLine();
 
@@ -491,7 +494,7 @@ void FImguiControlPanelWindow::CameraSetting(FEditor& Editor)
         ImGui::Text("Yaw");
         ImGui::SameLine();
 
-        float Yaw = Camera.GetYaw();
+        float Yaw = Camera->GetYaw();
         ImGui::SetNextItemWidth(50.0f);
         if (ImGui::DragFloat(
             "##CameraYaw",
@@ -502,7 +505,7 @@ void FImguiControlPanelWindow::CameraSetting(FEditor& Editor)
             "%.2f"
         ))
         {
-            Camera.SetYaw(Yaw);
+            Camera->SetYaw(Yaw);
         }
 
         ImGui::SameLine();
@@ -510,11 +513,11 @@ void FImguiControlPanelWindow::CameraSetting(FEditor& Editor)
 
         if (ImGui::Button("Reset Camera"))
         {
-            Camera.SetPosition(FVector{ -8.0f, 0.0f, 4.0f });
-            Camera.SetRotation(-20.0f, 0.0f);
-            Editor.State.SetCameraLocation(Camera.GetPosition());
-            Editor.State.SetCameraPitch(Camera.GetPitch());
-            Editor.State.SetCameraYaw(Camera.GetYaw());
+            Camera->SetPosition(FVector{ -8.0f, 0.0f, 4.0f });
+            Camera->SetRotation(-20.0f, 0.0f);
+            Editor.State.SetCameraLocation(Camera->GetPosition());
+            Editor.State.SetCameraPitch(Camera->GetPitch());
+            Editor.State.SetCameraYaw(Camera->GetYaw());
         }
     }
 }

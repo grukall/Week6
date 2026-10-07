@@ -34,7 +34,7 @@ struct FWorldContext
 	// 컨텍스트를 가리키는 고유 번호. UEngine이 부여한다 (배열 인덱스와 달리 컨텍스트가 삭제되어도 밀리지 않는다).
 	uint32 ContextId = InvalidContextId;
 
-    //EWorldType::PIE, Game이면, GameViewportClient를 생성해 넣는다.
+    //EWorldType::PIE, Game이면, GameViewportClient를 생성해 넣는다, 컨텍스트가 소유한다.
     FGameViewportClient* GameViewportClient = nullptr;
 
 	FWorldContext(EWorldType InWorldType, UWorld* InWorld, uint32 InContextId)

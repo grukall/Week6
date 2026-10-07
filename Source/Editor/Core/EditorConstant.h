@@ -13,6 +13,7 @@
 #include "Runtime/Actors/ASpotlightActor.h"
 #include "Runtime/Actors/ATextRenderActor.h"
 #include "Runtime/Actors/ACatActor.h"
+#include "Runtime/Actors/Infos/AExponentialHeightFog.h"
 
 
 #include "Runtime/CoreUObject/Mesh/UStaticMeshComponent.h"
@@ -27,6 +28,7 @@
 #include "Runtime/CoreUObject/UPointLightComponent.h"
 #include "Runtime/CoreUObject/UProjectileMovementComponent.h"
 #include "Runtime/CoreUObject/URotationMovementComponent.h"
+#include "Runtime/CoreUObject/UExponentialHeightFogComponent.h"
 
 
 namespace EditorConstant
@@ -46,6 +48,7 @@ namespace EditorConstant
 	   AAnimatedBillboardActor::StaticClass(),
 	   ASpotlightActor::StaticClass(),
 	   ATextRenderActor::StaticClass(),
+	   AExponentialHeightFog::StaticClass(),
 	};
 
 	/// <summary>
@@ -65,6 +68,7 @@ namespace EditorConstant
 	   UPointLightComponent::StaticClass(),
 	   UProjectileMovementComponent::StaticClass(),
 	   URotationMovementComponent::StaticClass(),
+	   UExponentialHeightFogComponent::StaticClass()
 	};
 
 }

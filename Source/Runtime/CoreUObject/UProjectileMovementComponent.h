@@ -1,5 +1,6 @@
 #pragma once
 #include "Runtime/CoreUObject/UMovementComponent.h"
+#include "Runtime/Engine/FArchive.h"
 
 class UProjectileMovementComponent : public UMovementComponent
 {
@@ -11,6 +12,9 @@ protected:
 	virtual bool MoveUpdatedComponentImpl(const FVector& Delta, const FQuaternion& newRotation, bool bSweep) override;
 	virtual float GetGravityZ() override { return ProjectileGravityScale; }
 public:
+	virtual void Serialize(FArchive& Archive) const override;
+	virtual void Deserialize(const FArchive& Archive) override;
+
 	bool ShouldApplyGravity() { return ProjectileGravityScale != 0; }
 
 	virtual FVector ComputeHomingAcceleration(const FVector& InVelocity, float DeltaTime) const;

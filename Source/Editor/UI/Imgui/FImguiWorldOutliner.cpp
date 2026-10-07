@@ -9,6 +9,7 @@
 #include <Runtime/Engine/UWorld.h>
 #include <Runtime/Core/TArray.h>
 #include <Editor/Core/EditorConstant.h>
+#include <ThirdParty/Imgui/imgui_internal.h>
 
 namespace
 {
@@ -85,14 +86,6 @@ void FImguiWorldOutliner::Process(FEditor& Editor)
 		return;
 	}
 
-	ImGui::Checkbox("아웃라이너 최적화 적용", &bUseOptimized);
-	if (ImGui::IsItemHovered())
-	{
-		ImGui::SetTooltip("체크: 캐쉬된 라벨 및 화면에 보이는 일부 노드만 랜더\n"
-			"해제: 매 프레임 동적 생성 및 전체 순회");
-	}
-	ImGui::Separator();
-
 	// 검색 필터 버퍼
 	const bool bFilterChanged = ShowSearchBar();
 	ImGui::Separator();
@@ -109,8 +102,6 @@ void FImguiWorldOutliner::Process(FEditor& Editor)
 		bCacheDirty = true;
 	}
 
-	//if (bUseOptimized)
-	//{
 	if (bCacheDirty || CurrentWorld != LastWorld || Actors->size() != LastActorCount)
 	{
 		RefreshCache(CurrentWorld);
@@ -139,18 +130,6 @@ void FImguiWorldOutliner::Process(FEditor& Editor)
 			ShowActorNode_Cached(Editor, DisplayList[i], SelectedActor);
 		}
 	}
-	//}
-	//else
-	//{
-	//	CurrentWorld->ForEachActors([&](AActor* Actor)
-	//	{
-	//		if (!Actor || IsAttachedActor(*Actor))
-	//		{
-	//			return;
-	//		}
-	//		ShowActorNode(Editor, Actor, CurrentFilterStr.c_str(), SelectedActor);
-	//	});
-	//}
 
 	ImGui::EndChild();
 
@@ -266,56 +245,6 @@ void FImguiWorldOutliner::UpdateFilter(const FString& FilterStr)
 	LastFilterStr = FilterStr;
 }
 
-//void FImguiWorldOutliner::ShowActorNode(FEditor& Editor, AActor* Actor, const std::string& FilterStr, AActor* SelectedActor)
-//{
-//	if (!Actor->GetClass()) { return; }
-//
-//	// 검색어 필터링
-//	if (!FilterStr.empty())
-//	{
-//		// 액터 이름 생성
-//		const FString& ActorName = Actor->GetClass()->GetDisplayName();
-//		if (ActorName.find(FilterStr) == FString::npos)
-//		{
-//			return;
-//		}
-//	}
-//
-//	const bool bIsSelected = (Actor == SelectedActor);
-//	ImGuiTreeNodeFlags NodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-//	if (bIsSelected)
-//	{
-//		NodeFlags |= ImGuiTreeNodeFlags_Selected;
-//	}
-//
-//	const TArray<AActor*> ChildActors = GetChildActors(*Actor);
-//	if (ChildActors.empty())
-//	{
-//		NodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-//	}
-//
-//	// 트리 노드 렌더링
-//	const bool bNodeOpen = ImGui::TreeNodeEx(Actor, NodeFlags, "%s (%s)", Actor->GetName().ToString().c_str(), Actor->GetClass()->GetDisplayName().c_str());
-//	HandleRowDragDrop(Actor, Actor->GetClass()->GetDisplayName().c_str());
-//
-//	// 클릭 시 액터 선택
-//	if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
-//	{
-//		Editor.SelectActor(Actor);
-//	}
-//
-//	// 붙어 있는 자식 액터 전개
-//	if (bNodeOpen && !ChildActors.empty())
-//	{
-//		for (AActor* ChildActor : ChildActors)
-//		{
-//			ShowActorNode(Editor, ChildActor, std::string(), SelectedActor);
-//		}
-//
-//		ImGui::TreePop();
-//	}
-//}
-
 void FImguiWorldOutliner::ShowActorNode_Cached(FEditor& Editor, const FOutlinerItem& Item, AActor* SelectedActor)
 {
 	if (!Item.Actor) return;
@@ -345,7 +274,16 @@ void FImguiWorldOutliner::ShowActorNode_Cached(FEditor& Editor, const FOutlinerI
 
 	if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
 	{
-		Editor.SelectActor(Item.Actor);
+		PressedActor = Item.Actor;
+	}
+
+	if (PressedActor == Item.Actor && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+	{
+		if (ImGui::IsItemHovered() && !ImGui::IsDragDropActive())
+		{
+			Editor.SelectActor(Item.Actor);
+		}
+		PressedActor = nullptr;
 	}
 
 	if (Item.bHasChildren)

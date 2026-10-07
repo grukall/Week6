@@ -16,6 +16,8 @@ class FTransform
 	void UpdateTransformMatrixIfDirty() const;
 
 public:
+
+
 	const FVector& GetLocation() const { return Location; }
 	const FQuaternion& GetRotation() const { return Rotation; }
 	const FVector& GetScale3D() const { return Scale3D; }

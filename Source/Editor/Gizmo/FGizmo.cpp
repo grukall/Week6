@@ -125,10 +125,18 @@ void FGizmo::BeginInteraction(const FTransform& Transform, EGizmoHandle Handle, 
 	case EGizmoHandle::None:
 		return;
 	}
-	InteractionAxisWorld = GetSpace() == EGizmoSpace::World ? InteractionAxisLocal : Transform.GetRotation().RotateVector(InteractionAxisLocal);
+	InteractionLastMouse = MousePosition;
 
-	InteractionStartTransform = Transform;
-	InteractionStartMouse = MousePosition;
+	if (UpdateInteractionAxis(Transform, Camera, ViewportSize))
+	{
+		ActiveHandle = Handle;
+	}
+}
+
+bool FGizmo::UpdateInteractionAxis(const FTransform& Transform, const FCamera& Camera, const FVector2& ViewportSize)
+{
+	// Local이면 현재 회전 기준 축을 쓴다. 다른 컴포넌트가 회전시켜도 축이 따라 돈다.
+	InteractionAxisWorld = GetSpace() == EGizmoSpace::World ? InteractionAxisLocal : Transform.GetRotation().RotateVector(InteractionAxisLocal);
 
 	float GizmoScale = CalculateGizmoScale(Transform.GetLocation(), Camera);
 
@@ -146,57 +154,86 @@ void FGizmo::BeginInteraction(const FTransform& Transform, EGizmoHandle Handle, 
 	FVector CenterToCamera = Camera.GetPosition() - OriginWorld;
 	InteractionRotationSign = (CenterToCamera.Dot(InteractionAxisWorld) <= 0.0f) ? 1.0f : -1.0f;
 
-	if (AxisViewportLength > 1e-5f)
+	if (AxisViewportLength <= 1e-5f)
 	{
-		InteractionAxisViewport = AxisViewport / AxisViewportLength;
-		InteractionWorldUnitsPerPixel = GizmoScale / AxisViewportLength;
-		ActiveHandle = Handle;
+		return false;
 	}
+
+	InteractionAxisViewport = AxisViewport / AxisViewportLength;
+	InteractionWorldUnitsPerPixel = GizmoScale / AxisViewportLength;
+	return true;
 }
 
-void FGizmo::UpdateInteraction(FEditor& Editor, const FVector2& MousePosition)
+void FGizmo::UpdateInteraction(FEditor& Editor, const FVector2& MousePosition, const FCamera& Camera, const FVector2& ViewportSize)
 {
 	if (!Editor.ObjectSelected() || ActiveHandle == EGizmoHandle::None)
 	{
 		return;
 	}
 
-	FVector2 MouseDelta = MousePosition - InteractionStartMouse;
+	// SelectedTransform은 FEditor::Process에서 매 프레임 실제 Transform과 동기화된다.
+	// 시작 시점이 아니라 현재 Transform 기준으로 축을 다시 구하고, 지난 프레임 이후 마우스 이동량만큼만 적용한다.
+	const FTransform& OldSelectedTransform = Editor.SelectedTransform;
+	if (!UpdateInteractionAxis(OldSelectedTransform, Camera, ViewportSize))
+	{
+		InteractionLastMouse = MousePosition;
+		return;
+	}
+
+	FVector2 MouseDelta = MousePosition - InteractionLastMouse;
 	float ViewportDistance = MouseDelta.Dot(InteractionAxisViewport);
 	float WorldDistance = ViewportDistance * InteractionWorldUnitsPerPixel;
+	FTransform NewSelectedTransform = OldSelectedTransform;
 
 	switch (Mode)
 	{
 	case EGizmoMode::Translate:
-		Editor.SelectedTransform.SetLocation(InteractionStartTransform.GetLocation() + InteractionAxisWorld * WorldDistance);
+		NewSelectedTransform.SetLocation(OldSelectedTransform.GetLocation() + InteractionAxisWorld * WorldDistance);
 		break;
-		
+
 	case EGizmoMode::Rotate:
 	{
-		FVector2 BA = InteractionStartMouse - InteractionOriginViewport;
+		FVector2 BA = InteractionLastMouse - InteractionOriginViewport;
 		FVector2 BC = MousePosition - InteractionOriginViewport;
 		float Theta = (std::atan2f(BA.Y, BA.X) - std::atan2f(BC.Y, BC.X)) * InteractionRotationSign * 180.0f / std::numbers::pi_v<float>;
 		if (GetSpace() == EGizmoSpace::World)
 		{
 			FQuaternion Delta = FQuaternion::FromAxisAngle(InteractionAxisWorld, Theta);
-			Editor.SelectedTransform.SetRotation(Delta * InteractionStartTransform.GetRotation());
+			NewSelectedTransform.SetRotation(Delta * OldSelectedTransform.GetRotation());
 		}
 		else
 		{
 			FQuaternion Delta = FQuaternion::FromAxisAngle(InteractionAxisLocal, Theta);
-			Editor.SelectedTransform.SetRotation(InteractionStartTransform.GetRotation() * Delta);
+			NewSelectedTransform.SetRotation(OldSelectedTransform.GetRotation() * Delta);
 		}
-		Editor.SelectedEulerDegDisplay = Editor.SelectedTransform.GetRotation().GetEulerXYZ() * 180.0f / std::numbers::pi_v<float>;
+		Editor.SelectedEulerDegDisplay = NewSelectedTransform.GetRotation().GetEulerXYZ() * 180.0f / std::numbers::pi_v<float>;
 		break;
 	}
 
 	case EGizmoMode::Scale:
-		Editor.SelectedTransform.SetScale3D(InteractionStartTransform.GetScale3D() + InteractionAxisLocal * WorldDistance);
+		NewSelectedTransform.SetScale3D(OldSelectedTransform.GetScale3D() + InteractionAxisLocal * WorldDistance);
 		break;
 
 	case EGizmoMode::None:
 		return;
 	}
+
+	// 기즈모 갱신 후 World Tick이 한 번 더 돌기 때문에, 변화량만 넘기고 FEditor::Process에서 실제 Transform에 적용한다.
+	// World면 월드 기준 변화량, Local이면 Old 기준 로컬 변화량이다. 스케일은 항상 로컬 축 기준 차이다.
+	if (GetSpace() == EGizmoSpace::World)
+	{
+		Editor.GapTransform.SetLocation(NewSelectedTransform.GetLocation() - OldSelectedTransform.GetLocation());
+		Editor.GapTransform.SetRotation((NewSelectedTransform.GetRotation() * OldSelectedTransform.GetRotation().Conjugate()).Normalized());
+	}
+	else
+	{
+		const FQuaternion InverseOldRotation = OldSelectedTransform.GetRotation().Conjugate();
+		Editor.GapTransform.SetLocation(InverseOldRotation.RotateVector(NewSelectedTransform.GetLocation() - OldSelectedTransform.GetLocation()));
+		Editor.GapTransform.SetRotation((InverseOldRotation * NewSelectedTransform.GetRotation()).Normalized());
+	}
+	Editor.GapTransform.SetScale3D(NewSelectedTransform.GetScale3D() - OldSelectedTransform.GetScale3D());
+	Editor.SelectedTransform = NewSelectedTransform;
+	InteractionLastMouse = MousePosition;
 }
 
 void FGizmo::EndInteraction()

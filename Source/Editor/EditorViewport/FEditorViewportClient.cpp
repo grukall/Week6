@@ -84,7 +84,8 @@ void FEditorViewportClient::UpdateGizmo(const FViewportInput& Input)
     // Hover와 종료는 Process에서 처리하고, 여기서는 진행 중인 드래그만 갱신한다.
     if (Editor->ObjectSelected() && Gizmo.IsInteracting() && Input.bLeftDown)
     {
-        Gizmo.UpdateInteraction(*Editor, Input.LocalMouse);
+        Gizmo.UpdateInteraction(*Editor, Input.LocalMouse, ViewportCamera, Input.SizePixels);
+        Editor->bChangedByGizmo = true;
     }
 }
 

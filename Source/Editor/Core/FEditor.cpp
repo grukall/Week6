@@ -75,7 +75,6 @@ void FEditor::Process()
         UnSelectActor();
     }
 
-    bool bChanged = false;
 
     // 선택된 액터가 속한 월드의 BVH만 갱신한다.
     if (SelectedActor)
@@ -89,16 +88,36 @@ void FEditor::Process()
             Target = SelectedActor->GetRootComponent();
         }
 
-        bChanged = Target && !(Target->GetGlobalTransform() == SelectedTransform);
+        if (Target && bChangedByGizmo)
+        {
+            // World면 월드 기준으로, Local이면 현재 회전 기준으로 기즈모 변화량만 적용한다.
+            FTransform TargetTransform = Target->GetGlobalTransform();
+            const FQuaternion TargetRotation = TargetTransform.GetRotation();
+            if (Gizmo.GetSpace() == EGizmoSpace::World)
+            {
+                TargetTransform.SetLocation(TargetTransform.GetLocation() + GapTransform.GetLocation());
+                TargetTransform.SetRotation((GapTransform.GetRotation() * TargetRotation).Normalized());
+            }
+            else
+            {
+                TargetTransform.SetLocation(TargetTransform.GetLocation() + TargetRotation.RotateVector(GapTransform.GetLocation()));
+                TargetTransform.SetRotation((TargetRotation * GapTransform.GetRotation()).Normalized());
+            }
+            TargetTransform.SetScale3D(TargetTransform.GetScale3D() + GapTransform.GetScale3D());
+            Target->SetRelativeTransformFromGlobal(TargetTransform);
+        }
+
+        // 다른 컴포넌트가 바꾼 Transform도 기즈모가 따라가도록 매 프레임 실제 Transform과 동기화한다.
         if (Target)
         {
-            Target->SetRelativeTransformFromGlobal(SelectedTransform);
+            SelectedTransform = Target->GetGlobalTransform();
         }
         // Transform이 변경되었을 때만 Refit
-        if (bChanged && World && World->GetScene())
+        if (bChangedByGizmo && World && World->GetScene())
         {
             RefitActorInBVH(World->GetScene()->GetSceneBVH(), SelectedActor);
         }
+        bChangedByGizmo = false;
     }
 
   SaveState();

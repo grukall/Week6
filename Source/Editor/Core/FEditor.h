@@ -27,8 +27,16 @@ enum class EEditorPrimitiveType : uint8 {
 
 class FEditor {
 public:
+  
+  // Gizmo로 변한 Transform 캐싱
   FTransform SelectedTransform;
+
+  // 이번 프레임 기즈모 변화량. World면 월드 기준(Rotation은 왼쪽에 곱함), Local이면 로컬 기준(Rotation은 오른쪽에 곱함). Scale3D는 차이.
+  FTransform GapTransform;
   FVector SelectedEulerDegDisplay;
+
+  //Gizmo를 통해 Transform
+  bool bChangedByGizmo = false;
 
   FEditorState State;
 

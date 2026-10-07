@@ -10,6 +10,9 @@ class ULightComponent : public USceneComponent
 	DECLARE_UCLASS(ULightComponent, USceneComponent)
 
 public:
+	virtual void Serialize(FArchive& Archive) const override;
+	virtual void Deserialize(const FArchive& Archive) override;
+
 	void Register(UWorld* InWorld) override;
 	void Unregister() override;
 

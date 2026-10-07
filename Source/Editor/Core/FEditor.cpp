@@ -45,17 +45,20 @@ void FEditor::Process()
     }
 
     // 씬의 액터 업데이트
-    if (FInputManager::Get().IsKeyPressed(VK_DELETE) && SelectedActor)
+    if (FInputManager::Get().IsKeyDown(VK_DELETE) && SelectedActor)
     {
 
         if (SelectedComponent)
         {
             // 선택을 먼저 풀어야 삭제된 컴포넌트의 트랜스폼이 액터 루트에 적용되지 않는다.
             AActor* OwnerActor = SelectedComponent->GetActorOwner();
+            UActorComponent* TempComponent = SelectedComponent;
             UnSelectActor();
             if (OwnerActor)
             {
-                OwnerActor->DeleteComponent(SelectedComponent);
+                OwnerActor->DeleteComponent(TempComponent);
+                SelectActor(OwnerActor);
+                HierarchyVersion++;
             }
         }
         else

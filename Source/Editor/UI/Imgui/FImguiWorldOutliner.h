@@ -44,6 +44,7 @@ private:
 	void ApplyAttach(const FOutlinerAttachRequest& Request);
 	// 드롭은 목록 순회 중에 일어나므로 기억만 해두고 순회가 끝난 뒤 처리한다.
 	TOptional<FOutlinerAttachRequest> PendingAttach;
+	AActor* PressedActor = nullptr;
 
 
 	// 검색 입력 칸을 그리고, 입력된 문자열을 소문자로 정규화해 돌려준다.

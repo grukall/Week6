@@ -2,9 +2,43 @@
 
 IMPLEMENT_UCLASS(UProjectileMovementComponent, UMovementComponent)
 
+void UProjectileMovementComponent::Serialize(FArchive& Archive) const
+{
+	Super::Serialize(Archive);
+
+	Archive.SetFloat("ProjectileGravityScale", ProjectileGravityScale);
+	Archive.SetFloat("HomingAccelerationMagnitude", HomingAccelerationMagnitude);
+	Archive.SetBool("bIsHomingProjectile", bIsHomingProjectile);
+
+	if (HomingTargetComponent)
+	{
+		Archive.SetString("HomingTarget", HomingTargetComponent->GetName().ToString());
+		const AActor* ParentHomingTarget = HomingTargetComponent->GetActorOwner();
+		if (ParentHomingTarget)
+		{
+			Archive.SetString("ParentHomingTarget", ParentHomingTarget->GetGuid().ToString());
+			return;
+		}
+	}
+	Archive.SetNull("HomingTarget");
+}
+
+void UProjectileMovementComponent::Deserialize(const FArchive& Archive)
+{
+	Super::Deserialize(Archive);
+
+	ProjectileGravityScale = Archive.GetFloat("ProjectileGravityScale");
+	HomingAccelerationMagnitude = Archive.GetFloat("HomingAccelerationMagnitude");
+	bIsHomingProjectile = Archive.GetBool("bIsHomingProjectile");
+}
+
 void UProjectileMovementComponent::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	if (!UpdatedComponent)
+	{
+		return;
+	}
 	FQuaternion CurrentQuat = UpdatedComponent->GetGlobalTransform().GetRotation();
 
 	if (ShouldApplyGravity())
@@ -29,10 +63,10 @@ void UProjectileMovementComponent::Tick(float DeltaTime)
 		Velocity *= MaxSpeed;
 	}
 
-	if (bIsHomingProjectile)
+	if (bIsHomingProjectile && HomingTargetComponent)
 	{
 		FVector Location = UpdatedComponent->GetGlobalTransform().GetLocation();
-		FVector TargetLocation = HomingTargetComponent->GetRelativeLocation();
+		FVector TargetLocation = HomingTargetComponent->GetGlobalTransform().GetLocation();
 
 		FVector Direction = TargetLocation - Location;
 
@@ -51,8 +85,9 @@ bool UProjectileMovementComponent::MoveUpdatedComponentImpl(const FVector& Delta
 	{
 		return false;
 	}
-	const FVector NewLocation = UpdatedComponent->GetGlobalTransform().GetLocation() + Delta;
-	UpdatedComponent->SetRelativeLocation(NewLocation);
+	FTransform NewTransform = UpdatedComponent->GetGlobalTransform();
+	NewTransform.SetLocation(NewTransform.GetLocation() + Delta);
+	UpdatedComponent->SetRelativeTransformFromGlobal(NewTransform);
 
 	return true;
 }
@@ -67,7 +102,7 @@ FVector UProjectileMovementComponent::ComputeHomingAcceleration(const FVector& I
 	FVector Direction;
 
 	FVector Location = UpdatedComponent->GetGlobalTransform().GetLocation();
-	FVector TargetLocation = HomingTargetComponent->GetRelativeLocation();
+	FVector TargetLocation = HomingTargetComponent->GetGlobalTransform().GetLocation();
 	
 	Direction = TargetLocation - Location;
 	

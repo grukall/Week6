@@ -3,6 +3,7 @@
 #include "Runtime/CoreUObject/UClass.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
 #include "Runtime/CoreUObject/USceneComponent.h"
+#include "Runtime/CoreUObject/UProjectileMovementComponent.h"
 #include "Runtime/Engine/FArchive.h"
 #include "Runtime/Engine/ULevel.h"
 #include "Runtime/Engine/UWorld.h"
@@ -275,6 +276,26 @@ namespace
 
 		Child->RestoreAttachment(ParentSceneComponent);
 	}
+
+	void RestoreHomingTarget(UProjectileMovementComponent* Projectile, const FArchive& ComponentArchive, const TMap<FString, AActor*>& LoadedActorsByGuid)
+	{
+		if (Projectile == nullptr || ComponentArchive.IsNull("HomingTarget") || ComponentArchive.IsNull("ParentHomingTarget"))
+		{
+			return;
+		}
+
+		const auto ParentHomingTargetIt = LoadedActorsByGuid.find(ComponentArchive.GetString("ParentHomingTarget"));
+		AActor* ParentHomingTarget = ParentHomingTargetIt != LoadedActorsByGuid.end() ? ParentHomingTargetIt->second : nullptr;
+		UActorComponent* HomingTarget = ParentHomingTarget ? ParentHomingTarget->FindComponentByName(FName(ComponentArchive.GetString("HomingTarget"))) : nullptr;
+		USceneComponent* HomingTargetComponent = HomingTarget ? HomingTarget->Cast<USceneComponent>() : nullptr;
+
+		if (HomingTargetComponent == nullptr)
+		{
+			return;
+		}
+
+		Projectile->HomingTargetComponent = HomingTargetComponent;
+	}
 }
 
 void AActor::RestoreExternalAttachments(const FArchive& Archive, const TMap<FString, AActor*>& LoadedActorsByGuid)
@@ -297,6 +318,7 @@ void AActor::RestoreExternalAttachments(const FArchive& Archive, const TMap<FStr
 		}
 
 		UActorComponent* Component = FindComponentByName(FName(ComponentArchive.GetString("Name")));
+		RestoreHomingTarget(Component ? Component->Cast<UProjectileMovementComponent>() : nullptr, ComponentArchive, LoadedActorsByGuid);
 		Restore(Component ? Component->Cast<USceneComponent>() : nullptr, ComponentArchive, LoadedActorsByGuid);
 	}
 }

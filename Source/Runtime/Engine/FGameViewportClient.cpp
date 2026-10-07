@@ -10,8 +10,7 @@ void FGameViewportClient::RemoveAssociation(FViewport & Viewport)
 	FViewportClient::RemoveAssociation(Viewport);
 }
 
-bool FGameViewportClient::GetViewInfo(FCamera& OutCamera)
+void FGameViewportClient::ProccessInput(const FViewportInput& Input, float deltaTime)
 {
-	OutCamera = TempCamera;
-	return true;
+	//TODO : 게임 입력을 여기서 각 LocalPlayer의 PlayerController에게 전달
 }

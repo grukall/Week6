@@ -323,6 +323,7 @@ void AActor::SetRootComponent(UActorComponent* Component)
 	if (RootComponent)
 	{
 		UE_LOG_WARN("이미 Root 컴포넌트가 있습니다.");
+		return;
 	}
 
 	AddComponent(Component);

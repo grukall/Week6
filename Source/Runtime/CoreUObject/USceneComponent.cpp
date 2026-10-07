@@ -90,11 +90,7 @@ void USceneComponent::SetupAttachment(USceneComponent* InParent, bool bKeepWorld
     }
     else
     {
-        //FTransform ParentScale;
-        //ParentScale.SetScale3D(InParent->GetGlobalTransform().GetScale3D());
-        FTransform DefaultTransform;
-
-        SetRelativeTransform(FTransform().GetRelativeTo(DefaultTransform));
+        SetRelativeTransform(FTransform());
     }
 }
 

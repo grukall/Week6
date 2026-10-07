@@ -74,7 +74,7 @@ void FImguiStatsWindow::Process(FEditor& Editor, float InDeltaTime) {
 
     if (Editor.bShowBenchmark)
     {
-        DrawPickingStatsOverlay(Editor);
+        //DrawPickingStatsOverlay(Editor);
     }
 
     if (bOpenMemory)

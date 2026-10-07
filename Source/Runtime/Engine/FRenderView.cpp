@@ -136,6 +136,12 @@ void FRenderView::CollectScenePrimitives(const FScene& Scene, const FSceneView& 
             continue;
         }
 
+        //PIE일때 표시안되는 것들 처리 (예시 : BillBoardComp)
+        if (PrimitiveComponent->GetWorld()->GetWorldType() == EWorldType::PIE && PrimitiveComponent->IsHiddenInGame())
+        {
+            continue;
+        }
+
         bool bSelected = false;
         if (PrimitiveComponent->GetActorOwner() && PrimitiveComponent->GetActorOwner() == SelectedActor)
         {
@@ -489,6 +495,11 @@ void FRenderView::RenderSphere(const FVector &Center, float Radius,
                                const FVector4 &Color, uint32 Segments) {
   FLineBatcher &LineBatcher = Renderer.GetLineBatcher();
   LineBatcher.DrawSphere(Center, Radius, Color, Segments);
+}
+
+void FRenderView::RenderGBufferPass()
+{
+    Renderer.RenderGBufferPass();
 }
 
 void FRenderView::RenderScreenPass(const FCamera& Camera, const AActor* SelectedActor, 

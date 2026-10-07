@@ -37,7 +37,6 @@ public:
 
 private:
 	//액터 한 개의 트리노드, 펼쳐지면 붙어 있는 자식 액터까지
-	void ShowActorNode(FEditor& Editor, AActor* Actor, const std::string& FilterStr, AActor* SelectedActor);
 	void ShowActorNode_Cached(FEditor& Editor, const FOutlinerItem& Item, AActor* SelectedActor);
 
 	// TreeNodeEx 직후에 호출한다. 직전 아이템을 드래그 소스 겸 드롭 타깃으로 만든다.
@@ -45,6 +44,7 @@ private:
 	void ApplyAttach(const FOutlinerAttachRequest& Request);
 	// 드롭은 목록 순회 중에 일어나므로 기억만 해두고 순회가 끝난 뒤 처리한다.
 	TOptional<FOutlinerAttachRequest> PendingAttach;
+	AActor* PressedActor = nullptr;
 
 
 	// 검색 입력 칸을 그리고, 입력된 문자열을 소문자로 정규화해 돌려준다.
@@ -72,6 +72,5 @@ private:
 	FString CurrentFilterStr = "";
 	bool bCacheDirty = true;
 	bool bDisplayListDirty = false;
-	bool bUseOptimized = true;
 
 };

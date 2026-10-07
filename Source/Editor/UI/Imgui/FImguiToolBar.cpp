@@ -178,13 +178,15 @@ void FImguiToolbar::ShowPIEUI(FEditor& Editor)
             Engine->bRequestEndPlay = true;
         }
 
-        EPlaySessionType SessionType = Engine->PlaySession.Get()->SessionType;
+        FPlaySession* Session = Engine->PlaySession.Get();
+        EPlaySessionType SessionType = Session->SessionType;
+        FEditor& Editor = Engine->GetEditor();
+        FViewport *Viewport = Editor.GetViewports()[Session->ViewEntryIndex].get();
         if (SessionType == EPlaySessionType::PIE)
         {
             if (ImGui::Button("Simulate in Editor", { 150.0f, 0.0f }))
             {
-                FEditor &Editor = Engine->GetEditor();
-                Engine->SwitchPlaySessionMode(Editor.GetActiveViewport(), EPlaySessionType::SIE);
+                Engine->SwitchPlaySessionMode(Viewport, EPlaySessionType::SIE);
             }
         }
         if (SessionType == EPlaySessionType::SIE)
@@ -192,7 +194,7 @@ void FImguiToolbar::ShowPIEUI(FEditor& Editor)
             if (ImGui::Button("Play in Editor", { 150.0f, 0.0f }))
             {
                 FEditor& Editor = Engine->GetEditor();
-                Engine->SwitchPlaySessionMode(Editor.GetActiveViewport(), EPlaySessionType::PIE);
+                Engine->SwitchPlaySessionMode(Viewport, EPlaySessionType::PIE);
             }
         }
     }

@@ -26,21 +26,6 @@ AAnimatedBillboardActor::AAnimatedBillboardActor()
 		Comp->SetLooping(true);
 		Comp->Play();
 	}
-
-	ULightComponent* Light = NewObject<UPointLightComponent>();
-	Light->SetAmbientInensity(0.3f);
-	Light->SetInensity(1.0f);
-	Light->SetFallOffStart(0.0f);
-	Light->SetFallOffEnd(10.0f);
-	Light->SetLightColor(FVector(1.0f, 0.0f, 0.0f));
-
-	AddComponent(Light);
-
-	UProjectileMovementComponent* Move = NewObject<UProjectileMovementComponent>();
-	Move->SetVelocity(FVector(10.0f, 0.0f, 0.0f));
-
-	bTickEnabled = true;
-	AddComponent(Move);
 }
 
 void AAnimatedBillboardActor::Initialize()

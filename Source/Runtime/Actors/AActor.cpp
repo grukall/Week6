@@ -3,6 +3,7 @@
 #include "Runtime/CoreUObject/UClass.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
 #include "Runtime/CoreUObject/USceneComponent.h"
+#include "Runtime/CoreUObject/UProjectileMovementComponent.h"
 #include "Runtime/Engine/FArchive.h"
 #include "Runtime/Engine/ULevel.h"
 #include "Runtime/Engine/UWorld.h"
@@ -275,6 +276,26 @@ namespace
 
 		Child->RestoreAttachment(ParentSceneComponent);
 	}
+
+	void RestoreHomingTarget(UProjectileMovementComponent* Projectile, const FArchive& ComponentArchive, const TMap<FString, AActor*>& LoadedActorsByGuid)
+	{
+		if (Projectile == nullptr || ComponentArchive.IsNull("HomingTarget") || ComponentArchive.IsNull("ParentHomingTarget"))
+		{
+			return;
+		}
+
+		const auto ParentHomingTargetIt = LoadedActorsByGuid.find(ComponentArchive.GetString("ParentHomingTarget"));
+		AActor* ParentHomingTarget = ParentHomingTargetIt != LoadedActorsByGuid.end() ? ParentHomingTargetIt->second : nullptr;
+		UActorComponent* HomingTarget = ParentHomingTarget ? ParentHomingTarget->FindComponentByName(FName(ComponentArchive.GetString("HomingTarget"))) : nullptr;
+		USceneComponent* HomingTargetComponent = HomingTarget ? HomingTarget->Cast<USceneComponent>() : nullptr;
+
+		if (HomingTargetComponent == nullptr)
+		{
+			return;
+		}
+
+		Projectile->HomingTargetComponent = HomingTargetComponent;
+	}
 }
 
 void AActor::RestoreExternalAttachments(const FArchive& Archive, const TMap<FString, AActor*>& LoadedActorsByGuid)
@@ -297,6 +318,7 @@ void AActor::RestoreExternalAttachments(const FArchive& Archive, const TMap<FStr
 		}
 
 		UActorComponent* Component = FindComponentByName(FName(ComponentArchive.GetString("Name")));
+		RestoreHomingTarget(Component ? Component->Cast<UProjectileMovementComponent>() : nullptr, ComponentArchive, LoadedActorsByGuid);
 		Restore(Component ? Component->Cast<USceneComponent>() : nullptr, ComponentArchive, LoadedActorsByGuid);
 	}
 }
@@ -322,48 +344,40 @@ void AActor::SetRootComponent(UActorComponent* Component)
 {
 	if (RootComponent)
 	{
-		throw EngineUtil::CreateError("이미 Root 컴포넌트가 있습니다.");
-	}
-
-	OwnedComponents.push_back(Component);
-	Component->SetActorOwner(this);
-	RegisterComponentName(Component);
-	Component->Initialize();
-	USceneComponent* SceneComponent = Component->Cast<USceneComponent>();
-
-	if (RegisteredWorld)
-	{
-		Component->Register(RegisteredWorld);
-	}
-
-	if (bHasBegunPlay)
-	{
-		Component->BeginPlay();
-	}
-
-	if (!SceneComponent)
-	{
+		UE_LOG_WARN("이미 Root 컴포넌트가 있습니다.");
 		return;
 	}
 
-	RootComponent = SceneComponent;
-
-	RootComponent->SetupAttachment(nullptr);
-	AttachedComp.push_back(RootComponent);
-
-
+	AddComponent(Component);
 }
 
 void AActor::MarkComponentsTransformDirty()
 {
 	for (USceneComponent* Component : AttachedComp)
 	{
-		if (Component)
+		if (!Component)
 		{
-			Component->OnTransformChanged();
-			for (USceneComponent* Child : Component->GetChildren())
+			continue;
+		}
+
+		Component->OnTransformChanged();
+
+		// 같은 액터의 자식은 AttachedComp에 있으므로, 여기서는 붙어 있는 다른 액터로만 내려간다.
+		for (USceneComponent* Child : Component->GetChildren())
+		{
+			if (!Child || Child->GetSceneOwner() != Component)
+			{
+				continue;
+			}
+
+			AActor* ChildActor = Child->GetActorOwner();
+			if (ChildActor == nullptr)
 			{
 				Child->OnTransformChanged();
+			}
+			else if (ChildActor != this)
+			{
+				ChildActor->MarkComponentsTransformDirty();
 			}
 		}
 	}
@@ -460,16 +474,9 @@ void AActor::AddComponent(UActorComponent* Addcomp)
 			CastSceneComponent->SetupAttachment(RootComponent);
 		}
 
-		if (CastSceneComponent->GetActorOwner() != this)
-		{
-			CastSceneComponent->SetActorOwner(this);
-		}
-
-
 		AttachedComp.push_back(CastSceneComponent);
 	}
 
-	//Addcomp->ActorOwner = this;
 	OwnedComponents.push_back(Addcomp);
 	RegisterComponentName(Addcomp);
 	Addcomp->Initialize();

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FViewportClient.h"
+#include "Runtime/Slate/SlateData.h"
 
 class FGameViewportClient : public FViewportClient
 {
@@ -16,5 +17,6 @@ public:
 	//Viewport 등록 이외에 클라이언트별 추가 작업이 필요한 경우, 여기에 구현한다.
 	virtual void AddAssociation(FViewport& Viewport) override;
 	virtual void RemoveAssociation(FViewport& Viewport) override;
-	virtual bool GetViewInfo(FCamera& OutCamera) override;
+	virtual FCamera* GetCamera() { return &TempCamera; }
+	virtual void ProccessInput(const FViewportInput& Input, float deltaTime);
 };

@@ -2,6 +2,25 @@
 
 IMPLEMENT_UCLASS(URotationMovementComponent, UMovementComponent)
 
+
+void URotationMovementComponent::Serialize(FArchive& Archive) const
+{
+    Super::Serialize(Archive);
+
+    Archive.SetVector("RotationRate", RotationRate);
+    Archive.SetVector("PivotTranslation", PivotTranslation);
+    Archive.SetBool("bRotationInLocalSpace", bRotationInLocalSpace);
+}
+
+void URotationMovementComponent::Deserialize(const FArchive& Archive)
+{
+    Super::Deserialize(Archive);
+
+    RotationRate = Archive.GetVector("RotationRate");
+	PivotTranslation = Archive.GetVector("PivotTranslation");
+	bRotationInLocalSpace = Archive.GetBool("bRotationInLocalSpace");
+}
+
 void URotationMovementComponent::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -24,3 +43,4 @@ bool URotationMovementComponent::MoveUpdatedComponentImpl(const FVector& Delta, 
 
 	return true;
 }
+

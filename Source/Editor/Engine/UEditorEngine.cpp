@@ -72,7 +72,7 @@ void UEditorEngine::OnWindowResize(UINT Width, UINT Height)
 			Viewports[i]->LengthUV *
 			FVector2{ static_cast<float>(Width), static_cast<float>(Height) };
 
-		EditorClient->GetCamera().SetAspectRatio(SizePixels.X / SizePixels.Y);
+		EditorClient->GetCamera()->SetAspectRatio(SizePixels.X / SizePixels.Y);
 	}
 #endif
 }
@@ -154,8 +154,8 @@ void UEditorEngine::Render()
         FViewportClient* ViewportClient = Viewport.GetClient();
         if (!ViewportClient) continue;
 
-        FCamera Camera;
-        if (!ViewportClient->GetViewInfo(Camera)) continue;
+        FCamera *Camera = ViewportClient->GetCamera();
+        if (!Camera) continue;
 
         // 뷰모드, 쇼플래그, 그리드는 에디터 Client의 설정을 쓴다.
         // TODO 클라이언트 별로 SceneView를 만들어 돌려주는 함수를 구현하면 게임 Client의 설정도 반영할 수 있다.
@@ -164,8 +164,8 @@ void UEditorEngine::Render()
 
         // 뷰포트 렌더링 명세 구성
         FSceneView sceneview{
-            .Camera = Camera,
-            .ViewProj = Camera.GetViewProjectionMatrix(),
+            .Camera = *Camera,
+            .ViewProj = Camera->GetViewProjectionMatrix(),
             .TopLeftUV = Viewport.TopLeftUV,
             .LengthUV = Viewport.LengthUV,
             .ViewMode = EditorViewport->ViewMode,
@@ -176,11 +176,16 @@ void UEditorEngine::Render()
         // 게임 Client가 연결된 뷰포트(Play)에는 하이라이트, 기즈모, 이름표, 그리드, 비주얼라이저 같은 에디터 장식을 그리지 않는다.
         const bool bEditorTools = Editor.IsEditorClientAttached(Leaf.EntryIndex);
 
+        // 선택 표시(하이라이트, 기즈모, 이름표)는 선택된 액터와 같은 월드를 그리는 뷰포트에서만 한다.
+        // 4분할에서 한 뷰포트만 PIE 월드를 보면 나머지는 에디터 월드를 그리는데, 거기에 PIE 액터의
+        // 선택 표시를 그리면 액터는 움직이지 않고 표시만 따로 움직인다.
+        const bool bShowSelection = bEditorTools && Editor.IsSelectionInWorld(ViewportClient->GetWorld());
+
         FEditorRenderContext EditorCtx;
-        EditorCtx.SelectedActor = bEditorTools ? Editor.GetSelectedActor() : nullptr;
+        EditorCtx.SelectedActor = bShowSelection ? Editor.GetSelectedActor() : nullptr;
         EditorCtx.SelectedTransform = Editor.SelectedTransform;
-        EditorCtx.Gizmo = (bEditorTools && Editor.ObjectSelected()) ? &Editor.GetGizmo() : nullptr;
-        EditorCtx.TextComp = (bEditorTools && Editor.ObjectSelected()) ? Editor.GetTextcomp() : nullptr;
+        EditorCtx.Gizmo = bShowSelection ? &Editor.GetGizmo() : nullptr;
+        EditorCtx.TextComp = bShowSelection ? Editor.GetTextcomp() : nullptr;
         EditorCtx.Grid = bEditorTools ? &EditorViewport->GetGrid() : nullptr;
         EditorCtx.VisualizerRegistry = bEditorTools ? &VisualizerRegistry : nullptr;
 
@@ -216,30 +221,33 @@ void UEditorEngine::Render()
             if (!ViewportClient)
                 continue;
 
-            FCamera Camera;
-            if (!ViewportClient->GetViewInfo(Camera))
+            // 선택된 액터와 다른 월드를 그리는 뷰포트에는 기즈모를 그리지 않는다.
+            if (!Editor.IsSelectionInWorld(ViewportClient->GetWorld()))
                 continue;
+
+            FCamera* Camera = ViewportClient->GetCamera();
+            if (!Camera) continue;
 
             const FEditorViewportClient* EditorViewport = Editor.GetEditorClient(Leaf.EntryIndex);
             if (!EditorViewport)
                 continue;
 
             FSceneView SceneView{
-      .Camera = Camera,
-      .ViewProj = Camera.GetViewProjectionMatrix(),
+      .Camera = *Camera,
+      .ViewProj = Camera->GetViewProjectionMatrix(),
       .TopLeftUV = Viewport.TopLeftUV,
       .LengthUV = Viewport.LengthUV,
       .ViewMode = EditorViewport->ViewMode,
       .ShowFlags = EditorViewport->ShowFlags,
             };
 
-            RenderView.RenderOverlayPass(Camera, SceneView, Editor.SelectedTransform, Editor.GetGizmo(), Editor.GetTextcomp());
+            RenderView.RenderOverlayPass(*Camera, SceneView, Editor.SelectedTransform, Editor.GetGizmo(), Editor.GetTextcomp());
             // 마지막으로 그린 뷰의 렌더 모드가 남지 않도록 설정
 
             RenderView.SetRenderMode(EditorViewport->ViewMode);
             RenderView.RenderGizmo(
                 Editor.SelectedTransform,
-                Camera,
+                *Camera,
                 Viewport.TopLeftUV,
                 Viewport.LengthUV,
                 Editor.GetGizmo());
@@ -355,13 +363,19 @@ void UEditorEngine::SwitchPlaySessionMode(FViewport *TargetViewport, EPlaySessio
     if (SessionType == EPlaySessionType::PIE)
     {
         FWorldContext* Context = FindWorldContext(Session->PIEContextId);
-        if (!Context || !Context->GameViewportClient)
+        FGameViewportClient* GameViewportClient = Context->GameViewportClient;
+        if (!Context || !GameViewportClient)
         {
             UE_LOG_ERROR("PIE 컨텍스트 또는 GameViewportClient를 찾을 수 없습니다.");
             return;
         }
 
-        TargetViewport->SetViewportClient(Context->GameViewportClient);
+        TargetViewport->SetViewportClient(GameViewportClient);
+
+        //카메라를 원근 투영으로 바꾼다.
+        FCamera* Camera = GameViewportClient->GetCamera();
+        if (Camera->GetProjection().GetProjectionType() != EProjectionType::Perspective)
+            Camera->SetProjectionType(EProjectionType::Perspective);
     }
     else if (SessionType == EPlaySessionType::SIE)
     {
@@ -449,7 +463,7 @@ void UEditorEngine::StartQueuedPlaySessionRequestInternal()
         return;
     }
 
-    FGameViewportClient* GameViewportClient = new FGameViewportClient(this, PIEContextId, TargetClient->GetCamera());
+    FGameViewportClient* GameViewportClient = new FGameViewportClient(this, PIEContextId, *TargetClient->GetCamera());
     PIEContext->GameViewportClient = GameViewportClient;
 
     EPlaySessionType SessionType = Params->SessionType;

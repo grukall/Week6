@@ -232,6 +232,7 @@ void FRenderView::RenderView(const FSceneView& View, const FScene& Scene, const 
     // 뷰포트 시작
     BeginView(View);
     UpdateLight(Scene);
+    UpdateFog(Scene, View);
 
 
     //컬링 측정
@@ -322,18 +323,6 @@ void FRenderView::BeginView(const FSceneView& View)
     // Renderer.UpdateLightConstants(View.LightConstants, View.ViewMode);
 
     UpdateViewConstants(View.Camera, View.LengthUV);
-
-    FFogData FogConstants{};
-
-    FMatrix VP = View.Camera.GetViewMatrix() * View.Camera.GetProjectionMatrix();
-    VP = VP.ToD3DMatrix();
-    VP.Inverse(FogConstants.InverseVP);
-    // FogConstants.Density 
-    // FogConstants.StartDistance
-    // FogConstants.CutoffDistance
-    // FogConstants.MaxOpacity
-    // FogConstants.InscatteringColor
-    Renderer.UpdateFogConstants(FogConstants);
 }
 
 void FRenderView::UpdateViewConstants(const FCamera& Camera, const FVector2& LengthUV)
@@ -507,7 +496,6 @@ void FRenderView::RenderScreenPass(const FCamera& Camera, const AActor* Selected
 {
     DrawStencilMask(Camera, SelectedActor);
     Renderer.RenderScreenPass(TopLeftUV, LengthUV);
-    UpdateFogConstants(Camera, TopLeftUV, LengthUV);
 }
 
 void FRenderView::RenderDepthPass(const FVector2& TopLeftUV, const FVector2& LengthUV) {
@@ -770,3 +758,26 @@ void FRenderView::UpdateLight(const FScene& Scene)
 }
 
 
+void FRenderView::UpdateFog(const FScene& Scene, const FSceneView& View)
+{
+    FFogData FogConstants;
+
+    FMatrix VP = View.Camera.GetViewMatrix() * View.Camera.GetProjectionMatrix();
+    VP = VP.ToD3DMatrix();
+    VP.Inverse(FogConstants.InverseVP);
+
+    if(Scene.GetFogComponents().empty())
+    {
+        FogConstants.MaxOpacity = 0;
+    }
+    else {
+        FogConstants.MaxOpacity = 1;
+    }
+
+    for (UExponentialHeightFogComponent* Fog : Scene.GetFogComponents())
+    {
+        Fog->BuildConstants(FogConstants);
+    }
+
+    Renderer.UpdateFogConstants(FogConstants);
+}

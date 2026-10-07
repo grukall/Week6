@@ -15,6 +15,7 @@
 
 
 #include "ThirdParty/Json/json.hpp"
+#include <Runtime/CoreUObject/UExponentialHeightFogComponent.h>
 
 class FScene
 {
@@ -33,6 +34,10 @@ public:
   void AddLightComponent(ULightComponent* Light);
   void RemoveLightComponent(ULightComponent* Light);
   TArray<ULightComponent*> GetLightComponents() const { return LightComponents; }
+
+  void AddFogComponent(UExponentialHeightFogComponent* Fog);
+  void RemoveFogComponent(UExponentialHeightFogComponent* Fog);
+  TArray<UExponentialHeightFogComponent*> GetFogComponents() const { return FogComponents; }
 
   void Addprimitive(UPrimitiveComponent *prim);
   void RemovePrimitive(UPrimitiveComponent *prim);
@@ -54,6 +59,7 @@ public:
 private:
   TArray<UPrimitiveComponent*> RenderComponents; // 렌더링큐 (Draw용)
   TArray<ULightComponent*> LightComponents;
+  TArray<UExponentialHeightFogComponent*> FogComponents;
 
   FSceneBVH SceneBVH;
 

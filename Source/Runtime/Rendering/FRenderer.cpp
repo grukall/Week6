@@ -1745,7 +1745,7 @@ void FRenderer::RenderEditorViewPort() {
 
     Context->OMSetRenderTargets(1, BackBufferRTV.GetAddressOf(), nullptr);
     // 씬 텍스처와 스텐실 텍스처 바인딩   
-    ID3D11ShaderResourceView* SRVs[] = { EditorViewPortSRV.Get() };
+    ID3D11ShaderResourceView* SRVs[] = { SceneColorSRV.Get() };
     Context->PSSetShaderResources(0, 1, SRVs);
 
     Context->Draw(3, 0);

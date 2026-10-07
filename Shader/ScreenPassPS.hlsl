@@ -18,6 +18,12 @@ PS_OUTPUT MainPS(PS_INPUT Input)
 {
     PS_OUTPUT output;
     
+    if (MaxOpacity <= 0.0f)
+    {
+        output.Color = SceneTexture.Load(int3(Input.Position.xy, 0));
+        return output;
+    }
+    
     const int2 pixelCoord = int2(Input.Position.xy);
     float4 Sampled = SceneTexture.Load(int3(pixelCoord, 0)); // 기존 색상 출력
     

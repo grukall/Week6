@@ -102,6 +102,8 @@ public:
 	// Lights
 	void UpdateLight(const FScene& Scene);
 
+	void UpdateFog(const FScene& Scene, const FSceneView& View);
+
 private:
 	FCullingSettings CullingSettings;
 	//컬링 후 가시 여부 인덱스(실제 renderComponent 인덱스와 동일하게)

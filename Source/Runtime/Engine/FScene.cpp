@@ -171,3 +171,22 @@ void FScene::RemoveLightComponent(ULightComponent* Light)
 
     std::erase(LightComponents, Light);
 }
+
+void FScene::AddFogComponent(UExponentialHeightFogComponent* Fog)
+{
+	if (Fog == nullptr)
+		return;
+	if (std::find(FogComponents.begin(), FogComponents.end(), Fog) ==
+		FogComponents.end()) {
+		// const int32 NewIndex = static_cast<int32>(FogComponents.size());
+		FogComponents.push_back(Fog);
+	}
+}
+
+void FScene::RemoveFogComponent(UExponentialHeightFogComponent* Fog)
+{
+    if (Fog == nullptr)
+        return;
+
+    std::erase(FogComponents, Fog);
+}

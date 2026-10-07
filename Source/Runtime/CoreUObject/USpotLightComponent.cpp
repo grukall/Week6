@@ -5,6 +5,12 @@ IMPLEMENT_UCLASS(USpotLightComponent, ULightComponent)
 
 void USpotLightComponent::BuildConstants(FLightConstants& Constants)
 {
+	// 배열이 가득 차면 더 넣지 않는다.
+	if (Constants.NumSpotLights >= MAXLIGHTS)
+	{
+		return;
+	}
+
 	int32 NumLight = Constants.NumSpotLights++;
 	SpotLight Light;
 	Light.Intensity = GetIntensity();

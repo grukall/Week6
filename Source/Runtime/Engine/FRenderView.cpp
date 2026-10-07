@@ -231,7 +231,7 @@ void FRenderView::RenderView(const FSceneView& View, const FScene& Scene, const 
 {
     // 뷰포트 시작
     BeginView(View);
-    //UpdateLight(Scene);
+    UpdateLight(Scene);
     UpdateFog(Scene, View);
 
 
@@ -251,11 +251,8 @@ void FRenderView::RenderView(const FSceneView& View, const FScene& Scene, const 
         RenderQueue.Sort();
     }
 
-    RenderGBufferPass(View.Camera, EditorCtx.SelectedActor, View.TopLeftUV, View.LengthUV);
-
     // 기본 씬 오브젝트 패스
     FlushBasePass(View.Camera);
-    UpdateLight(Scene, View.TopLeftUV, View.LengthUV);
 
     //BasePass 이후에 깊이 버퍼 기준으로 가시성 질의
     if (bOracleRequested)
@@ -497,19 +494,6 @@ void FRenderView::RenderSphere(const FVector &Center, float Radius,
                                const FVector4 &Color, uint32 Segments) {
   FLineBatcher &LineBatcher = Renderer.GetLineBatcher();
   LineBatcher.DrawSphere(Center, Radius, Color, Segments);
-}
-
-void FRenderView::RenderGBufferPass(const FCamera& Camera, const AActor* SelectedActor,
-    const FVector2& TopLeftUV, const FVector2& LengthUV)
-{
-    Renderer.RenderDeferredLightingPass(TopLeftUV, LengthUV);
-    Renderer.DrawPrimitiveBatch(RenderQueue.GetPrimRenderQ());
-}
-
-void FRenderView::RenderDifferedLightingPass(const FCamera& Camera, const AActor* SelectedActor,
-    const FVector2& TopLeftUV, const FVector2& LengthUV)
-{
-    Renderer.RenderDeferredLightingPass(TopLeftUV, LengthUV);
 }
 
 void FRenderView::RenderScreenPass(const FCamera& Camera, const AActor* SelectedActor, 
@@ -766,12 +750,9 @@ void FRenderView::RunOcclusionOracle()
 
 
 // Lights Update
-void FRenderView::UpdateLight(const FScene& Scene, const FVector2& TopLeftUV, const FVector2& LengthUV)
+void FRenderView::UpdateLight(const FScene& Scene)
 {
-    FLightConstants AmbientConstants{};
-    AmbientConstants.AmbientLight = { 0.2f, 0.2f, 0.2f };
-    Renderer.UpdateLightConstants(AmbientConstants, EViewModeIndex::VMI_Lit);
-    Renderer.RenderDeferredLightingPass(TopLeftUV, LengthUV);
+    FLightConstants Constants;
 
     for (ULightComponent* Light : Scene.GetLightComponents())
     {
@@ -780,13 +761,10 @@ void FRenderView::UpdateLight(const FScene& Scene, const FVector2& TopLeftUV, co
             continue;
         }
 
-        FLightConstants Constants{};
-        Constants.AmbientLight = { 0.2f, 0.2f, 0.2f };
-
         Light->BuildConstants(Constants);
-        Renderer.UpdateLightConstants(Constants, EViewModeIndex::VMI_Lit);
-        Renderer.RenderDeferredLightingPass(TopLeftUV, LengthUV);
     }
+
+    Renderer.UpdateLightConstants(Constants, EViewModeIndex::VMI_Lit);
 }
 
 

@@ -615,7 +615,7 @@ bool FRenderResourceLibrary::CreateFXAAPostProcessPipeline(FRenderer& Renderer) 
 
     // 샘플러 상태 생성
     D3D11_SAMPLER_DESC SamplerDesc{
-        .Filter = D3D11_FILTER_MIN_MAG_MIP_POINT,
+        .Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR,
         .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
         .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
         .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,

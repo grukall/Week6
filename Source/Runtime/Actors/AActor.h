@@ -42,7 +42,6 @@ public:
 
 	void SetRootComponent(UActorComponent* Component);
 	USceneComponent* GetRootComponent() const { return RootComponent; }
-	const TArray<USceneComponent*>& GetAttachedComponents() const { return AttachedComp; }
 	const TArray<UActorComponent*>& GetOwnedComponents() const { return OwnedComponents; }
 
 
@@ -72,7 +71,6 @@ public:
 
 protected:
 	USceneComponent* RootComponent = nullptr;
-	TArray<USceneComponent*> AttachedComp;
 	TArray<UActorComponent*> OwnedComponents;
 	bool bTickEnabled = false;
 	bool bRegistered = false;

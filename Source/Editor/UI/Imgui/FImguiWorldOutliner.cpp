@@ -26,8 +26,9 @@ namespace
 	TArray<AActor*> GetChildActors(const AActor& Actor)
 	{
 		TArray<AActor*> ChildActors;
-		for (USceneComponent* Comp : Actor.GetAttachedComponents())
+		for (UActorComponent* ActorComponent : Actor.GetOwnedComponents())
 		{
+			USceneComponent* Comp = ActorComponent->Cast<USceneComponent>();
 			if (!Comp) { continue; }
 
 			for (USceneComponent* Child : Comp->GetChildren())

@@ -1,7 +1,12 @@
 #include "FImguiPropertyWindow.h"
 #include "Runtime/CoreUObject/USceneComponent.h"
 #include "Runtime/CoreUObject/UPrimitiveComponent.h"
+#include "Runtime/CoreUObject/UDirectionLightComponent.h"
+#include "Runtime/CoreUObject/UPointLightComponent.h"
 #include "Runtime/CoreUObject/USpotLightComponent.h"
+#include "Runtime/CoreUObject/UExponentialHeightFogComponent.h"
+#include "Runtime/CoreUObject/UProjectileMovementComponent.h"
+#include "Runtime/CoreUObject/URotationMovementComponent.h"
 #include "Runtime/CoreUObject/UTextInstanceComponent.h"
 #include "Runtime/CoreUObject/UBillBoardComp.h"
 #include "Runtime/CoreUObject/UAnimatedBillboardComp.h"
@@ -16,6 +21,8 @@
 #include <string>
 #include <algorithm>
 #include "FImguiDragDrop.h"
+#include "Editor/Core/EditorConstant.h"
+#include "Runtime/CoreUObject/UObjectGlobals.h"
 #include "Runtime/Rendering/FMaterial.h"
 #include "Runtime/Rendering/FRenderResourceLibrary.h"
 #include "Runtime/Asset/FAssetRegistry.h"
@@ -25,6 +32,31 @@
 namespace
 {
 	constexpr float SlotSize = 64.0f;
+
+	TArray<USceneComponent*> GetTreeChildren(const AActor& Actor, USceneComponent& Comp)
+	{
+		TArray<USceneComponent*> TreeChildren;
+		for (USceneComponent* Child : Comp.GetChildren())
+		{
+			if (Child && Child->GetSceneOwner() == &Comp && Child->GetActorOwner() == &Actor)
+			{
+				TreeChildren.push_back(Child);
+			}
+		}
+
+		if (&Comp == Actor.GetRootComponent())
+		{
+			for (UActorComponent* ActorComponent : Actor.GetOwnedComponents())
+			{
+				USceneComponent* Other = ActorComponent->Cast<USceneComponent>();
+				if (Other && Other != &Comp && !Other->GetSceneOwner())
+				{
+					TreeChildren.push_back(Other);
+				}
+			}
+		}
+		return TreeChildren;
+	}
 }
 
 
@@ -42,17 +74,11 @@ void FImguiPropertyWindow::Process(FEditor& Editor)
 		ShowActorHeader(*SelectedActor);
 		ImGui::Separator();
 
-		if (SelectedActor->GetRootComponent())
-		{
-			ShowComponentHierarchy(*SelectedActor);
-			ImGui::Separator();
+		ShowComponentHierarchy(Editor, *SelectedActor);
+		ImGui::Separator();
 
-			ShowComponentSections(Editor, *SelectedActor);
-		}
-		else
-		{
-			ImGui::TextDisabled("No RootComponent");
-		}
+		ShowComponentSections(Editor, *SelectedActor);
+		//ShowActorComponentSections(*SelectedActor);
 	}
 	else
 	{
@@ -68,31 +94,179 @@ void FImguiPropertyWindow::ShowActorHeader(const AActor& Actor) const
 {
 	const char* ActorClassName = Actor.GetClass() ? Actor.GetClass()->GetDisplayName().c_str() : "None";
 	ImGui::Text("Actor Class: %s", ActorClassName);
-	ImGui::Text("Actor UUID: %u", Actor.GetUUID());
+	ImGui::Text("Actor Name: %s", Actor.GetName().ToString().c_str());
+	ImGui::Text("Actor Guid: %s", Actor.GetGuid().ToString().c_str());
 }
 
-void FImguiPropertyWindow::ShowComponentHierarchy(const AActor& Actor) const
+void FImguiPropertyWindow::ShowComponentHierarchy(FEditor& Editor, AActor& Actor)
 {
 	ImGui::TextDisabled("Components Hierarchy");
 
-	const USceneComponent* RootComp = Actor.GetRootComponent();
-	if (RootComp)
+	PendingDragged = nullptr;
+	PendingTarget = nullptr;
+
+	if (USceneComponent* RootComp = Actor.GetRootComponent())
 	{
-		const char* RootName = RootComp->GetClass() ? RootComp->GetClass()->GetDisplayName().c_str() : "RootComponent";
-		ImGui::BulletText("[Root] %s (ID: %u)", RootName, RootComp->GetUUID());
+		ShowComponentTreeNode(Editor, Actor, *RootComp);
+	}
+	else
+	{
+		ImGui::TextDisabled("No RootComponent");
 	}
 
-	for (const USceneComponent* Comp : Actor.GetAttachedComponents())
+	ShowActorComponentList(Editor, Actor);
+
+	if (PendingDragged && PendingTarget
+		&& PendingDragged != Actor.GetRootComponent()
+		&& PendingDragged->GetActorOwner() == &Actor
+		&& PendingTarget->GetActorOwner() == &Actor
+		&& PendingDragged->GetSceneOwner() != PendingTarget)
 	{
-		if (!Comp || Comp == RootComp)
+		PendingDragged->SetupAttachment(PendingTarget, true);
+		PendingDragged->MarkActorTransformDirty();
+		Editor.RefreshSelectedTransform();
+		++Editor.HierarchyVersion;
+	}
+
+	ShowComponentButtons(Editor, Actor);
+}
+
+void FImguiPropertyWindow::ShowComponentTreeNode(FEditor& Editor, AActor& Actor, USceneComponent& Comp)
+{
+	const bool bIsRoot = (&Comp == Actor.GetRootComponent());
+	const TArray<USceneComponent*> TreeChildren = GetTreeChildren(Actor, Comp);
+
+	ImGuiTreeNodeFlags NodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
+	if (&Comp == Editor.GetSelectedComponent())
+	{
+		NodeFlags |= ImGuiTreeNodeFlags_Selected;
+	}
+	if (TreeChildren.empty())
+	{
+		NodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+	}
+
+	const FString CompName = Comp.GetName().ToString();
+	const char* CompClassName = Comp.GetClass() ? Comp.GetClass()->GetDisplayName().c_str() : "Component";
+	const bool bNodeOpen = ImGui::TreeNodeEx(&Comp, NodeFlags, "%s%s (%s)", bIsRoot ? "[Root] " : "", CompName.c_str(), CompClassName);
+
+	if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+	{
+		PressedComponent = &Comp;
+	}
+
+	if (PressedComponent == &Comp && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+	{
+		if (ImGui::IsItemHovered() && !ImGui::IsDragDropActive())
+		{
+			Editor.SelectComponent(&Comp);
+		}
+		PressedComponent = nullptr;
+	}
+
+	if (!bIsRoot && ImGui::BeginDragDropSource())
+	{
+		USceneComponent* Dragged = &Comp;
+		ImGui::SetDragDropPayload(ComponentDragPayloadType, &Dragged, sizeof(Dragged));
+		ImGui::TextUnformatted(CompName.c_str());
+		ImGui::EndDragDropSource();
+	}
+
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload(ComponentDragPayloadType))
+		{
+			PendingDragged = *static_cast<USceneComponent* const*>(Payload->Data);
+			PendingTarget = &Comp;
+		}
+		ImGui::EndDragDropTarget();
+	}
+
+	if (bNodeOpen && !TreeChildren.empty())
+	{
+		for (USceneComponent* Child : TreeChildren)
+		{
+			ShowComponentTreeNode(Editor, Actor, *Child);
+		}
+
+		ImGui::TreePop();
+	}
+}
+
+void FImguiPropertyWindow::ShowActorComponentList(FEditor& Editor, AActor& Actor)
+{
+	for (UActorComponent* Comp : Actor.GetOwnedComponents())
+	{
+		if (!Comp || Comp->IsA<USceneComponent>())
 		{
 			continue;
 		}
 
-		const char* SubName = Comp->GetClass() ? Comp->GetClass()->GetDisplayName().c_str() : "SubComponent";
-		ImGui::Indent(15.0f);
-		ImGui::BulletText("└── [Sub] %s (ID: %u)", SubName, Comp->GetUUID());
-		ImGui::Unindent(15.0f);
+		ImGuiTreeNodeFlags NodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
+		if (Comp == Editor.GetSelectedComponent())
+		{
+			NodeFlags |= ImGuiTreeNodeFlags_Selected;
+		}
+
+		const FString CompName = Comp->GetName().ToString();
+		const char* CompClassName = Comp->GetClass() ? Comp->GetClass()->GetDisplayName().c_str() : "Component";
+		ImGui::TreeNodeEx(Comp, NodeFlags, "%s (%s)", CompName.c_str(), CompClassName);
+
+		if (ImGui::IsItemClicked())
+		{
+			Editor.SelectComponent(Comp);
+		}
+	}
+}
+
+void FImguiPropertyWindow::ShowComponentButtons(FEditor& Editor, AActor& Actor)
+{
+	if (ImGui::Button("Add Component"))
+	{
+		ImGui::OpenPopup("AddComponentPopup");
+	}
+
+	UActorComponent* SelectedComponent = Editor.GetSelectedComponent();
+	const bool bCanDelete = SelectedComponent
+		&& SelectedComponent->GetActorOwner() == &Actor
+		&& SelectedComponent != Actor.GetRootComponent();
+
+	ImGui::SameLine();
+	ImGui::BeginDisabled(!bCanDelete);
+	const bool bDeleteClicked = ImGui::Button("Delete Component");
+	ImGui::EndDisabled();
+
+	if (ImGui::BeginPopup("AddComponentPopup"))
+	{
+		for (UClass* Item : EditorConstant::SpawnableComponents)
+		{
+			if (!ImGui::Selectable(Item->GetUClassName().c_str()))
+			{
+				continue;
+			}
+
+			UObject* Object = NewObject(Item);
+			UActorComponent* NewComponent = Object ? Object->Cast<UActorComponent>() : nullptr;
+			if (NewComponent)
+			{
+				Actor.AddComponent(NewComponent);
+				++Editor.HierarchyVersion;
+			}
+			else if (Object)
+			{
+				DestroyObject(Object);
+			}
+		}
+		ImGui::EndPopup();
+	}
+
+	if (bDeleteClicked && bCanDelete)
+	{
+		// 선택을 먼저 풀어야 삭제된 컴포넌트의 트랜스폼이 액터 루트에 적용되지 않는다.
+		Editor.UnSelectActor();
+		Actor.DeleteComponent(SelectedComponent);
+		Editor.SelectActor(&Actor);
+		++Editor.HierarchyVersion;
 	}
 }
 
@@ -100,7 +274,7 @@ void FImguiPropertyWindow::ShowComponentSections(FEditor& Editor, AActor& Actor)
 {
 	USceneComponent* RootComp = Actor.GetRootComponent();
 
-	for (USceneComponent* Comp : Actor.GetAttachedComponents())
+	for (UActorComponent* Comp : Actor.GetOwnedComponents())
 	{
 		if (!Comp)
 		{
@@ -112,7 +286,7 @@ void FImguiPropertyWindow::ShowComponentSections(FEditor& Editor, AActor& Actor)
 
 		// ### 뒤쪽이 실제 ID 라서, 앞의 표시 이름이 바뀌어도 접힘 상태가 유지된다.
 		std::string SectionTitle = (bIsRoot ? "[Root] " : "[Sub] ") + std::string(CompTypeName)
-			+ " (ID: " + std::to_string(Comp->GetUUID()) + ")###CompHeader_" + std::to_string(Comp->GetUUID());
+			+ " (Index: " + std::to_string(Comp->GetInternalIndex()) + ")###CompHeader_" + std::to_string(Comp->GetInternalIndex());
 
 		if (!ImGui::CollapsingHeader(SectionTitle.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 		{
@@ -128,11 +302,37 @@ void FImguiPropertyWindow::ShowComponentSections(FEditor& Editor, AActor& Actor)
 	}
 }
 
-void FImguiPropertyWindow::ShowComponentDetails(FEditor& Editor, AActor& Actor,
-	USceneComponent& Comp, bool bIsRoot)
+void FImguiPropertyWindow::ShowActorComponentSections(AActor& Actor)
 {
-	ShowTransform(Editor, Comp, bIsRoot);
+	for (UActorComponent* Comp : Actor.GetOwnedComponents())
+	{
+		if (!Comp || Comp->IsA<UActorComponent>())
+		{
+			continue;
+		}
 
+		const char* CompTypeName = Comp->GetClass() ? Comp->GetClass()->GetDisplayName().c_str() : "Component";
+		std::string SectionTitle = "[Comp] " + std::string(CompTypeName)
+			+ " (Index: " + std::to_string(Comp->GetInternalIndex()) + ")###CompHeader_" + std::to_string(Comp->GetInternalIndex());
+
+		if (!ImGui::CollapsingHeader(SectionTitle.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			continue;
+		}
+
+		ImGui::Text("Name: %s", Comp->GetName().ToString().c_str());
+		ImGui::TextDisabled("No editable properties");
+		ImGui::Spacing();
+	}
+}
+
+void FImguiPropertyWindow::ShowComponentDetails(FEditor& Editor, AActor& Actor,
+	UActorComponent& Comp, bool bIsRoot)
+{
+	if (Comp.IsA<USceneComponent>())
+	{
+		ShowTransform(Editor, static_cast<USceneComponent&>(Comp), bIsRoot);
+	}
 	if (Comp.IsA<UTextInstanceComponent>())
 	{
 		ShowTextSettings(static_cast<UTextInstanceComponent&>(Comp));
@@ -147,70 +347,81 @@ void FImguiPropertyWindow::ShowComponentDetails(FEditor& Editor, AActor& Actor,
 	{
 		ShowBillboardSettings(static_cast<UBillBoardComp&>(Comp));
 	}
+	else if (Comp.IsA<UDirectionLightComponent>())
+	{
+		ShowDirectionLightSettings(static_cast<UDirectionLightComponent&>(Comp));
+	}
+	else if (Comp.IsA<UPointLightComponent>())
+	{
+		ShowPointLightSettings(static_cast<UPointLightComponent&>(Comp));
+	}
 	else if (Comp.IsA<USpotLightComponent>())
 	{
 		ShowSpotLightSettings(static_cast<USpotLightComponent&>(Comp));
+	}
+
+	else if (Comp.IsA<UExponentialHeightFogComponent>())
+	{
+		ShowFogSettings(static_cast<UExponentialHeightFogComponent&>(Comp));
+	}
+
+	else if (Comp.IsA<UProjectileMovementComponent>())
+	{
+		ShowProjectileMovementSettings(static_cast<UProjectileMovementComponent&>(Comp));
+	}
+
+	else if (Comp.IsA<URotationMovementComponent>())
+	{
+		ShowRotationMovementSettings(static_cast<URotationMovementComponent&>(Comp));
 	}
 
 	else if (Comp.IsA<UStaticMeshComponent>())
 	{
 		ShowStaticMeshSettings(Actor, static_cast<UStaticMeshComponent&>(Comp), bIsRoot);
 	}
+
+	
 }
 
 void FImguiPropertyWindow::ShowTransform(FEditor& Editor, USceneComponent& Comp, bool bIsRoot) const
 {
 	ImGui::TextDisabled("Transform");
 
-	if (bIsRoot)
-	{
-		// 루트 컴포넌트 트랜스폼은 에디터 기즈모와 동기화
-		FVector Location = Editor.SelectedTransform.GetLocation();
-		if (ImGui::DragFloat3("Translation", &Location.X, 0.01f))
-		{
-			Editor.SelectedTransform.SetLocation(Location);
-		}
-		if (ImGui::DragFloat3("Rotation (deg)", &Editor.SelectedEulerDegDisplay.X, 0.5f))
-		{
-			Editor.SelectedTransform.SetRotation(FQuaternion::FromEulerXYZDeg(Editor.SelectedEulerDegDisplay));
-		}
-		FVector Scale = Editor.SelectedTransform.GetScale3D();
-		if (ImGui::DragFloat3("Scale", &Scale.X, 0.01f))
-		{
-			Editor.SelectedTransform.SetScale3D(Scale);
-		}
-		return;
-	}
+	const bool bHasParent = !bIsRoot || Comp.GetSceneOwner();
+	const char* LocationLabel = bHasParent ? "Rel Location###Location" : "Location###Location";
+	const char* RotationLabel = bHasParent ? "Rel Rotation (deg)###Rotation" : "Rotation (deg)###Rotation";
+	const char* ScaleLabel = bHasParent ? "Rel Scale###Scale" : "Scale###Scale";
 
 	// 서브 컴포넌트 상대 트랜스폼 편집
 	FTransform RelTransform = Comp.GetRelativeTransform();
 	FVector RelLocation = RelTransform.GetLocation();
 	bool bTransformChanged = false;
-	if (ImGui::DragFloat3("Rel Location", &RelLocation.X, 0.01f))
+	if (ImGui::DragFloat3(LocationLabel, &RelLocation.X, 0.01f))
 	{
 		bTransformChanged = true;
 		RelTransform.SetLocation(RelLocation);
 	}
 
 	FVector RelEuler = RelTransform.GetRotation().ToEulerXYZDeg();
-	if (ImGui::DragFloat3("Rel Rotation (deg)", &RelEuler.X, 0.5f))
+	if (ImGui::DragFloat3(RotationLabel, &RelEuler.X, 0.5f))
 	{
 		bTransformChanged = true;
 		RelTransform.SetRotation(FQuaternion::FromEulerXYZDeg(RelEuler));
 	}
 	FVector RelScale = RelTransform.GetScale3D();
-	if (ImGui::DragFloat3("Rel Scale", &RelScale.X, 0.01f))
+	if (ImGui::DragFloat3(ScaleLabel, &RelScale.X, 0.01f))
 	{
 		bTransformChanged = true;
 		RelTransform.SetScale3D(RelScale);
 	}
 
-	if (bTransformChanged)
+	if (!bTransformChanged)
 	{
-		Comp.MarkActorTransformDirty();
+		return;
 	}
 
 	Comp.SetRelativeTransform(RelTransform);
+	Editor.RefreshSelectedTransform();
 }
 
 void FImguiPropertyWindow::ShowTextSettings(UTextInstanceComponent& TextComp) const
@@ -304,6 +515,12 @@ void FImguiPropertyWindow::ShowBillboardSettings(UBillBoardComp& BillboardComp) 
 	{
 		BillboardComp.SetUVOffset(UVOffset);
 	}
+
+	bool bIsHiddenInGame = BillboardComp.IsHiddenInGame();
+	if (ImGui::Checkbox("IsHiddenInGame", &bIsHiddenInGame))
+	{
+		BillboardComp.SetHiddenInGame(bIsHiddenInGame);
+	}
 }
 
 void FImguiPropertyWindow::ShowAnimatedBillboardSettings(UAnimatedBillboardComp& BillboardComp) const
@@ -355,6 +572,61 @@ void FImguiPropertyWindow::ShowAnimatedBillboardSettings(UAnimatedBillboardComp&
 	if (ImGui::Button("Stop")) { BillboardComp.Stop(); }
 }
 
+void FImguiPropertyWindow::ShowDirectionLightSettings(UDirectionLightComponent& LightComp) const
+{
+	ImGui::Separator();
+	ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.3f, 1.0f), "Direction Light Settings");
+
+	FVector LightCol = LightComp.GetLightColor();
+	if (ImGui::ColorEdit3("Light Color", &LightCol.X))
+	{
+		LightComp.SetLightColor(LightCol);
+	}
+
+	float LightIntensity = LightComp.GetIntensity();
+	if (ImGui::DragFloat("Intensity", &LightIntensity, 0.05f, 0.0f, 50.0f))
+	{
+		LightComp.SetIntensity(LightIntensity);
+	}
+
+	FVector Direction = LightComp.GetLightDirection();
+	if (ImGui::DragFloat3("Light Direction", &Direction.X, 1.0f, 89.0f))
+	{
+		//Direction.Normalize();
+		LightComp.SetLightDirection(Direction);
+	}
+}
+
+void FImguiPropertyWindow::ShowPointLightSettings(UPointLightComponent& LightComp) const
+{
+	ImGui::Separator();
+	ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.3f, 1.0f), "Point Light Settings");
+
+	FVector LightCol = LightComp.GetLightColor();
+	if (ImGui::ColorEdit3("Light Color", &LightCol.X))
+	{
+		LightComp.SetLightColor(LightCol);
+	}
+
+	float LightIntensity = LightComp.GetIntensity();
+	if (ImGui::DragFloat("Intensity", &LightIntensity, 0.05f, 0.0f, 50.0f))
+	{
+		LightComp.SetIntensity(LightIntensity);
+	}
+
+	float FallOffStart = LightComp.GetFallOffStart();
+	if (ImGui::DragFloat("FallOffStart", &FallOffStart, 0.05f, 0.0f, 50.0f))
+	{
+		LightComp.SetFallOffStart(FallOffStart);
+	}
+
+	float FallOffEnd = LightComp.GetFallOffEnd();
+	if (ImGui::DragFloat("FallOffEnd", &FallOffEnd, 0.05f, 0.0f, 50.0f))
+	{
+		LightComp.SetFallOffEnd(FallOffEnd);
+	}
+}
+
 void FImguiPropertyWindow::ShowSpotLightSettings(USpotLightComponent& LightComp) const
 {
 	ImGui::Separator();
@@ -372,16 +644,136 @@ void FImguiPropertyWindow::ShowSpotLightSettings(USpotLightComponent& LightComp)
 		LightComp.SetIntensity(LightIntensity);
 	}
 
-	float SpotAngle = LightComp.GetSpotAngle();
-	if (ImGui::SliderFloat("Spot Angle", &SpotAngle, 1.0f, 89.0f))
+	float FallOffStart = LightComp.GetFallOffStart();
+	if (ImGui::DragFloat("FallOffStart", &FallOffStart, 0.05f, 0.0f, 50.0f))
 	{
-		LightComp.SetSpotAngle(SpotAngle);
+		LightComp.SetFallOffStart(FallOffStart);
 	}
 
-	float LightRange = LightComp.GetRange();
-	if (ImGui::DragFloat("Range", &LightRange, 0.1f, 0.1f, 100.0f))
+	float FallOffEnd = LightComp.GetFallOffEnd();
+	if (ImGui::DragFloat("FallOffEnd", &FallOffEnd, 0.05f, 0.0f, 50.0f))
 	{
-		LightComp.SetRange(LightRange);
+		LightComp.SetFallOffEnd(FallOffEnd);
+	}
+
+	FVector Direction = LightComp.GetLightDirection();
+	if (ImGui::DragFloat3("Light Direction", &Direction.X, 1.0f, 89.0f))
+	{
+		Direction.Normalize();
+		LightComp.SetLightDirection(Direction);
+	}
+
+	float SpotPower = LightComp.GetSpotPower();
+	if (ImGui::DragFloat("SpotPower", &SpotPower, 0.05f, 0.0f, 50.0f))
+	{
+		LightComp.SetSpotPower(SpotPower);
+	}
+}
+
+void FImguiPropertyWindow::ShowFogSettings(UExponentialHeightFogComponent& FogComp) const
+{
+	ImGui::Separator();
+	ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.3f, 1.0f), "Exponential Height Fog Settings");
+
+	FVector4 InscatteringColor = FogComp.GetInscatteringColor();
+	if (ImGui::ColorEdit3("Inscattering Color", &InscatteringColor.X))
+	{
+		FogComp.SetInscatteringColor(InscatteringColor);
+	}
+
+	float Density = FogComp.GetDensity();
+	if (ImGui::DragFloat("Density", &Density, 0.005f, 0.0f, 10.0f, "%.3f"))
+	{
+		FogComp.SetDensity(Density);
+	}
+
+	// 셰이더가 이 값으로 나누므로 0은 허용하지 않는다.
+	float HeightFalloff = FogComp.GetHeightFalloff();
+	if (ImGui::DragFloat("Height Falloff", &HeightFalloff, 0.005f, 0.001f, 10.0f, "%.3f"))
+	{
+		FogComp.SetHeightFalloff(std::max(HeightFalloff, 0.001f));
+	}
+
+	float StartDistance = FogComp.GetStartDistance();
+	if (ImGui::DragFloat("Start Distance", &StartDistance, 1.0f, 0.0f, 100000.0f, "%.1f"))
+	{
+		FogComp.SetStartDistance(std::max(StartDistance, 0.0f));
+	}
+
+	float CutoffDistance = FogComp.GetCutoffDistance();
+	if (ImGui::DragFloat("Cutoff Distance", &CutoffDistance, 10.0f, 0.0f, 1000000.0f, "%.1f"))
+	{
+		FogComp.SetCutoffDistance(std::max(CutoffDistance, 0.0f));
+	}
+
+	float MaxOpacity = FogComp.GetMaxOpacity();
+	if (ImGui::SliderFloat("Max Opacity", &MaxOpacity, 0.0f, 1.0f))
+	{
+		FogComp.SetMaxOpacity(MaxOpacity);
+	}
+}
+
+void FImguiPropertyWindow::ShowProjectileMovementSettings(UProjectileMovementComponent& MovComp) const
+{
+	FVector Velocity = MovComp.GetVelocity();
+	if (ImGui::DragFloat3("Velocity", &Velocity.X, 1.0f, 89.0f))
+	{
+		MovComp.SetVelocity(Velocity);
+	}
+
+	float Gravity = MovComp.ProjectileGravityScale;
+	if (ImGui::DragFloat("Gravity", &Gravity, 0.05f, 0.0f, 50.0f))
+	{
+		MovComp.ProjectileGravityScale = Gravity;
+	}
+
+	bool bIsHoming = MovComp.bIsHomingProjectile;
+	if (ImGui::Checkbox("IsHoming", &bIsHoming))
+	{
+		MovComp.bIsHomingProjectile = bIsHoming;
+	}
+
+	float Hommer = MovComp.HomingAccelerationMagnitude;
+	if (ImGui::DragFloat("Acceleration", &Hommer, 0.05f, 0.0f, 50.0f))
+	{
+		MovComp.HomingAccelerationMagnitude = Hommer;
+	}
+
+	ImGui::TextDisabled("Homing Target");
+	const USceneComponent* CurrentTarget = MovComp.HomingTargetComponent;
+	const FString TargetLabel = CurrentTarget ? CurrentTarget->GetName().ToString() : "None";
+	ImGui::Button(TargetLabel.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0.0f));
+
+	if (ImGui::BeginDragDropTarget())
+	{
+		USceneComponent* NewTarget = nullptr;
+
+		if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload(OutlinerDragPayloadType))
+		{
+			const auto* Dropped = static_cast<const FOutlinerDragPayload*>(Payload->Data);
+			// 아웃라이너의 액터 행은 Component가 비어 있으므로 루트 컴포넌트로 대신한다.
+			NewTarget = Dropped->Component ? Dropped->Component
+				: (Dropped->Actor ? Dropped->Actor->GetRootComponent() : nullptr);
+		}
+		else if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload(ComponentDragPayloadType))
+		{
+			NewTarget = *static_cast<USceneComponent* const*>(Payload->Data);
+		}
+
+		if (NewTarget && NewTarget != MovComp.UpdatedComponent)
+		{
+			MovComp.HomingTargetComponent = NewTarget;
+		}
+		ImGui::EndDragDropTarget();
+	}
+}
+
+void FImguiPropertyWindow::ShowRotationMovementSettings(URotationMovementComponent& MovComp) const
+{
+	FVector RotationRate = MovComp.GetRotationRate();
+	if (ImGui::DragFloat3("Rotation Rate", &RotationRate.X, 1.0f, 89.0f))
+	{
+		MovComp.SetRotationRate(RotationRate);
 	}
 }
 
@@ -579,7 +971,9 @@ void FImguiPropertyWindow::ShowStaticMeshSlot(UStaticMeshComponent& MeshComp) co
 
 	// 슬롯 만들기
 	float FullWidth = ImGui::GetContentRegionAvail().x;
-	ImGui::Button(StaticMesh->GetID().ToString().c_str(), ImVec2(FullWidth, SlotSize));
+	
+	const FString Label = StaticMesh ? StaticMesh->GetID().ToString() : "No StaticMesh";
+	ImGui::Button(Label.c_str(), ImVec2(FullWidth, SlotSize));
 
 	// 드롭 타깃은 아이템을 그린 직후여야 한다.
 	if (!ImGui::BeginDragDropTarget()) { return; }

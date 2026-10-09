@@ -3,6 +3,8 @@
 #include "Runtime/CoreUObject/UClass.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
 #include "Runtime/CoreUObject/Mesh/UStaticMeshComponent.h"
+#include "Runtime/CoreUObject/UPointLightComponent.h"
+
 #include "Runtime/Asset/FAssetRegistry.h"
 
 IMPLEMENT_UCLASS(AAppleBittenActor, AActor)
@@ -15,9 +17,10 @@ AAppleBittenActor::AAppleBittenActor()
 
 	FAssetRegistry& Registry = FAssetRegistry::GetInstance();
 	AppleStaticMeshComp->SetMesh(Registry.Get<UStaticMesh>("StaticMesh/JungleApple/Apple_Bitten.json"));
+	bTickEnabled = true;
 }
 
-void AAppleBittenActor::Update(float DeltaTime)
+void AAppleBittenActor::Tick(float DeltaTime, ELevelTick eTickType)
 {
-	Super::Update(DeltaTime);
+	Super::Tick(DeltaTime, eTickType);
 }

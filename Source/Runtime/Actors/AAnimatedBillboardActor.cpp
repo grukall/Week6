@@ -2,6 +2,8 @@
 #include "Runtime/CoreUObject/UClass.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
 #include "Runtime/CoreUObject/UAnimatedBillboardComp.h"
+#include "Runtime/CoreUObject/UPointLightComponent.h"
+#include "Runtime/CoreUObject/UProjectileMovementComponent.h"
 #include "Runtime/Asset/FAssetRegistry.h"
 
 IMPLEMENT_UCLASS(AAnimatedBillboardActor, AActor)

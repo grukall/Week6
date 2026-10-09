@@ -5,15 +5,18 @@
 #include "Editor/Core/FEditorState.h"
 #include "Runtime/Core/IntTypes.h"
 #include "Runtime/Core/TArray.h"
-#include "Runtime/CoreUObject/UObject.h"
 #include "Runtime/CoreUObject/TWeakObjectPtr.h"
 #include "Runtime/Actors/AActor.h"
-#include "Runtime/Engine/USceneManager.h"
 #include "Runtime/Rendering/ShaderConstants.h"
 #include "Runtime/CoreUObject/UTextInstanceComponent.h"
-
-
 #include "Runtime/UI/SSplitter.h"
+#include "Runtime/Slate/FViewport.h"
+#include "Runtime/Engine/UWorld.h"
+
+class UEditorEngine;
+class UEngine;
+class FViewportClient;
+
 enum class EEditorPrimitiveType : uint8 {
   Cube,
   Cylinder,
@@ -24,12 +27,16 @@ enum class EEditorPrimitiveType : uint8 {
 
 class FEditor {
 public:
+  
+  // Gizmo로 변한 Transform 캐싱
   FTransform SelectedTransform;
+
+  // 이번 프레임 기즈모 변화량. World면 월드 기준(Rotation은 왼쪽에 곱함), Local이면 로컬 기준(Rotation은 오른쪽에 곱함). Scale3D는 차이.
+  FTransform GapTransform;
   FVector SelectedEulerDegDisplay;
 
-  // TODO: 이건 Scene에 들어가야함. 아마 아래와 같은 컴포넌트가 부착된 액터로 들어가야할 것
-  // https://dev.epicgames.com/documentation/unreal-engine/API/Runtime/Engine/UDirectionalLightComponent
-  FLightConstants GlobalLight;
+  //Gizmo를 통해 Transform
+  bool bChangedByGizmo = false;
 
   FEditorState State;
 
@@ -38,6 +45,8 @@ public:
   bool bHideUI = false;
   // F11. bHideUI가 숨기는 창에 더해 툴바까지 숨긴다.
   bool bZenMode = false;
+  // 컴포넌트 추가/삭제/재부착처럼 계층이 바뀔 때 올린다. 아웃라이너가 캐시 갱신에 쓴다.
+  uint32 HierarchyVersion = 0;
   bool bShowBenchmark = true;
   double LastPickingMs = 0.0;
   double AccumulatedPickingMs = 0.0;
@@ -51,36 +60,50 @@ public:
   }
 
 public:
-  void Initialize(USceneManager *SceneManager);
+  void Initialize(UEditorEngine* Engine);
   void Shutdown();
 
   void Process();
 
-  void NewScene();
-  void SaveScene(const FString &Path);
-  void LoadScene(const FString &Path);
-  bool CheckSceneExists();
+  // 월드의 소유자는 UEditorEngine이다. FEditor는 접근만 위임한다.
+  // 에디터 월드: 저장/로드/New의 대상. PIE 중에도 항상 에디터 월드를 가리킨다.
+  [[nodiscard]] UWorld* GetEditorWorld() const;
+  // 활성 뷰포트가 보는 월드: 아웃라이너, 선택, 피킹, 기즈모, 스폰의 대상. PIE 중에는 PIE 월드가 된다.
+  [[nodiscard]] UWorld* GetViewWorld() const;
 
-  void AddViewport(FEditorViewportClient Viewport);
-  void InitMultiViewport(FEditorViewportClient Viewport);
+  void NewMap();
+  void SaveMap(const FString &Path);
+  void LoadMap(const FString &Path);
+
+  void AddViewport(UEngine* Engine, FWorldContext& Context);
+  void InitMultiViewport(UEngine* Engine, FWorldContext& Context);
   void ResizeView(FEditorState::SplitViewMode mode);
   void DeleteViewport(int32 IndexOfViewport);
-  FEditorViewportClient* GetActiveViewport(); // 임시로 0번 반환
+  FViewport* GetActiveViewport();
+
+  // 활성 뷰포트에 "지금 연결된" Client. 에디터 Client일 수도, 게임 Client일 수도 있다. (렌더, 월드 조회 등 범용)
+  FViewportClient* GetActiveViewportClient();
+
+  // 에디터 Client는 뷰포트에 무엇이 연결되어 있든 항상 이 경로로 얻는다.
+  FEditorViewportClient* GetEditorClient(int32 Index);
+  FEditorViewportClient* GetActiveEditorClient();
+
+  // 이 뷰포트에 에디터 Client가 연결돼 있는지.
+  [[nodiscard]] bool IsEditorClientAttached(int32 Index) const;
+
+  // 선택된 액터가 이 월드의 것인지.
+  [[nodiscard]] bool IsSelectionInWorld(const UWorld* World) const;
 
   void UpdateCamera();
-
+  void RefreshSelectedTransform();
+  bool SelectComponent(UActorComponent* InActorComponent);
   bool SelectActor(AActor *Actor);
   void UnSelectActor();
   AActor *GetSelectedActor() const { return SelectedActor.Get(); }
   [[nodiscard]] bool ActorSelected() const { return SelectedActor.IsValid(); }
   [[nodiscard]] bool ObjectSelected() const { return SelectedActor.IsValid(); }
 
-  [[nodiscard]] TArray<FEditorViewportClient> &GetViewports() {
-    return EditorViewports;
-  }
-  [[nodiscard]] UScene* GetCurrentScene() const {
-    return SceneManager ? SceneManager->CurrentScene : nullptr;
-  }
+  [[nodiscard]] TArray<TUniquePtr<FViewport>> &GetViewports() {return  Viewports;}
   void SpawnActorToCurrentScene(UClass* Type, int Count = 1);
   // 피킹 등에서 현재 씬의 렌더링 대상 컴포넌트가 필요할 때 사용
   [[nodiscard]] const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
@@ -93,20 +116,23 @@ public:
   void LoadState();
   void SetViewLayout(FEditorState::SplitViewMode mode);
   UTextInstanceComponent* GetTextcomp() { return SelectedActorTextComp; }
+  UEditorEngine* GetEditorEngine() const { return EditorEngine; }
+  UActorComponent* GetSelectedComponent() { return SelectedComponent.Get(); }
   
  //Viewport관련
   int32 ActiveViewportIndex = 0;
   SWindow* Root=nullptr;
-  SWindow Leaf[4];
+  SWindow Leaf[4]; 
   SSplitterH HorizonSplitter; //세로선
   SSplitterH HorizonSplitter2; //세로선
   SSplitterV VerticalSplitter; // 가로선
+
 private:
-  USceneManager* SceneManager =
-      nullptr; // 씬을 다중으로 가질 수 있도록 구조개선 가능-이경우 에디터쪽에
-               // 클래스를 추가해 씬과 FEditorViewportClient들을 연관
-  TArray<FEditorViewportClient> EditorViewports;
+  UEditorEngine* EditorEngine = nullptr;
+  TArray<TUniquePtr<FEditorViewportClient>> EditorViewportClients;
+  TArray<TUniquePtr<FViewport>> Viewports;
   FGizmo Gizmo;
   TWeakObjectPtr<AActor> SelectedActor;
+  TWeakObjectPtr<UActorComponent> SelectedComponent;
   TWeakObjectPtr<UTextInstanceComponent> SelectedActorTextComp;
 };

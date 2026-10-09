@@ -2,7 +2,6 @@
 #include <Windows.h>
 #include <memory>
 
-#include "Editor/Application/IApplication.h"
 #include "Source/Runtime/Engine/FCamera.h"
 #include "Source/Runtime/Rendering/FRenderer.h"
 #include "Source/Runtime/Rendering/FRenderResourceLibrary.h"
@@ -10,22 +9,22 @@
 #include "Runtime/Parser/FObjParser.h"
 #include "Runtime/Input/FViewerCameraController.h"
 
-class FObjViewerApplication final : public IApplication
+class FObjViewerApplication
 {
 public:
 	FObjViewerApplication(FRenderer& InRenderer);
 
 	void Initialize(HWND hWnd, ID3D11Device* Device, ID3D11DeviceContext* Context);
-	void Update(float DeltaTime) override;
-	void Render() override;
-	void Shutdown() override;
+	void Tick(float DeltaTime);
+	void Render();
+	void Shutdown();
 	void OpenObj(const char* InPath);
 	void ImportBinary(const char* InPath);
 	void ExportObjToBinary(const char* OutPath);
 	
 	void OpenMtl(const char* InFilePath);
 
-	void OnWindowSize(UINT Width, UINT Height) override;
+	void OnWindowSize(UINT Width, UINT Height);
 
 private:
 	// UI Functions
@@ -54,7 +53,6 @@ private:
 	FCamera Camera;
 	FViewerCameraController CameraController;
 
-	FLightConstants Light;
 	float LightYaw = 45.0f;
 	float LightPitch = -45.0f;
 

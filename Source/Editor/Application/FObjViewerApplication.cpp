@@ -41,7 +41,7 @@ void FObjViewerApplication::Initialize(HWND hWnd, ID3D11Device* Device, ID3D11De
 	//OpenMtl("Resources/test.mtl");
 }
 
-void FObjViewerApplication::Update(float DeltaTime)
+void FObjViewerApplication::Tick(float DeltaTime)
 {
 	if (!ImGui::GetIO().WantCaptureMouse)
 	{
@@ -58,6 +58,12 @@ void FObjViewerApplication::Render()
 	ID3D11RenderTargetView* BackBuffer = Renderer->GetBackBuffer();
 	ID3D11DepthStencilView* DepthStencil = Renderer->GetDepthStencilView();
 
+	FMatrix View = Camera.GetViewMatrix();
+	FMatrix Projection = Camera.GetProjectionMatrix();
+	FMatrix VP = View * Projection;
+	FMatrix InvVP;
+	VP.Inverse(InvVP);
+
 	if (BackBuffer && Context)
 	{
 		Context->OMSetRenderTargets(1, &BackBuffer, DepthStencil);
@@ -70,17 +76,21 @@ void FObjViewerApplication::Render()
 		FMatrix World = FMatrix::GetIdentity();
 		FViewConstants ViewConstants
 		{
-			.View = Camera.GetViewMatrix(),
-			.Projection = Camera.GetProjectionMatrix(),
+			.Pos = Camera.GetPosition(),
+			.View = View,
+			.Projection = Projection,
+			.InvVP = InvVP,
 			.ViewportSize = FVector2
 			{
 				static_cast<float>(Renderer->GetWidth()),
 				static_cast<float>(Renderer->GetHeight()),
 			},
+			.Near = Camera.GetProjection().GetNearPlane(),
+			.Far = Camera.GetProjection().GetFarPlane(),
 		};
 		Renderer->UpdateViewConstants(ViewConstants);
 
-		Renderer->UpdateLightConstants(Light, EViewModeIndex::VMI_Lit);
+		//Renderer->UpdateLightConstants(Light, EViewModeIndex::VMI_Lit);
 
 		FObjectConstants Constants;
 		Constants.World = World;
@@ -291,13 +301,13 @@ void FObjViewerApplication::RenderSideBar()
 		ImGui::Separator();
 		ImGui::SliderFloat("Light Yaw", &LightYaw, -180.0f, 180.0f);
 		ImGui::SliderFloat("Light Pitch", &LightPitch, -180.0f, 180.0f);
-		ImGui::SliderFloat("Light Intensity", &Light.Intensity, 0.0f, 3.0f);
+		//ImGui::SliderFloat("Light Intensity", &Light.DirLights[0].Intensity, 0.0f, 3.0f);
 
 		float RadYaw = LightYaw * 3.141592f / 180.0f;
 		float RadPitch = LightPitch * 3.141592f / 180.0f;
 		FVector NewDirection = FVector(cosf(RadPitch) * cosf(RadYaw), cosf(RadPitch) * sinf(RadYaw), sinf(RadPitch));
 		NewDirection.Normalize();
-		Light.LightDirection = NewDirection;
+		//Light.DirLights[0].LightDirection = NewDirection;
 	}
 
 	ImGui::End();

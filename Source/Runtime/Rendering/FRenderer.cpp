@@ -90,9 +90,16 @@ void FRenderer::BeginFrame() {
   Context->RSSetViewports(1, &Viewport);
   BindEditorViewportRenderTargets();
 
-  constexpr float ClearColor[] = {0.5f, 0.5f, 0.5f, 1.0f};
-  //constexpr float ClearColor[] = {0.05f, 0.05f, 0.08f, 1.0f};
+  /*constexpr float BackGroundColor[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+  Context->ClearRenderTargetView(BackBufferRTV.Get(), BackGroundColor);*/
+
+  constexpr float ClearColor[] = {0.0f, 0.0f, 0.0f, 1.0f};
+  constexpr float Zero[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+  
   Context->ClearRenderTargetView(EditorViewPortRTV.Get(), ClearColor);
+  Context->ClearRenderTargetView(GBufferARTV.Get(), Zero);
+  Context->ClearRenderTargetView(GBufferBRTV.Get(), Zero);
+  Context->ClearRenderTargetView(GBufferCRTV.Get(), Zero);
   Context->ClearDepthStencilView(
       DepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 }
@@ -139,6 +146,7 @@ void FRenderer::OnWindowSize(UINT Width, UINT Height) {
   BackBufferRTV.Reset();
   DepthStencilView.Reset();
   DepthStencilSRV.Reset();
+  DepthSRV.Reset();
   DepthStencilBuffer.Reset();
   EditorViewPortRTV.Reset();
   EditorViewPortSRV.Reset();
@@ -315,7 +323,7 @@ FRenderer::CreateRenderPipeline(const FRenderPipelineDesc &Desc, EViewModeIndex 
   if (RenderMode == EViewModeIndex::VMI_Wireframe) {
     ClonedDesc.Rasterizer.FillMode = ERasterizerFillMode::Wireframe;
   }
-
+  
   Microsoft::WRL::ComPtr<ID3DBlob> Blob;
   const fs::path VertexShaderPath{ ClonedDesc.VertexShaderFilePath };
   HRESULT Result = D3DReadFileToBlob(VertexShaderPath.wstring().c_str(), &Blob);
@@ -783,6 +791,17 @@ bool FRenderer::InitializeBackBufferAndDepthStencil() {
     return false;
   }
 
+  D3D11_SHADER_RESOURCE_VIEW_DESC DepthSrvDesc{
+      .Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
+      .ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
+      .Texture2D = { .MostDetailedMip = 0, .MipLevels = 1 },
+  };
+  Result = Device->CreateShaderResourceView(DepthStencilBuffer.Get(),
+      &DepthSrvDesc, &DepthSRV);
+  if (FAILED(Result)) {
+      return false;
+  }
+
   return true;
 }
 
@@ -802,7 +821,7 @@ bool FRenderer::InitializeEditorViewportRenderTarget() {
       .Height = Height,
       .MipLevels = 1u,
       .ArraySize = 1u,
-      .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+      .Format = DXGI_FORMAT_R16G16B16A16_FLOAT,     // 기존 : DXGI_FORMAT_R8G8B8A8_UNORM
       .SampleDesc = {.Count = 1u},
       .Usage = D3D11_USAGE_DEFAULT,
       .BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE,
@@ -816,6 +835,24 @@ bool FRenderer::InitializeEditorViewportRenderTarget() {
 
   Result =
       Device->CreateTexture2D(&ColorTexDesc, nullptr, &SceneColorTexture);
+  if (FAILED(Result)) {
+      return false;
+  }
+
+  Result =
+      Device->CreateTexture2D(&ColorTexDesc, nullptr, &GBufferATexture);
+  if (FAILED(Result)) {
+      return false;
+  }
+
+  Result =
+      Device->CreateTexture2D(&ColorTexDesc, nullptr, &GBufferBTexture);
+  if (FAILED(Result)) {
+      return false;
+  }
+
+  Result =
+      Device->CreateTexture2D(&ColorTexDesc, nullptr, &GBufferCTexture);
   if (FAILED(Result)) {
       return false;
   }
@@ -841,10 +878,46 @@ bool FRenderer::InitializeEditorViewportRenderTarget() {
 
   Result = Device->CreateRenderTargetView(SceneColorTexture.Get(), nullptr,
       &SceneColorRTV);
+
   if (FAILED(Result)) {
       return false;
   }
 
+  Result = Device->CreateShaderResourceView(GBufferATexture.Get(), nullptr,
+      &GBufferASRV);
+  if (FAILED(Result)) {
+      return false;
+  }
+
+  Result = Device->CreateRenderTargetView(GBufferATexture.Get(), nullptr,
+      &GBufferARTV);
+  if (FAILED(Result)) {
+      return false;
+  }
+
+  Result = Device->CreateShaderResourceView(GBufferBTexture.Get(), nullptr,
+      &GBufferBSRV);
+  if (FAILED(Result)) {
+      return false;
+  }
+
+  Result = Device->CreateRenderTargetView(GBufferBTexture.Get(), nullptr,
+      &GBufferBRTV);
+  if (FAILED(Result)) {
+      return false;
+  }
+
+  Result = Device->CreateShaderResourceView(GBufferCTexture.Get(), nullptr,
+      &GBufferCSRV);
+  if (FAILED(Result)) {
+      return false;
+  }
+
+  Result = Device->CreateRenderTargetView(GBufferCTexture.Get(), nullptr,
+      &GBufferCRTV);
+  if (FAILED(Result)) {
+      return false;
+  }
 
   return true;
 }
@@ -1027,6 +1100,32 @@ bool FRenderer::InitializeConstantBuffers() {
     return false;
   }
 
+  D3D11_BUFFER_DESC MaterialConstantBufferDesc = {
+      .ByteWidth = sizeof(FMaterialConstants),
+      .Usage = D3D11_USAGE_DEFAULT,
+      .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+  };
+
+  Result =
+      Device->CreateBuffer(&MaterialConstantBufferDesc, nullptr, &MaterialConstantBuffer);
+
+  if (FAILED(Result)) {
+      return false;
+  }
+
+  D3D11_BUFFER_DESC FogConstantBufferDesc = {
+      .ByteWidth = sizeof(FFogData),
+      .Usage = D3D11_USAGE_DEFAULT,
+      .BindFlags = D3D11_BIND_CONSTANT_BUFFER,
+  };
+
+  Result =
+      Device->CreateBuffer(&FogConstantBufferDesc, nullptr, &FogConstantBuffer);
+
+  if (FAILED(Result)) {
+      return false;
+  }
+
   for (int32 i = 0; i < NumFrameResourceCount; i++)
   {
 	  D3D11_BUFFER_DESC FrameResourceConstantBufferDesc = {
@@ -1090,13 +1189,34 @@ void FRenderer::UpdateViewConstants(const FViewConstants &Constants) {
   Context->PSSetConstantBuffers(1, 1, ViewConstantBuffer.GetAddressOf());*/
 
     FViewConstants ShaderConstants = Constants;
-    ShaderConstants.View = ShaderConstants.View;
-    ShaderConstants.Projection = ShaderConstants.Projection.ToD3DMatrix();
+
+    FMatrix View = ShaderConstants.View;
+    FMatrix Projection = ShaderConstants.Projection.ToD3DMatrix();
+    FMatrix VP = View * Projection;
+    FMatrix InvVP;
+    VP.Inverse(InvVP);
+
+    ShaderConstants.View = View;
+    ShaderConstants.Projection = Projection;
+    ShaderConstants.InvVP = InvVP;
+	ShaderConstants.Near = Constants.Near;
+	ShaderConstants.Far = Constants.Far;
 
     Context->UpdateSubresource(GetCurrentFrameResource()->ViewConstantBuffer.Get(), 0, nullptr,
         &ShaderConstants, 0, 0);
     Context->VSSetConstantBuffers(1, 1, GetCurrentFrameResource()->ViewConstantBuffer.GetAddressOf());
     Context->PSSetConstantBuffers(1, 1, GetCurrentFrameResource()->ViewConstantBuffer.GetAddressOf());
+
+}
+
+void FRenderer::UpdateMaterialConstants(const FMaterialConstants& Constants) {
+    Context->UpdateSubresource(MaterialConstantBuffer.Get(), 0, nullptr, &Constants, 0, 0);
+    Context->PSSetConstantBuffers(5, 1, MaterialConstantBuffer.GetAddressOf());
+}
+
+void FRenderer::UpdateFogConstants(const FFogData& Constants) {
+    Context->UpdateSubresource(FogConstantBuffer.Get(), 0, nullptr, &Constants, 0, 0);
+    Context->PSSetConstantBuffers(6, 1, FogConstantBuffer.GetAddressOf());
 }
 
 void FRenderer::Draw(const FDrawCommand &Command, uint32 Slot,
@@ -1281,6 +1401,8 @@ void FRenderer::BindDrawResources(const FMesh& Mesh, const FMaterial& Material, 
     }
 }
 
+
+
 void FRenderer::DrawUploadedCommand(const FDrawCommand& Command, bool bApplyViewMode)
 {
     if (!Command.Mesh || Command.Materials.empty())
@@ -1308,6 +1430,12 @@ void FRenderer::DrawUploadedCommand(const FDrawCommand& Command, bool bApplyView
                 bApplyViewMode
             );
 
+            FMaterialConstants Constants{};
+            Constants.DiffAlbedo = Material.GetDiffuse();
+            Constants.Shininess = Material.GetShininess();
+            Constants.SpecAlbedo = Material.GetSpecular();
+            UpdateMaterialConstants(Constants);
+
             Context->DrawIndexed(
                 Section.IndexCount,
                 Section.StartIndex,
@@ -1330,6 +1458,12 @@ void FRenderer::DrawUploadedCommand(const FDrawCommand& Command, bool bApplyView
             Material,
             bApplyViewMode
         );
+
+        FMaterialConstants Constants{};
+        Constants.DiffAlbedo = Material.GetDiffuse();
+        Constants.Shininess = Material.GetShininess();
+        Constants.SpecAlbedo = Material.GetSpecular();
+        UpdateMaterialConstants(Constants);
 
         if (Mesh.HasIndices())
         {            
@@ -1529,9 +1663,9 @@ void FRenderer::ClearTextInstances() {
   FRenderResourceLibrary::Get().DestroyAllInstancingArray();
 }
 
-void FRenderer::RenderScreenPass()
+void FRenderer::RenderScreenPass(const FVector2& TopLeftUV, const FVector2& LengthUV)
 {
-    Context->RSSetViewports(1, &Viewport);
+    SetViewportUV(TopLeftUV, LengthUV);
     Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     Context->IASetInputLayout(nullptr);
 
@@ -1541,9 +1675,10 @@ void FRenderer::RenderScreenPass()
 
     Context->OMSetRenderTargets(1, SceneColorRTV.GetAddressOf(), nullptr);
 
-    // 씬 텍스처 바인딩
-    ID3D11ShaderResourceView* SRV = EditorViewPortSRV.Get();
-    Context->PSSetShaderResources(6, 1, &SRV);
+    // 텍스처 바인딩
+    ID3D11ShaderResourceView* SRVs[] = { EditorViewPortSRV.Get(),
+                                      DepthSRV.Get() };
+    Context->PSSetShaderResources(6, 2, SRVs);
 
     FRenderResourceLibrary::Get()
         .GetPipeline(FName("#ScreenPass"))
@@ -1553,14 +1688,47 @@ void FRenderer::RenderScreenPass()
     INC_DWORD_STAT_BY("Prims", 1);
 
     // 슬롯 해제
-    ID3D11ShaderResourceView* NullSRV = { nullptr };
-    Context->PSSetShaderResources(6, 1, &NullSRV);
+    ID3D11ShaderResourceView* NullSRV[2] = {nullptr, nullptr};
+    Context->PSSetShaderResources(6, 2, NullSRV);
+
+    Context->OMSetRenderTargets(
+        1, SceneColorRTV.GetAddressOf(), DepthStencilView.Get()
+    );
 }
 
-void FRenderer::RenderOutline() {
+void FRenderer::RenderDepthPass(const FVector2& TopLeftUV, const FVector2& LengthUV)
+{
+    SetViewportUV(TopLeftUV, LengthUV);
+    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    Context->IASetInputLayout(nullptr);
+
+    ID3D11Buffer* NullVB = nullptr;
+    UINT Zero = 0;
+    Context->IASetVertexBuffers(0, 1, &NullVB, &Zero, &Zero);
+
+    Context->OMSetRenderTargets(1, SceneColorRTV.GetAddressOf(), nullptr);
+
+    // 텍스처 바인딩
+    ID3D11ShaderResourceView* SRVs[] = { EditorViewPortSRV.Get(),
+                                      DepthSRV.Get() };
+    Context->PSSetShaderResources(6, 2, SRVs);
+
+    FRenderResourceLibrary::Get()
+        .GetPipeline(FName("#DepthPass"))
+        ->Bind(*Context.Get());
+    Context->Draw(3, 0);
+    INC_DWORD_STAT("Draws");
+    INC_DWORD_STAT_BY("Prims", 1);
+
+    // 슬롯 해제
+    ID3D11ShaderResourceView* NullSRV[2] = { nullptr, nullptr };
+    Context->PSSetShaderResources(6, 2, NullSRV);
+}
+
+void FRenderer::RenderOutline(const FVector2& TopLeftUV, const FVector2& LengthUV) {
   // 백버퍼 뷰포트 및 토폴로지 복구
 
-  Context->RSSetViewports(1, &Viewport);
+    SetViewportUV(TopLeftUV, LengthUV);
   Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
   Context->IASetInputLayout(nullptr);
 
@@ -1568,14 +1736,14 @@ void FRenderer::RenderOutline() {
   UINT Zero = 0;
   Context->IASetVertexBuffers(0, 1, &NullVB, &Zero, &Zero);
 
-  Context->OMSetRenderTargets(1, BackBufferRTV.GetAddressOf(), nullptr);
+  Context->OMSetRenderTargets(1, EditorViewPortRTV.GetAddressOf(), nullptr);
   // 씬 텍스처와 스텐실 텍스처 바인딩
   ID3D11ShaderResourceView *SRVs[] = { SceneColorSRV.Get(),
                                       DepthStencilSRV.Get()};
   Context->PSSetShaderResources(0, 2, SRVs);
 
   FRenderResourceLibrary::Get()
-      .GetPipeline(FName("#PostProcess"))
+      .GetPipeline(FName("#OutlinePostProcess"))
       ->Bind(*Context.Get());
   Context->Draw(3, 0);
   INC_DWORD_STAT("Draws");
@@ -1584,6 +1752,76 @@ void FRenderer::RenderOutline() {
   // 슬롯 해제
   ID3D11ShaderResourceView *NullSRVs[] = {nullptr, nullptr};
   Context->PSSetShaderResources(0, 2, NullSRVs);
+}
+
+void FRenderer::FXAA() {
+    Context->RSSetViewports(1, &Viewport);
+    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    Context->IASetInputLayout(nullptr);
+
+    ID3D11Buffer* NullVB = nullptr;
+    UINT Zero = 0;
+    Context->IASetVertexBuffers(0, 1, &NullVB, &Zero, &Zero);
+
+    Context->OMSetRenderTargets(1, SceneColorRTV.GetAddressOf(), nullptr);
+    // 씬 텍스처와 스텐실 텍스처 바인딩
+    ID3D11ShaderResourceView* SRVs[] = { EditorViewPortSRV.Get() };
+    Context->PSSetShaderResources(0, 1, SRVs);
+
+    FRenderResourceLibrary::Get().GetPipeline(FName("#FXAAPostProcess"))->Bind(*Context.Get());
+    Context->Draw(3, 0);
+    INC_DWORD_STAT("Draws");
+    INC_DWORD_STAT_BY("Prims", 1);
+
+    // 슬롯 해제
+    ID3D11ShaderResourceView* NullSRVs[] = { nullptr, nullptr };
+    Context->PSSetShaderResources(0, 2, NullSRVs);
+}
+
+void FRenderer::RenderSceneColor() {
+    Context->RSSetViewports(1, &Viewport);
+    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    Context->IASetInputLayout(nullptr);
+
+    ID3D11Buffer* NullVB = nullptr;
+    UINT Zero = 0;
+    Context->IASetVertexBuffers(0, 1, &NullVB, &Zero, &Zero);
+
+    Context->OMSetRenderTargets(1, BackBufferRTV.GetAddressOf(), nullptr);
+    // 씬 텍스처와 스텐실 텍스처 바인딩   
+    ID3D11ShaderResourceView* SRVs[] = { SceneColorSRV.Get() };
+    Context->PSSetShaderResources(0, 1, SRVs);
+
+    Context->Draw(3, 0);
+    INC_DWORD_STAT("Draws");
+    INC_DWORD_STAT_BY("Prims", 1);
+
+    // 슬롯 해제
+    ID3D11ShaderResourceView* NullSRVs[] = { nullptr, nullptr };
+    Context->PSSetShaderResources(0, 2, NullSRVs);
+}
+
+void FRenderer::RenderEditorViewPort() {
+    Context->RSSetViewports(1, &Viewport);
+    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    Context->IASetInputLayout(nullptr);
+
+    ID3D11Buffer* NullVB = nullptr;
+    UINT Zero = 0;
+    Context->IASetVertexBuffers(0, 1, &NullVB, &Zero, &Zero);
+
+    Context->OMSetRenderTargets(1, BackBufferRTV.GetAddressOf(), nullptr);
+    // 씬 텍스처와 스텐실 텍스처 바인딩   
+    ID3D11ShaderResourceView* SRVs[] = { EditorViewPortSRV.Get() };
+    Context->PSSetShaderResources(0, 1, SRVs);
+
+    Context->Draw(3, 0);
+    INC_DWORD_STAT("Draws");
+    INC_DWORD_STAT_BY("Prims", 1);
+
+    // 슬롯 해제
+    ID3D11ShaderResourceView* NullSRVs[] = { nullptr, nullptr };
+    Context->PSSetShaderResources(0, 2, NullSRVs);
 }
 
 bool FRenderer::InitializeGPUTimerQueries() {
@@ -1679,4 +1917,40 @@ void FRenderer::ResolveGPUTimer() {
 
   // 한 프레임에 세트를 여러 개 회수할 수 있으므로, 누적이 아니라 프레임당 한 번만 넣는다.
   SET_CYCLE_COUNTER("GPU Time", LastGPUTimeMs);
+}
+
+void FRenderer::RenderDeferredLightingPass(const FVector2& TopLeftUV, const FVector2& LengthUV)
+{
+    SetViewportUV(TopLeftUV, LengthUV);
+
+    // GBuffer를 읽고 최종 색을 쓸 타깃
+    Context->OMSetRenderTargets(1, EditorViewPortRTV.GetAddressOf(), nullptr);
+
+    ID3D11ShaderResourceView* GBufferSRVs[] = {
+        GBufferASRV.Get(),
+        GBufferBSRV.Get(),
+        GBufferCSRV.Get(),
+        DepthSRV.Get()
+    };
+    Context->PSSetShaderResources(6, 4, GBufferSRVs);
+
+    Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    Context->IASetInputLayout(nullptr);
+
+    FRenderResourceLibrary::Get()
+        .GetPipeline(FName("#DeferredLighting"))
+        ->Bind(*Context.Get());
+
+    Context->Draw(3, 0); // 여기서는 화면 전체 픽셀에 조명을 계산하므로 맞음
+
+    ID3D11ShaderResourceView* NullSRVs[4] = {};
+    Context->PSSetShaderResources(6, 4, NullSRVs);
+
+    ID3D11RenderTargetView* Targets[] = {
+    GBufferARTV.Get(),
+    GBufferBRTV.Get(),
+    GBufferCRTV.Get()
+    };
+
+    Context->OMSetRenderTargets(3, Targets, DepthStencilView.Get());
 }

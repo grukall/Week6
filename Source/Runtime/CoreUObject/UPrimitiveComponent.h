@@ -9,14 +9,18 @@
 #include "Runtime/Engine/FCulling.h"
 #include "Runtime/Rendering/FMaterial.h"
 
+class UWorld;
+
 class UPrimitiveComponent : public USceneComponent {
   GENERATED_BODY()
   DECLARE_UCLASS(UPrimitiveComponent, USceneComponent)
 
 public:
     void Initialize() override;
-    void Register(UScene& InScene) override;
+    void Register(UWorld *InWorld) override;
     void Unregister() override;
+    virtual void Serialize(FArchive& Archive) const override;
+    virtual void Deserialize(const FArchive& Archive) override;
 
     virtual void SetMesh(UStaticMesh* Mesh);
 
@@ -38,6 +42,9 @@ public:
     virtual EEngineShowFlags GetShowFlag() const { return EEngineShowFlags::SF_Primitives; }
     int32 GetBVHIndex() const { return BVHIndex; }
     void SetBVHIndex(int32 i) { BVHIndex = i; }
+
+    bool IsHiddenInGame() const { return bHiddenInGame; }
+    void SetHiddenInGame(bool value) { bHiddenInGame = value; }
 
     void MarkBoundDirty();
     int32 GetSceneIndex() const { return SceneIndex; }
@@ -81,6 +88,7 @@ protected:
 private:
     int32 SceneIndex = -1;
     bool bBoundDirtyQueued = false;
+    bool bHiddenInGame = false;
 
     TArray<FMaterial> CachedMaterials;
 };

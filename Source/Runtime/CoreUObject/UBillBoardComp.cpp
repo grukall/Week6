@@ -1,6 +1,6 @@
 #include "UBillBoardComp.h"
 #include "Runtime/CoreUObject/UObjectGlobals.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/FScene.h"
 #include "Runtime/Engine/FArchive.h"
 #include "Runtime/Rendering/FRenderResourceLibrary.h"
 #include "Runtime/Core/Log.h"
@@ -23,6 +23,7 @@ void UBillBoardComp::Initialize() {
   SetMesh(Registry.Get<UStaticMesh>("#Rect"));
   SetMaterial(Registry.Get<UMaterial>("Material/Billboard.json"));
 
+  SetHiddenInGame(true);
   RenderData.Type = ERenderType::Primitive;
 }
 

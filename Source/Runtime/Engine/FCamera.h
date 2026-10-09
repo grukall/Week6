@@ -58,4 +58,6 @@ public:
 	const FMatrix& GetViewMatrix() const;
 	const FMatrix& GetProjectionMatrix() const;
 	const FMatrix& GetViewProjectionMatrix() const;
+	const float GetNearPlane() const { return Projection.GetNearPlane(); }
+	const float GetFarPlane() const { return Projection.GetFarPlane(); }
 };

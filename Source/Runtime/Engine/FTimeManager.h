@@ -10,7 +10,7 @@ public:
 	static float GetTime();
 	static float GetDeltaTime();
 
-	static void Update();
+	static void Tick();
 
 private:
 

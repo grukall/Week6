@@ -15,7 +15,7 @@ class FCamera;
 class FGizmo;
 class FGrid;
 class AActor;
-class UScene;
+class FScene;
 
 // 커맨드로 제어하는 컬링 옵션
 struct FCullingSettings
@@ -38,17 +38,24 @@ public:
 	void PrepareRender();
 
 	// 전체 뷰포트 렌더링
-	void RenderView(const FSceneView& View, const UScene& Scene, const FEditorRenderContext& EditorCtx);
-	void CollectScenePrimitives(const UScene& Scene, const FSceneView& View, const AActor* SelectedActor);
+	void RenderView(const FSceneView& View, const FScene& Scene, const FEditorRenderContext& EditorCtx);
+	void CollectScenePrimitives(const FScene& Scene, const FSceneView& View, const AActor* SelectedActor);
 
 	// 뷰포트 패스 파이프라인
 	void BeginView(const FSceneView& View);
+	void UpdateViewConstants(const FCamera& Camera, const FVector2& LengthUV);
+	void UpdateFogConstants(const FCamera& Camera, const FVector2& LengthUV, const FVector2& TopLeftUV);
 	void DrawGrid(const FCamera& Camera, FGrid& Grid);
 	void FlushBasePass(const FCamera& Camera);
 	void FlushLinePass(const FCamera& Camera);
-	void ScreenPass();
-	void RenderPostProcessPass(const FCamera& Camera, const AActor* SelectedActor);
+	void ScreenPass(const FCamera& Camera, const AActor* SelectedActor, const FVector2& TopLeftUV, const FVector2& LengthUV);
+	void DepthPass(const FVector2& TopLeftUV, const FVector2& LengthUV);
+	void RenderPostProcessPass(const FCamera& Camera, const AActor* SelectedActor, const FVector2& TopLeftUV, const FVector2& LengthUV);
 	void RenderOverlayPass(const FCamera& Camera, const FSceneView& SceneView, const FTransform& SelectedTransform, const FGizmo& Gizmo, UTextInstanceComponent* TextComp);
+
+	void FXAAPostProcessPass();
+	void RenderScenePostProcess();
+	void RenderEditorPostProcess();
 
 	// 개별 렌더 및 디버그 라인
 	void RenderGizmo(const FTransform& Transform, const FCamera& Camera, FVector2 TopLeftUV, FVector2 LengthUV, const FGizmo& Gizmo);
@@ -59,8 +66,14 @@ public:
 	void RenderQuad(const FVector& A, const FVector& B, const FVector& C, const FVector& D, const FVector4& Color);
 	void RenderSphere(const FVector& Center, float Radius, const FVector4& Color, uint32 Segments = 16);
 
-	void RenderScreenPass();
-	void RenderOutline(const FCamera& Camera, const AActor* SelectedActor);
+	void RenderGBufferPass(const FCamera& Camera, const AActor* SelectedActor,
+		const FVector2& TopLeftUV, const FVector2& LengthUV);
+	void RenderDifferedLightingPass(const FCamera& Camera, const AActor* SelectedActor,
+		const FVector2& TopLeftUV, const FVector2& LengthUV);
+
+	void RenderScreenPass(const FCamera& Camera, const AActor* SelectedActor, const FVector2& TopLeftUV, const FVector2& LengthUV);
+	void RenderDepthPass(const FVector2& TopLeftUV, const FVector2& LengthUV);
+	void RenderOutline(const FCamera& Camera, const AActor* SelectedActor, const FVector2& TopLeftUV, const FVector2& LengthUV);
 	void DrawStencilMask(const FCamera& Camera, const AActor* SelectedActor);
 	void RenderVerticetoline();
 
@@ -80,7 +93,7 @@ public:
 	void SetCullingEnabled(bool pCullingEnable);
 
 	//렌더 전에 컬링 판정
-	void CullScene(const FSceneView& View, const UScene& Scene);
+	void CullScene(const FSceneView& View, const FScene& Scene);
 
 	//void SetOcclusionEnabled(bool bEnable) { bOcclusionEnabled = bEnable; }
 	//bool IsOcclusionEnabled() const { return bOcclusionEnabled; }
@@ -88,6 +101,11 @@ public:
 
 	//측정 : 다음에 렌더되는 뷰 하나에서 오라클을 실행(한 프레임 멈춤)
 	void RequestOcclusionOracle() { bOracleRequested = true; }
+
+	// Lights
+	void UpdateLight(const FScene& Scene, const FVector2& TopLeftUV, const FVector2& LengthUV);
+
+	void UpdateFog(const FScene& Scene, const FSceneView& View);
 
 private:
 	FCullingSettings CullingSettings;
@@ -124,4 +142,7 @@ private:
 	TArray<FDrawCommand> OracleOccludedCommands;  // 오클루전으로 지운 것 (검증 대상)
 
 	void RunOcclusionOracle();
+
+public:
+	bool bIsFXAA = false;
 };

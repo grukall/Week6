@@ -16,6 +16,8 @@ class FTransform
 	void UpdateTransformMatrixIfDirty() const;
 
 public:
+
+
 	const FVector& GetLocation() const { return Location; }
 	const FQuaternion& GetRotation() const { return Rotation; }
 	const FVector& GetScale3D() const { return Scale3D; }
@@ -25,6 +27,7 @@ public:
 	void SetScale3D(const FVector& Value);
 
 	const FMatrix& GetMatrix() const;
+	FTransform GetRelativeTo(const FTransform& Parent) const;
 
 	// 부모 트랜스폼과 자식 트랜스폼 합성 연산자
 	FTransform operator*(const FTransform& Child) const;

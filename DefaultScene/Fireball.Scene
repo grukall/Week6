@@ -1,0 +1,502 @@
+{
+    "Version": 3,
+    "map": {
+        "PersistentLevel": {
+            "Actors": [
+                {
+                    "Guid": "37F85C4C18510AA1A1B523EDDA038499",
+                    "Name": "SphereActor_0",
+                    "OwnedComponents": [
+                        {
+                            "Name": "RotationMovementComponent_0",
+                            "PivotTranslation": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "RotationRate": [
+                                79.0,
+                                49.0,
+                                51.0
+                            ],
+                            "Type": "URotationMovementComponent",
+                            "Velocity": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "bRotationInLocalSpace": false,
+                            "bSweep": false
+                        },
+                        {
+                            "HomingAccelerationMagnitude": 0.0,
+                            "HomingTarget": null,
+                            "Name": "ProjectileMovementComponent_0",
+                            "ProjectileGravityScale": 0.0,
+                            "Type": "UProjectileMovementComponent",
+                            "Velocity": [
+                                0.0,
+                                1.0,
+                                0.0
+                            ],
+                            "bIsHomingProjectile": false,
+                            "bSweep": false
+                        },
+                        {
+                            "AmbientIntensity": 0.20000000298023224,
+                            "FallOffEnd": 9.0,
+                            "FallOffStart": 0.0,
+                            "Intensity": 6.150000095367432,
+                            "LightColor": [
+                                1.0,
+                                0.0,
+                                0.0
+                            ],
+                            "LightDirection": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "Location": [
+                                0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "Name": "PointLightComponent_0",
+                            "Parent": "StaticMeshComponent_0",
+                            "Rotation": [
+                                -0.0,
+                                0.0,
+                                0.0
+                            ],
+                            "Scale": [
+                                1.0,
+                                1.0,
+                                1.0
+                            ],
+                            "SpotPower": 0.0,
+                            "Type": "UPointLightComponent"
+                        }
+                    ],
+                    "RootComponent": {
+                        "Location": [
+                            -0.0,
+                            -15.0,
+                            2.0
+                        ],
+                        "Materials": [
+                            {
+                                "Color": [
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    0.0
+                                ],
+                                "Diffuse": [
+                                    0.4000000059604645,
+                                    0.4000000059604645,
+                                    0.4000000059604645
+                                ],
+                                "DisableShading": false,
+                                "MaterialAsset": "Material/Textured.json",
+                                "OverridePipelineAsset": "Pipeline/UVScroll.json",
+                                "OverrideTextureAsset": "Texture/UVTest.json",
+                                "Shininess": 0.06499999761581421,
+                                "Specular": [
+                                    0.30000001192092896,
+                                    0.30000001192092896,
+                                    0.30000001192092896
+                                ],
+                                "UVOffset": [
+                                    0.0,
+                                    0.0
+                                ],
+                                "UVScale": [
+                                    1.0,
+                                    1.0
+                                ]
+                            }
+                        ],
+                        "MeshAsset": "#Sphere",
+                        "Name": "StaticMeshComponent_0",
+                        "Rotation": [
+                            -0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Scale": [
+                            0.5,
+                            0.5,
+                            0.5
+                        ],
+                        "Type": "UStaticMeshComponent",
+                        "bHiddenInGame": false
+                    },
+                    "Type": "ASphereActor"
+                },
+                {
+                    "Guid": "662185ED00ABBCFFAC7C63235FE5EDF9",
+                    "Name": "CubeActor_1",
+                    "OwnedComponents": [],
+                    "RootComponent": {
+                        "Location": [
+                            0.0,
+                            0.0,
+                            0.018218617886304855
+                        ],
+                        "Materials": [
+                            {
+                                "Color": [
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    0.0
+                                ],
+                                "Diffuse": [
+                                    0.4000000059604645,
+                                    0.4000000059604645,
+                                    0.4000000059604645
+                                ],
+                                "DisableShading": false,
+                                "MaterialAsset": "Material/Textured.json",
+                                "OverridePipelineAsset": "Pipeline/UVScroll.json",
+                                "OverrideTextureAsset": "Texture/oiiaii.json",
+                                "Shininess": 0.06499999761581421,
+                                "Specular": [
+                                    0.30000001192092896,
+                                    0.30000001192092896,
+                                    0.30000001192092896
+                                ],
+                                "UVOffset": [
+                                    0.0,
+                                    0.0
+                                ],
+                                "UVScale": [
+                                    1.0,
+                                    1.0
+                                ]
+                            }
+                        ],
+                        "MeshAsset": "#Cube",
+                        "Name": "StaticMeshComponent_0",
+                        "Rotation": [
+                            -0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Scale": [
+                            40.0,
+                            40.0,
+                            0.5
+                        ],
+                        "Type": "UStaticMeshComponent",
+                        "bHiddenInGame": false
+                    },
+                    "Type": "ACubeActor"
+                },
+                {
+                    "Guid": "91CF69967B323D4224A2A43E6E992D83",
+                    "Name": "CubeActor_2",
+                    "OwnedComponents": [],
+                    "RootComponent": {
+                        "Location": [
+                            0.0,
+                            0.0,
+                            20.0
+                        ],
+                        "Materials": [
+                            {
+                                "Color": [
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    0.0
+                                ],
+                                "Diffuse": [
+                                    0.4000000059604645,
+                                    0.4000000059604645,
+                                    0.4000000059604645
+                                ],
+                                "DisableShading": false,
+                                "MaterialAsset": "Material/Textured.json",
+                                "OverridePipelineAsset": "Pipeline/UVScroll.json",
+                                "OverrideTextureAsset": "Texture/oiiaii.json",
+                                "Shininess": 0.06499999761581421,
+                                "Specular": [
+                                    0.30000001192092896,
+                                    0.30000001192092896,
+                                    0.30000001192092896
+                                ],
+                                "UVOffset": [
+                                    0.0,
+                                    0.0
+                                ],
+                                "UVScale": [
+                                    1.0,
+                                    1.0
+                                ]
+                            }
+                        ],
+                        "MeshAsset": "#Cube",
+                        "Name": "StaticMeshComponent_0",
+                        "Rotation": [
+                            -0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Scale": [
+                            40.0,
+                            40.0,
+                            0.5
+                        ],
+                        "Type": "UStaticMeshComponent",
+                        "bHiddenInGame": false
+                    },
+                    "Type": "ACubeActor"
+                },
+                {
+                    "Guid": "40C5489AC6E9105F869DF83AEDEB3EDD",
+                    "Name": "CubeActor_3",
+                    "OwnedComponents": [],
+                    "RootComponent": {
+                        "Location": [
+                            0.0,
+                            -20.0,
+                            0.0
+                        ],
+                        "Materials": [
+                            {
+                                "Color": [
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    0.0
+                                ],
+                                "Diffuse": [
+                                    0.4000000059604645,
+                                    0.4000000059604645,
+                                    0.4000000059604645
+                                ],
+                                "DisableShading": false,
+                                "MaterialAsset": "Material/Textured.json",
+                                "OverridePipelineAsset": "Pipeline/UVScroll.json",
+                                "OverrideTextureAsset": "Texture/oiiaii.json",
+                                "Shininess": 0.06499999761581421,
+                                "Specular": [
+                                    0.30000001192092896,
+                                    0.30000001192092896,
+                                    0.30000001192092896
+                                ],
+                                "UVOffset": [
+                                    0.0,
+                                    0.0
+                                ],
+                                "UVScale": [
+                                    1.0,
+                                    1.0
+                                ]
+                            }
+                        ],
+                        "MeshAsset": "#Cube",
+                        "Name": "StaticMeshComponent_0",
+                        "Rotation": [
+                            -0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Scale": [
+                            40.0,
+                            0.5,
+                            40.0
+                        ],
+                        "Type": "UStaticMeshComponent",
+                        "bHiddenInGame": false
+                    },
+                    "Type": "ACubeActor"
+                },
+                {
+                    "Guid": "9FD80EC342C4AD51AF0EF615E2BB258D",
+                    "Name": "CubeActor_4",
+                    "OwnedComponents": [],
+                    "RootComponent": {
+                        "Location": [
+                            0.0,
+                            20.0,
+                            0.0
+                        ],
+                        "Materials": [
+                            {
+                                "Color": [
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    0.0
+                                ],
+                                "Diffuse": [
+                                    0.4000000059604645,
+                                    0.4000000059604645,
+                                    0.4000000059604645
+                                ],
+                                "DisableShading": false,
+                                "MaterialAsset": "Material/Textured.json",
+                                "OverridePipelineAsset": "Pipeline/UVScroll.json",
+                                "OverrideTextureAsset": "Texture/oiiaii.json",
+                                "Shininess": 0.06499999761581421,
+                                "Specular": [
+                                    0.30000001192092896,
+                                    0.30000001192092896,
+                                    0.30000001192092896
+                                ],
+                                "UVOffset": [
+                                    0.0,
+                                    0.0
+                                ],
+                                "UVScale": [
+                                    1.0,
+                                    1.0
+                                ]
+                            }
+                        ],
+                        "MeshAsset": "#Cube",
+                        "Name": "StaticMeshComponent_0",
+                        "Rotation": [
+                            4.440891569105034e-16,
+                            1.4901162970204496e-08,
+                            0.0
+                        ],
+                        "Scale": [
+                            40.0,
+                            0.5,
+                            40.0
+                        ],
+                        "Type": "UStaticMeshComponent",
+                        "bHiddenInGame": false
+                    },
+                    "Type": "ACubeActor"
+                },
+                {
+                    "Guid": "701CB1085C97926DA8D90061DAEF95DD",
+                    "Name": "CubeActor_5",
+                    "OwnedComponents": [],
+                    "RootComponent": {
+                        "Location": [
+                            -5.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Materials": [
+                            {
+                                "Color": [
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    0.0
+                                ],
+                                "Diffuse": [
+                                    0.4000000059604645,
+                                    0.4000000059604645,
+                                    0.4000000059604645
+                                ],
+                                "DisableShading": false,
+                                "MaterialAsset": "Material/Textured.json",
+                                "OverridePipelineAsset": "Pipeline/UVScroll.json",
+                                "OverrideTextureAsset": "Texture/oiiaii.json",
+                                "Shininess": 0.06499999761581421,
+                                "Specular": [
+                                    0.30000001192092896,
+                                    0.30000001192092896,
+                                    0.30000001192092896
+                                ],
+                                "UVOffset": [
+                                    0.0,
+                                    0.0
+                                ],
+                                "UVScale": [
+                                    1.0,
+                                    1.0
+                                ]
+                            }
+                        ],
+                        "MeshAsset": "#Cube",
+                        "Name": "StaticMeshComponent_0",
+                        "Rotation": [
+                            -0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Scale": [
+                            0.5,
+                            40.0,
+                            40.0
+                        ],
+                        "Type": "UStaticMeshComponent",
+                        "bHiddenInGame": false
+                    },
+                    "Type": "ACubeActor"
+                },
+                {
+                    "Guid": "0D13D983D828A37DBCEE7BE1EF52601F",
+                    "Name": "CubeActor_7",
+                    "OwnedComponents": [],
+                    "RootComponent": {
+                        "Location": [
+                            5.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Materials": [
+                            {
+                                "Color": [
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    0.0
+                                ],
+                                "Diffuse": [
+                                    0.4000000059604645,
+                                    0.4000000059604645,
+                                    0.4000000059604645
+                                ],
+                                "DisableShading": false,
+                                "MaterialAsset": "Material/Textured.json",
+                                "OverridePipelineAsset": "Pipeline/UVScroll.json",
+                                "OverrideTextureAsset": "Texture/oiiaii.json",
+                                "Shininess": 0.06499999761581421,
+                                "Specular": [
+                                    0.30000001192092896,
+                                    0.30000001192092896,
+                                    0.30000001192092896
+                                ],
+                                "UVOffset": [
+                                    0.0,
+                                    0.0
+                                ],
+                                "UVScale": [
+                                    1.0,
+                                    1.0
+                                ]
+                            }
+                        ],
+                        "MeshAsset": "#Cube",
+                        "Name": "StaticMeshComponent_0",
+                        "Rotation": [
+                            -0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Scale": [
+                            0.5,
+                            40.0,
+                            40.0
+                        ],
+                        "Type": "UStaticMeshComponent",
+                        "bHiddenInGame": false
+                    },
+                    "Type": "ACubeActor"
+                }
+            ],
+            "Type": "ULevel"
+        },
+        "Type": "UWorld"
+    }
+}

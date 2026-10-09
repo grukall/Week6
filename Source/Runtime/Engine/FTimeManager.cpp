@@ -10,7 +10,7 @@ float FTimeManager::GetDeltaTime()
 	return DeltaTime;
 }
 
-void FTimeManager::Update()
+void FTimeManager::Tick()
 {
 	const TimePoint Clock = SteadyClock::now();
 	Time = Duration(Clock - StartTime).count();

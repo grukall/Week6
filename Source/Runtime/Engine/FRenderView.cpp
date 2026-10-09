@@ -15,7 +15,7 @@
 #include "Runtime/Rendering/FRenderer.h"
 #include "Runtime/Rendering/ShaderConstants.h"
 #include "Runtime/Engine/FRenderData.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/FScene.h"
 #include "Runtime/Engine/FTimeManager.h"
 #include "Runtime/Core/Globals.h"
 #include <fstream>
@@ -95,9 +95,9 @@ namespace
     }
 }
 
-void FRenderView::CollectScenePrimitives(const UScene& Scene, const FSceneView& View, const AActor* SelectedActor)
+void FRenderView::CollectScenePrimitives(const FScene& Scene, const FSceneView& View, const AActor* SelectedActor)
 {
-    const TArray<UPrimitiveComponent*>& Primitives = Scene.GetRenderComponents();
+    const TArray<UPrimitiveComponent*>& Primitives = Scene.GetPrimitives();
     // Primitives[i]의 SceneIndex는 i이므로 CullDataList[i]가 그 컴포넌트의 월드 바운드다 (VisibleFlags와 같은 규칙)
     const TArray<FAxisAlignedBoundingBox>& CullDataList = Scene.GetCullDataList();
     const UStaticMeshComponent::FLODView LODView = UStaticMeshComponent::MakeLODView(View.Camera);
@@ -132,6 +132,12 @@ void FRenderView::CollectScenePrimitives(const UScene& Scene, const FSceneView& 
         
         // 쇼 플래그 확인
         if ((static_cast<uint64>(View.ShowFlags) & static_cast<uint64>(PrimitiveComponent->GetShowFlag())) == 0)
+        {
+            continue;
+        }
+
+        //PIE일때 표시안되는 것들 처리 (예시 : BillBoardComp)
+        if (PrimitiveComponent->GetWorld()->GetWorldType() == EWorldType::PIE && PrimitiveComponent->IsHiddenInGame())
         {
             continue;
         }
@@ -221,10 +227,13 @@ void FRenderView::PrepareRender()
     Renderer.UpdateFrameConstants(FrameConstants);
 }
 
-void FRenderView::RenderView(const FSceneView& View, const UScene& Scene, const FEditorRenderContext& EditorCtx)
+void FRenderView::RenderView(const FSceneView& View, const FScene& Scene, const FEditorRenderContext& EditorCtx)
 {
     // 뷰포트 시작
     BeginView(View);
+    //UpdateLight(Scene);
+    UpdateFog(Scene, View);
+
 
     //컬링 측정
     {
@@ -242,8 +251,11 @@ void FRenderView::RenderView(const FSceneView& View, const UScene& Scene, const 
         RenderQueue.Sort();
     }
 
+    RenderGBufferPass(View.Camera, EditorCtx.SelectedActor, View.TopLeftUV, View.LengthUV);
+
     // 기본 씬 오브젝트 패스
     FlushBasePass(View.Camera);
+    UpdateLight(Scene, View.TopLeftUV, View.LengthUV);
 
     //BasePass 이후에 깊이 버퍼 기준으로 가시성 질의
     if (bOracleRequested)
@@ -253,6 +265,13 @@ void FRenderView::RenderView(const FSceneView& View, const UScene& Scene, const 
     }
 
     Renderer.ClearLastRenderState();
+
+    RenderScreenPass(View.Camera, EditorCtx.SelectedActor, View.TopLeftUV, View.LengthUV);
+    if (View.ViewMode == EViewModeIndex::VMI_SceneDepth)
+    {
+        // 깊이 버퍼를 화면에 출력
+        Renderer.RenderDepthPass(View.TopLeftUV, View.LengthUV);
+    }
 
     // 에디터 라인 패스
     if (EditorCtx.Grid && (View.ShowFlags & static_cast<uint32>(EEngineShowFlags::SF_Grid)) != 0) {
@@ -281,10 +300,19 @@ void FRenderView::RenderView(const FSceneView& View, const UScene& Scene, const 
 
     Renderer.ClearLastRenderState();
 
-    RenderScreenPass();
-
     // 후처리 외곽선 패스
-    RenderPostProcessPass(View.Camera, EditorCtx.SelectedActor);
+    RenderPostProcessPass(View.Camera, EditorCtx.SelectedActor, View.TopLeftUV, View.LengthUV);
+    
+
+    if (bIsFXAA)
+    {
+        FXAAPostProcessPass();
+        RenderScenePostProcess();
+    }
+    else
+    {
+        RenderEditorPostProcess();
+    }
 
     Renderer.ClearLastRenderState();
 }
@@ -295,21 +323,55 @@ void FRenderView::BeginView(const FSceneView& View)
     Renderer.BindEditorViewportRenderTargets();
     Renderer.SetViewportUV(View.TopLeftUV, View.LengthUV);
     Renderer.SetRenderMode(View.ViewMode);
-    Renderer.UpdateLightConstants(View.LightConstants, View.ViewMode);
+    // Renderer.UpdateLightConstants(View.LightConstants, View.ViewMode);
 
-    // ViewConstants 갱신
+    UpdateViewConstants(View.Camera, View.LengthUV);
+}
+
+void FRenderView::UpdateViewConstants(const FCamera& Camera, const FVector2& LengthUV)
+{
+    FMatrix ViewM = Camera.GetViewMatrix();
+    FMatrix ProjectionM = Camera.GetProjectionMatrix();
+    FMatrix VP = ViewM * ProjectionM;
+    FMatrix InvVP;
+    if (!VP.Inverse(InvVP))
+    {
+        return;
+    }
+
     FViewConstants ViewConstants
     {
-        .View = View.Camera.GetViewMatrix(),
-        .Projection = View.Camera.GetProjectionMatrix(),
+        .Pos = Camera.GetPosition(),
+        .View = Camera.GetViewMatrix(),
+        .Projection = Camera.GetProjectionMatrix(),
+        .InvVP = InvVP,
         .ViewportSize = FVector2
         {
-            View.LengthUV.X * Renderer.GetWidth(),
-            View.LengthUV.Y * Renderer.GetHeight(),
+            LengthUV.X * Renderer.GetWidth(),
+            LengthUV.Y * Renderer.GetHeight(),
         },
+        .Near = Camera.GetNearPlane(),
+        .Far = Camera.GetFarPlane(),
     };
 
     Renderer.UpdateViewConstants(ViewConstants);
+}
+
+void FRenderView::UpdateFogConstants(const FCamera& Camera, const FVector2& LengthUV, const FVector2& TopLeftUV)
+{
+    FFogData FogConstants{};
+
+    FMatrix VP = Camera.GetViewMatrix() * Camera.GetProjectionMatrix();
+    VP = VP.ToD3DMatrix();
+    VP.Inverse(FogConstants.InverseVP);
+    
+    // FogConstants.Density 
+    // FogConstants.StartDistance
+    // FogConstants.CutoffDistance
+    // FogConstants.MaxOpacity
+    // FogConstants.InscatteringColor
+
+    Renderer.UpdateFogConstants(FogConstants);
 }
 
 void FRenderView::DrawGrid(const FCamera& Camera, FGrid& Grid)
@@ -334,20 +396,44 @@ void FRenderView::FlushLinePass(const FCamera& Camera)
     FlushLineBatch(Camera.GetViewProjectionMatrix());
 }
 
-void FRenderView::ScreenPass()
+void FRenderView::ScreenPass(const FCamera& Camera, const AActor* SelectedActor, const FVector2& TopLeftUV, const FVector2& LengthUV)
 {
-    RenderScreenPass();
+    RenderScreenPass(Camera, SelectedActor, TopLeftUV, LengthUV);
 }
 
-void FRenderView::RenderPostProcessPass(const FCamera& Camera, const AActor* SelectedActor)
+void FRenderView::DepthPass(const FVector2& TopLeftUV, const FVector2& LengthUV)
+
 {
-    RenderOutline(Camera, SelectedActor);
+    RenderDepthPass(TopLeftUV, LengthUV);
+}
+
+
+void FRenderView::RenderPostProcessPass(const FCamera& Camera, const AActor* SelectedActor, const FVector2& TopLeftUV, const FVector2& LengthUV)
+{
+    RenderOutline(Camera, SelectedActor, TopLeftUV, LengthUV);
+}
+
+void FRenderView::FXAAPostProcessPass()
+{
+    Renderer.FXAA();
+}
+
+void FRenderView::RenderScenePostProcess()
+{
+    Renderer.RenderSceneColor();
+}
+
+void FRenderView::RenderEditorPostProcess()
+{
+    Renderer.RenderEditorViewPort();
 }
 
 void FRenderView::RenderOverlayPass(const FCamera& Camera, const FSceneView& SceneView, const FTransform& SelectedTransform, const FGizmo& Gizmo, UTextInstanceComponent* TextComp)
 {
     // 뷰포트 영역 재설정
     Renderer.SetViewportUV(SceneView.TopLeftUV, SceneView.LengthUV);
+    // 오버레이는 뷰포트 루프가 끝난 뒤 그리므로, 마지막 뷰포트의 카메라가 남아 있지 않게 다시 설정한다.
+    UpdateViewConstants(Camera, SceneView.LengthUV);
 
     //// 기즈모 렌더링
     //Renderer.ClearDepth();
@@ -371,6 +457,7 @@ void FRenderView::RenderGizmo(const FTransform &Transform,
                               const FCamera &Camera, FVector2 TopLeftUV,
                               FVector2 LengthUV, const FGizmo &Gizmo) {
   Renderer.SetViewportUV(TopLeftUV, LengthUV);
+  UpdateViewConstants(Camera, LengthUV);
   Renderer.ClearDepth();
   Gizmo.Draw(Renderer, Transform, Camera);
 }
@@ -412,15 +499,33 @@ void FRenderView::RenderSphere(const FVector &Center, float Radius,
   LineBatcher.DrawSphere(Center, Radius, Color, Segments);
 }
 
-void FRenderView::RenderScreenPass()
+void FRenderView::RenderGBufferPass(const FCamera& Camera, const AActor* SelectedActor,
+    const FVector2& TopLeftUV, const FVector2& LengthUV)
 {
-    Renderer.RenderScreenPass();
+    Renderer.RenderDeferredLightingPass(TopLeftUV, LengthUV);
+    Renderer.DrawPrimitiveBatch(RenderQueue.GetPrimRenderQ());
+}
+
+void FRenderView::RenderDifferedLightingPass(const FCamera& Camera, const AActor* SelectedActor,
+    const FVector2& TopLeftUV, const FVector2& LengthUV)
+{
+    Renderer.RenderDeferredLightingPass(TopLeftUV, LengthUV);
+}
+
+void FRenderView::RenderScreenPass(const FCamera& Camera, const AActor* SelectedActor, 
+                                    const FVector2& TopLeftUV, const FVector2& LengthUV)
+{
+    DrawStencilMask(Camera, SelectedActor);
+    Renderer.RenderScreenPass(TopLeftUV, LengthUV);
+}
+
+void FRenderView::RenderDepthPass(const FVector2& TopLeftUV, const FVector2& LengthUV) {
+	Renderer.RenderDepthPass(TopLeftUV, LengthUV);
 }
 
 void FRenderView::RenderOutline(const FCamera &Camera,
-                                const AActor *SelectedActor) {
-  DrawStencilMask(Camera, SelectedActor);
-  Renderer.RenderOutline();
+                                const AActor *SelectedActor, const FVector2& TopLeftUV, const FVector2& LengthUV) {
+  Renderer.RenderOutline(TopLeftUV, LengthUV);
 }
 
 void FRenderView::DrawStencilMask(const FCamera& Camera,
@@ -430,22 +535,27 @@ void FRenderView::DrawStencilMask(const FCamera& Camera,
     USceneComponent* RootComp = SelectedActor->GetRootComponent();
     if (!RootComp) return;
 
-    UPrimitiveComponent* PrimComp = RootComp->Cast<UPrimitiveComponent>();
-    if (!PrimComp) return;
-
-    const FMatrix ModelMatrix = PrimComp->GetRenderMatrix(Camera);
-    FDrawCommand DrawCommand = GetDrawCommand(*PrimComp, Camera, PrimComp->GetWorldBounds(), UStaticMeshComponent::MakeLODView(Camera));
-
-    DrawCommand.Constants.DisableShading = true;
-    DrawCommand.Constants.World = ModelMatrix;
-
     auto OutlineMaterial = FRenderResourceLibrary::Get().GetMaterial("#Outline");
-    if (OutlineMaterial)
+    if (!OutlineMaterial)
     {
-        OutlineMaterial->GetPipeline()->SetStencilRef(1);
+        return;
+    }
+    OutlineMaterial->GetPipeline()->SetStencilRef(1);
+
+    for (UActorComponent* ActorComponent : SelectedActor->GetOwnedComponents())
+    {
+        UPrimitiveComponent* PrimComp = ActorComponent->Cast<UPrimitiveComponent>();
+        if (!PrimComp) continue;
+
+        const FMatrix ModelMatrix = PrimComp->GetRenderMatrix(Camera);
+        FDrawCommand DrawCommand = GetDrawCommand(*PrimComp, Camera, PrimComp->GetWorldBounds(), UStaticMeshComponent::MakeLODView(Camera));
+
+        DrawCommand.Constants.DisableShading = true;
+        DrawCommand.Constants.World = ModelMatrix;
         DrawCommand.Materials = std::span<const FMaterial>(OutlineMaterial.get(), 1);
         Renderer.Draw(DrawCommand, 2, false);
     }
+
 }
 
 void FRenderView::SetRenderMode(EViewModeIndex InMode)
@@ -538,7 +648,7 @@ void FRenderView::SetCullingEnabled(bool pCullingEnable)
     Globals::bEnableFrustumCulling = pCullingEnable;
 }
 
-void FRenderView::CullScene(const FSceneView& View, const UScene& Scene)
+void FRenderView::CullScene(const FSceneView& View, const FScene& Scene)
 {
     const TArray<FAxisAlignedBoundingBox>& CullDataList = Scene.GetCullDataList();
     
@@ -652,4 +762,59 @@ void FRenderView::RunOcclusionOracle()
 
     OracleDrawnCommands.clear();
     OracleOccludedCommands.clear();
+}
+
+
+// Lights Update
+void FRenderView::UpdateLight(const FScene& Scene, const FVector2& TopLeftUV, const FVector2& LengthUV)
+{
+    FLightConstants AmbientConstants{};
+    AmbientConstants.AmbientLight = { 0.2f, 0.2f, 0.2f };
+    Renderer.UpdateLightConstants(AmbientConstants, EViewModeIndex::VMI_Lit);
+    Renderer.RenderDeferredLightingPass(TopLeftUV, LengthUV);
+
+    for (ULightComponent* Light : Scene.GetLightComponents())
+    {
+        if (!Light)
+        {
+            continue;
+        }
+
+        FLightConstants Constants{};
+        Constants.AmbientLight = { 0.2f, 0.2f, 0.2f };
+
+        Light->BuildConstants(Constants);
+        Renderer.UpdateLightConstants(Constants, EViewModeIndex::VMI_Lit);
+        Renderer.RenderDeferredLightingPass(TopLeftUV, LengthUV);
+    }
+}
+
+
+void FRenderView::UpdateFog(const FScene& Scene, const FSceneView& View)
+{
+    FFogData FogConstants;
+
+    FMatrix VP = View.Camera.GetViewMatrix() * View.Camera.GetProjectionMatrix();
+    VP = VP.ToD3DMatrix();
+    VP.Inverse(FogConstants.InverseVP);
+
+    if(Scene.GetFogComponents().empty())
+    {
+        FogConstants.MaxOpacity = 0;
+    }
+    else {
+        FogConstants.MaxOpacity = 1;
+    }
+
+    for (UExponentialHeightFogComponent* Fog : Scene.GetFogComponents())
+    {
+        Fog->BuildConstants(FogConstants);
+    }
+
+    if ((View.ShowFlags & static_cast<uint64>(EEngineShowFlags::SF_Fog)) == 0)
+    {
+        FogConstants.MaxOpacity = 0;
+    }
+
+    Renderer.UpdateFogConstants(FogConstants);
 }

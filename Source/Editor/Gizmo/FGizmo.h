@@ -44,7 +44,7 @@ public:
 	[[nodiscard]] EGizmoHandle HitTest(const FTransform& Transform, const FRay& Ray, const FCamera& Camera) const;
 	
 	void BeginInteraction(const FTransform& Transform, EGizmoHandle Handle, const FVector2& MousePosition, const FCamera& Camera, const FVector2& ViewportSize);
-	void UpdateInteraction(FEditor& Editor, const FVector2& MousePosition);
+	void UpdateInteraction(FEditor& Editor, const FVector2& MousePosition, const FCamera& Camera, const FVector2& ViewportSize);
 	void EndInteraction();
 	[[nodiscard]] bool IsInteracting() const { return ActiveHandle != EGizmoHandle::None; }
 	[[nodiscard]] EGizmoSpace GetSpace() const { return ModeSpace[static_cast<uint8>(Mode)]; }
@@ -57,6 +57,7 @@ public:
 
 private:
 	void DrawAxis(FRenderer& Renderer, EGizmoHandle Handle, const FMatrix& World) const;
+	bool UpdateInteractionAxis(const FTransform& Transform, const FCamera& Camera, const FVector2& ViewportSize);
 	[[nodiscard]] float CalculateGizmoScale(const FVector& GizmoLocation, const FCamera& Camera) const;
 	[[nodiscard]] FVector2 WorldToViewport(const FVector& WorldPosition, const FCamera& Camera, const FVector2& ViewportSize) const;
 
@@ -73,11 +74,10 @@ private:
 		EGizmoSpace::Local, // Scale
 	};
 
-	FTransform InteractionStartTransform;
 	FVector InteractionAxisWorld;
 	FVector InteractionAxisLocal;
 	FVector2 InteractionAxisViewport;
-	FVector2 InteractionStartMouse;
+	FVector2 InteractionLastMouse;
 	FVector2 InteractionOriginViewport;
 	float InteractionRotationSign = 1.0f;
 	float InteractionWorldUnitsPerPixel = 0.0f;

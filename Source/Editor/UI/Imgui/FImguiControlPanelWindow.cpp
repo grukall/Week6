@@ -8,7 +8,7 @@
 #include "Runtime/Core/FString.h"
 #include "Runtime/Engine/ShowFlags.h"
 #include "Runtime/Engine/FRayCastingManager.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/FScene.h"
 #include "Runtime/CoreUObject/FStatsManager.h"
 #include "Runtime/CoreUObject/UPrimitiveComponent.h"
 #include <algorithm>
@@ -33,11 +33,6 @@ void FImguiControlPanelWindow::Process(FEditor& Editor)
 
     ImGui::Separator();
 
-    if (ImGui::Button("대회 씬 바로 불러오기"))
-    {
-        Editor.LoadScene("DefaultScene/Default.scene");
-    }
-
     //액터 스폰
     ActorSpawnSetting(Editor);
     // 그리드 설정
@@ -49,23 +44,26 @@ void FImguiControlPanelWindow::Process(FEditor& Editor)
     CameraSetting(Editor);
     ImGui::Separator();
     //전역조명
-    DirectionLightSetting(Editor);
+    // DirectionLightSetting(Editor);
 
     ImGui::Separator();
-    BVHDebugSetting(Editor);
 
-    ImGui::Separator();
-    RenderStateSort(Editor);
+    if (ImGui::CollapsingHeader("Debug/Optimization"))
+    {
+        BVHDebugSetting(Editor);
 
-    ImGui::Separator();
-	SIMDCullingDebugSetting(Editor);
+        ImGui::Separator();
+        RenderStateSort(Editor);
 
-    ImGui::Separator();
-    LODSetting(Editor);
+        ImGui::Separator();
+	    SIMDCullingDebugSetting(Editor);
 
-    ImGui::Separator();
-    CullingSetting(Editor);
+        ImGui::Separator();
+        LODSetting(Editor);
 
+        ImGui::Separator();
+        CullingSetting(Editor);
+    }
     ImGui::End();
 }
 
@@ -188,8 +186,11 @@ void FImguiControlPanelWindow::RunPickBenchmark(FEditor& Editor, int Iterations)
 {
     if (!FRayCastingManager::bHasLastPickRay || Iterations <= 0) { return; }
 
-    UScene* Scene = Editor.GetCurrentScene();
-    FEditorViewportClient* Viewport = Editor.GetActiveViewport();
+	UWorld* World = Editor.GetViewWorld();
+	if (!World) { return; }
+
+	FScene* Scene =World->GetScene();
+    FEditorViewportClient* Viewport = Editor.GetActiveEditorClient();
     const bool bUseBVH = Editor.bUseBVHPicking && Scene;
     if (!bUseBVH && !Viewport) { return; }
 
@@ -211,7 +212,7 @@ void FImguiControlPanelWindow::RunPickBenchmark(FEditor& Editor, int Iterations)
         else
         {
             FRayCastingManager::RayIntersectsMeshes(
-                Ray, Viewport->ViewportCamera, Editor.GetPrimitiveComponents(), HitComponent, ImpactPoint);
+                Ray, *Viewport->GetCamera(), Editor.GetPrimitiveComponents(), HitComponent, ImpactPoint);
         }
         Times.push_back(Counter.Finish());
     }
@@ -220,10 +221,10 @@ void FImguiControlPanelWindow::RunPickBenchmark(FEditor& Editor, int Iterations)
     double Sum = 0.0;
     for (double T : Times) { Sum += T; }
 
-    UE_LOG("[PickBench] %s x%d | Median %.4f ms | Min %.4f ms | Avg %.4f ms | Hit UUID %u",
+    UE_LOG("[PickBench] %s x%d | Median %.4f ms | Min %.4f ms | Avg %.4f ms | Hit Index %u",
         bUseBVH ? "BVH" : "Linear", Iterations,
         Times[Times.size() / 2], Times.front(), Sum / Times.size(),
-        HitComponent ? HitComponent->GetUUID() : 0u);
+        HitComponent ? HitComponent->GetInternalIndex() : 0u);
 }
 
 void FImguiControlPanelWindow::RenderStateSort(FEditor& Editor)
@@ -367,7 +368,7 @@ void FImguiControlPanelWindow::ActorSpawnSetting(FEditor& Editor)
     // 그리드 설정
 void FImguiControlPanelWindow::GridSetting(FEditor& Editor)
 {
-    FEditorViewportClient* Viewport = Editor.GetActiveViewport();
+    FEditorViewportClient* Viewport = Editor.GetActiveEditorClient();
     if (!Viewport) { return; }
 
     float CellSize = Viewport->GetGrid().GetCellSize();
@@ -383,12 +384,12 @@ void FImguiControlPanelWindow::GridSetting(FEditor& Editor)
 void FImguiControlPanelWindow::RenderModeAndShowFlagSetting(FEditor& Editor)
 {
     
-    FEditorViewportClient* ActiveViewport = Editor.GetActiveViewport();
+    FEditorViewportClient* ActiveViewport = Editor.GetActiveEditorClient();
     if (ActiveViewport)
     {
         // 뷰 모드 드롭박스
         int CurrentViewMode = static_cast<int>(ActiveViewport->ViewMode);
-        const char* ViewModes[] = { "Lit", "Unlit", "Wireframe" };
+        const char* ViewModes[] = { "Lit", "Unlit", "Wireframe", "Scene Depth"};
         ImGui::SetNextItemWidth(180.0f);
         if (ImGui::Combo("##ViewMode", &CurrentViewMode, ViewModes, IM_ARRAYSIZE(ViewModes)))
         {
@@ -417,6 +418,11 @@ void FImguiControlPanelWindow::RenderModeAndShowFlagSetting(FEditor& Editor)
             {
                 ActiveViewport->ToggleShowFlag(EEngineShowFlags::SF_Grid);
             }
+            bool bFog = ActiveViewport->HasShowFlag(EEngineShowFlags::SF_Fog);
+            if (ImGui::Checkbox("Fog", &bFog))
+            {
+                ActiveViewport->ToggleShowFlag(EEngineShowFlags::SF_Fog);
+            }
             ImGui::EndCombo();
         }
         ImGui::SameLine();
@@ -426,12 +432,12 @@ void FImguiControlPanelWindow::RenderModeAndShowFlagSetting(FEditor& Editor)
 
 void FImguiControlPanelWindow::CameraSetting(FEditor& Editor)
 {
-    if (FEditorViewportClient* Viewport = Editor.GetActiveViewport())
+    if (FEditorViewportClient* ViewportClient = Editor.GetActiveEditorClient())
     {
-        FCamera& Camera = Viewport->ViewportCamera;
+        FCamera *Camera = ViewportClient->GetCamera();
 
         bool bOrthographic =
-            (Camera.GetProjection().GetProjectionType() == EProjectionType::Orthographic);
+            (Camera->GetProjection().GetProjectionType() == EProjectionType::Orthographic);
         //if (ImGui::Checkbox("Orthogonal", &bOrthographic))
         //{
         //    Camera.Projection.ProjectionType =
@@ -452,20 +458,20 @@ void FImguiControlPanelWindow::CameraSetting(FEditor& Editor)
         ImGui::Text("Speed");
         Editor.State.SetCameraSpeed(CameraSpeed);
 
-        float FOV = Camera.GetProjection().GetFOV();
+        float FOV = Camera->GetProjection().GetFOV();
         ImGui::SetNextItemWidth(180.0f);
         if (ImGui::DragFloat("##FOV", &FOV, 0.1f, 1.0f, 179.0f, "%.1f"))
         {
-            Camera.SetFOV(FOV);
+            Camera->SetFOV(FOV);
         }
         ImGui::SameLine();
         ImGui::Text("FOV");
 
-        FVector CameraPosition = Camera.GetPosition();
+        FVector CameraPosition = Camera->GetPosition();
         ImGui::SetNextItemWidth(180.0f);
         if (ImGui::DragFloat3("##CameraLocation", &CameraPosition.X, 0.05f, 0.0f, 0.0f, "%.3f"))
         {
-            Camera.SetPosition(CameraPosition);
+            Camera->SetPosition(CameraPosition);
         }
         ImGui::SameLine();
         ImGui::Text("Camera Location");
@@ -474,7 +480,7 @@ void FImguiControlPanelWindow::CameraSetting(FEditor& Editor)
         ImGui::Text("Pitch");
         ImGui::SameLine();
 
-        float Pitch = Camera.GetPitch();
+        float Pitch = Camera->GetPitch();
         ImGui::SetNextItemWidth(50.0f);
         if (ImGui::DragFloat(
             "##CameraPitch",
@@ -485,7 +491,7 @@ void FImguiControlPanelWindow::CameraSetting(FEditor& Editor)
             "%.2f"
         ))
         {
-            Camera.SetPitch(Pitch);
+            Camera->SetPitch(Pitch);
         }
         ImGui::SameLine();
 
@@ -493,7 +499,7 @@ void FImguiControlPanelWindow::CameraSetting(FEditor& Editor)
         ImGui::Text("Yaw");
         ImGui::SameLine();
 
-        float Yaw = Camera.GetYaw();
+        float Yaw = Camera->GetYaw();
         ImGui::SetNextItemWidth(50.0f);
         if (ImGui::DragFloat(
             "##CameraYaw",
@@ -504,7 +510,7 @@ void FImguiControlPanelWindow::CameraSetting(FEditor& Editor)
             "%.2f"
         ))
         {
-            Camera.SetYaw(Yaw);
+            Camera->SetYaw(Yaw);
         }
 
         ImGui::SameLine();
@@ -512,76 +518,11 @@ void FImguiControlPanelWindow::CameraSetting(FEditor& Editor)
 
         if (ImGui::Button("Reset Camera"))
         {
-            Camera.SetPosition(FVector{ -8.0f, 0.0f, 4.0f });
-            Camera.SetRotation(-20.0f, 0.0f);
-            Editor.State.SetCameraLocation(Camera.GetPosition());
-            Editor.State.SetCameraPitch(Camera.GetPitch());
-            Editor.State.SetCameraYaw(Camera.GetYaw());
+            Camera->SetPosition(FVector{ -8.0f, 0.0f, 4.0f });
+            Camera->SetRotation(-20.0f, 0.0f);
+            Editor.State.SetCameraLocation(Camera->GetPosition());
+            Editor.State.SetCameraPitch(Camera->GetPitch());
+            Editor.State.SetCameraYaw(Camera->GetYaw());
         }
     }
 }
-
-void FImguiControlPanelWindow::DirectionLightSetting(FEditor& Editor)
-{
-    ImGui::SeparatorText("Sun Light Control");
-    // 엑스축 조명 방향 설정
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.85f, 0.22f, 0.22f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.95f, 0.32f, 0.32f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.75f, 0.15f, 0.15f, 1.0f));
-    ImGui::Button("X", ImVec2(22.0f, 0.0f));
-    ImGui::PopStyleColor(3);
-    ImGui::SameLine();
-    ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.85f, 0.22f, 0.22f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(1.0f, 0.35f, 0.35f, 1.0f));
-    ImGui::SetNextItemWidth(180.0f);
-    ImGui::SliderFloat("##LightDirX", &Editor.GlobalLight.LightDirection.X, -1.0f, 1.0f, "%.2f");
-    ImGui::PopStyleColor(2);
-    ImGui::SameLine();
-    ImGui::Text("Light Dir X (Forward/Back)");
-
-    // 와이축 조명 방향 설정
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.22f, 0.75f, 0.22f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.32f, 0.85f, 0.32f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.15f, 0.65f, 0.15f, 1.0f));
-    ImGui::Button("Y", ImVec2(22.0f, 0.0f));
-    ImGui::PopStyleColor(3);
-    ImGui::SameLine();
-    ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.22f, 0.75f, 0.22f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.35f, 0.95f, 0.35f, 1.0f));
-    ImGui::SetNextItemWidth(180.0f);
-    ImGui::SliderFloat("##LightDirY", &Editor.GlobalLight.LightDirection.Y, -1.0f, 1.0f, "%.2f");
-    ImGui::PopStyleColor(2);
-    ImGui::SameLine();
-    ImGui::Text("Light Dir Y (Right/Left)");
-
-    // 제트축 조명 방향 설정
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.45f, 0.95f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.35f, 0.55f, 1.0f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.18f, 0.35f, 0.85f, 1.0f));
-    ImGui::Button("Z", ImVec2(22.0f, 0.0f));
-    ImGui::PopStyleColor(3);
-    ImGui::SameLine();
-    ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.25f, 0.45f, 0.95f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.4f, 0.6f, 1.0f, 1.0f));
-    ImGui::SetNextItemWidth(180.0f);
-    ImGui::SliderFloat("##LightDirZ", &Editor.GlobalLight.LightDirection.Z, -1.0f, 1.0f, "%.2f");
-    ImGui::PopStyleColor(2);
-    ImGui::SameLine();
-    ImGui::Text("Light Dir Z (Up/Down)");
-
-    ImGui::SetNextItemWidth(180.0f);
-    ImGui::ColorEdit3("##LightColor", &Editor.GlobalLight.LightColor.X);
-    ImGui::SameLine();
-    ImGui::Text("Color");
-
-    ImGui::SetNextItemWidth(180.0f);
-    ImGui::SliderFloat("##LightIntensity", &Editor.GlobalLight.Intensity, 0.0f, 5.0f, "%.2f");
-    ImGui::SameLine();
-    ImGui::Text("Intensity");
-
-    ImGui::SetNextItemWidth(180.0f);
-    ImGui::SliderFloat("##LightAmbient", &Editor.GlobalLight.AmbientIntensity, 0.0f, 1.0f, "%.2f");
-    ImGui::SameLine();
-    ImGui::Text("Ambient");
-}
-

@@ -1,5 +1,5 @@
 #include "UAnimatedBillboardComp.h"
-#include "Runtime/Engine/UScene.h"
+#include "Runtime/Engine/FScene.h"
 #include "Runtime/Engine/FArchive.h"
 #include "UClass.h"
 #include <algorithm>
@@ -11,6 +11,8 @@ void UAnimatedBillboardComp::Initialize()
 {
   Super::Initialize();
   bTickEnabled = true;
+  bTickInEditor = true;
+  SetHiddenInGame(false);
 }
 
 void UAnimatedBillboardComp::SetSpriteSheet(int InGridX, int InGridY,
@@ -74,7 +76,7 @@ void UAnimatedBillboardComp::Deserialize(const FArchive& Archive)
 	CurrentUVOffset = Archive.GetVector2("CurrentUVOffset");
 }
 
-void UAnimatedBillboardComp::Update(float DeltaTime) {
+void UAnimatedBillboardComp::Tick(float DeltaTime) {
   if (!bPlaying || TotalFrames <= 1 || FrameRate <= 0.0f) {
     return;
   }

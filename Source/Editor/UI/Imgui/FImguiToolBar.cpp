@@ -3,6 +3,9 @@
 #include "Editor/Core/FEditor.h"
 #include "FImguiEditorViewportWindow.h"
 #include "Runtime/Resource/FResourceLoader.h"
+#include "Editor/Engine/UEditorEngine.h"
+
+
 // "표시명\0패턴\0" 이중 널 종료 필요
 constexpr wchar_t SceneFilter[] = L"Scene Files (*.Scene)\0*.Scene\0All Files (*.*)\0*.*\0";
 constexpr wchar_t ObjFilter[] = L"Scene Files (*.obj)\0*.obj\0All Files (*.*)\0*.*\0";
@@ -23,6 +26,9 @@ void FImguiToolbar::Process(FEditor& Editor, FImguiConsoleWindow& ConsoleWindow,
 
         //Imgui Window들 소환
         ShowViewBar(Editor, ConsoleWindow);
+
+        //PIE UI 소환
+        ShowPIEUI(Editor);
 
         ImGui::EndMainMenuBar();
 	}
@@ -60,7 +66,7 @@ void FImguiToolbar::ShowFileBar(FString CurrentScenePath, FEditor& Editor)
     {
         if (ImGui::MenuItem("New Scene"))
         {
-            Editor.NewScene();
+            Editor.NewMap();
             CurrentScenePath.clear();
         }
         if (ImGui::MenuItem("Save Scene"))
@@ -72,12 +78,12 @@ void FImguiToolbar::ShowFileBar(FString CurrentScenePath, FEditor& Editor)
                 if (PickSceneFile(Path, true))
                 {
                     CurrentScenePath = Path;
-                    Editor.SaveScene(Path);
+                    Editor.SaveMap(Path);
                 }
             }
             else
             {
-                Editor.SaveScene(CurrentScenePath);
+                Editor.SaveMap(CurrentScenePath);
             }
         }
 
@@ -87,7 +93,7 @@ void FImguiToolbar::ShowFileBar(FString CurrentScenePath, FEditor& Editor)
             if (PickSceneFile(Path, true))
             {
                 CurrentScenePath = Path;
-                Editor.SaveScene(Path);
+                Editor.SaveMap(Path);
             }
         }
 
@@ -97,7 +103,7 @@ void FImguiToolbar::ShowFileBar(FString CurrentScenePath, FEditor& Editor)
             if (PickSceneFile(Path, false))
             {
                 CurrentScenePath = Path;
-                Editor.LoadScene(Path);
+                Editor.LoadMap(Path);
             }
         }
 
@@ -158,6 +164,51 @@ void FImguiToolbar::ShowViewBar(FEditor& Editor, FImguiConsoleWindow& ConsoleWin
     if (ImGui::Button(GizmoModes[SelectedItem], { 150.0f, 0.0f }))
     {
         Gizmo.Mode = static_cast<EGizmoMode>((SelectedItem + 1) % 4);
+    }
+}
+
+void FImguiToolbar::ShowPIEUI(FEditor& Editor)
+{
+    UEditorEngine* Engine = Editor.GetEditorEngine();
+    bool bPlayingSession = Engine->PlaySession.IsSet();
+    if (bPlayingSession)
+    {
+        if (ImGui::Button("End", { 150.0f, 0.0f }))
+        {
+            Engine->bRequestEndPlay = true;
+        }
+
+        FPlaySession* Session = Engine->PlaySession.Get();
+        EPlaySessionType SessionType = Session->SessionType;
+        FEditor& Editor = Engine->GetEditor();
+        FViewport *Viewport = Editor.GetViewports()[Session->ViewEntryIndex].get();
+        if (SessionType == EPlaySessionType::PIE)
+        {
+            if (ImGui::Button("Simulate in Editor", { 150.0f, 0.0f }))
+            {
+                Engine->SwitchPlaySessionMode(Viewport, EPlaySessionType::SIE);
+            }
+        }
+        if (SessionType == EPlaySessionType::SIE)
+        {
+            if (ImGui::Button("Play in Editor", { 150.0f, 0.0f }))
+            {
+                FEditor& Editor = Engine->GetEditor();
+                Engine->SwitchPlaySessionMode(Viewport, EPlaySessionType::PIE);
+            }
+        }
+    }
+    else
+    {
+        if (ImGui::Button("Play in Editor", { 150.0f, 0.0f }))
+        {
+            Engine->PlaySessionRequest.Set(FRequestPlaySessionParams(EWorldType::PIE, EPlaySessionType::PIE));
+        }
+        if (ImGui::Button("Simulate in Editor", { 150.0f, 0.0f }))
+        {
+            Engine->PlaySessionRequest.Set(FRequestPlaySessionParams(EWorldType::PIE, EPlaySessionType::SIE));
+        }
+
     }
 }
 

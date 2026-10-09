@@ -7,19 +7,6 @@
 #include "Runtime/Geometry/FFrustum.h"
 #include <cstdint>
 
-//임시 FPlane, FFrustum, 조훈님이 만들면 그 자료구조로 교체
-//struct FPlane { FVector Normal; float D; };
-
-//struct FFrustum
-//{
-//    FPlane Planes[6];
-//    static FFrustum FromViewProj(const FMatrix& ViewProj);
-//};
-
-// ★ bool이 아니라 3-상태여야 함
-enum class EIntersection : uint8 { Outside, Intersect, Inside };
-
-//EIntersection TestAABB(const FFrustum& Frustum, const FAxisAlignedBoundingBox& Box);
 
 class FSceneBVH
 {
@@ -110,14 +97,19 @@ inline static void RefitActorInBVH(FSceneBVH& BVH, AActor* Actor)
 {
     if (!Actor) { return; }
 
-    if (USceneComponent* Root = Actor->GetRootComponent())
+    // 루트도 AttachedComponents에 들어 있다. 같은 액터의 자식은 이 목록에서 처리되므로,
+    // Children으로는 붙어 있는 다른 액터로만 내려간다.
+    for (UActorComponent* ActorComponent : Actor->GetOwnedComponents())
     {
-        if (UPrimitiveComponent* P = Root->Cast<UPrimitiveComponent>()) { BVH.RefitObject(P); }
-    }
-
-    for (USceneComponent* S : Actor->GetAttachedComponents())
-    {
+        USceneComponent* S = ActorComponent->Cast<USceneComponent>();
         if (!S) { continue; }
         if (UPrimitiveComponent* P = S->Cast<UPrimitiveComponent>()) { BVH.RefitObject(P); }
+        for (USceneComponent* Child : S->GetChildren())
+        {
+            if (!Child || Child->GetSceneOwner() != S) { continue; }
+
+            AActor* ChildActor = Child->GetActorOwner();
+            if (ChildActor && ChildActor != Actor) { RefitActorInBVH(BVH, ChildActor); }
+        }
     }
 }

@@ -1,4 +1,4 @@
-#include "Editor/Application/FEditorApplication.h"
+#include "Editor/Engine/UEditorEngine.h"
 #include "Runtime/Core/Log.h"
 #include "Runtime/Core/Globals.h"
 #include "Runtime/Utility/WindowsUtil.h"
@@ -13,12 +13,19 @@ int WINAPI wWinMain(
     _In_ int32 nShowCmd)
 {
 	FWString ErrorTitle = std::format(L"{} Fatal Error", WindowsUtil::ToWString(Globals::EngineName));
-
 	FEngineLoop EngineLoop;
 
 	try
 	{
 		EngineLoop.Init(hInstance);
+
+		//TODO : 빌드 모드에 따라 다른 엔진을 만들도록 수정(EditorEngine, GameEngine, ObjViewrEngine 등)
+		UEngine* Engine = NewObject<UEditorEngine>();
+		HWND Window = EngineLoop.GetMainWindowHandle();
+		Engine->Init(Window);
+
+		EngineLoop.SetEngine(Engine);
+
 		EngineLoop.Tick();
 		EngineLoop.Exit();
 	}
